@@ -9,7 +9,7 @@ function cors(headers = {}) {
     ...headers,
     "access-control-allow-origin": "*",
     "access-control-allow-methods": "GET,PUT,OPTIONS",
-    "access-control-allow-headers": "Content-Type,X-Library-Secret"
+    "access-control-allow-headers": "Content-Type,X-Library-Secret,X-Telegram-Init-Data,X-MVP-Access-Grant"
   };
 }
 
@@ -77,41 +77,73 @@ async function telegramMemberStatus(env, chatId, userId) {
   return ["creator", "administrator", "member"].includes(status);
 }
 
+async function signGrant(env, userId, ttlSeconds=30) {
+  const exp = Math.floor(Date.now()/1000) + ttlSeconds;
+  const payload = `${userId}.${exp}`;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(env.LIBRARY_SECRET || ""),
+    {name:"HMAC", hash:"SHA-256"},
+    false,
+    ["sign","verify"]
+  );
+  const sig = new Uint8Array(
+    await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload))
+  );
+  const hex = [...sig].map(b=>b.toString(16).padStart(2,"0")).join("");
+  return `${payload}.${hex}`;
+}
+
+async function verifyGrant(env, grant, userId) {
+  if (!grant || !userId || !env.LIBRARY_SECRET) return false;
+  const parts = grant.split(".");
+  if (parts.length !== 3) return false;
+  const [id, expText, sigHex] = parts;
+  if (id !== String(userId)) return false;
+  const exp = Number(expText);
+  if (!Number.isFinite(exp) || exp < Math.floor(Date.now()/1000)) return false;
+  if (!/^[0-9a-f]{64}$/i.test(sigHex)) return false;
+
+  const payload = `${id}.${expText}`;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(env.LIBRARY_SECRET),
+    {name:"HMAC", hash:"SHA-256"},
+    false,
+    ["verify"]
+  );
+  const sig = new Uint8Array(sigHex.match(/.{2}/g).map(x=>parseInt(x,16)));
+  return crypto.subtle.verify("HMAC", key, sig, new TextEncoder().encode(payload));
+}
+
 async function checkAccess(request, env) {
-  const initData = request.headers.get("X-Telegram-Init-Data") || new URL(request.url).searchParams.get("init_data") || "";
+  const initData =
+    request.headers.get("X-Telegram-Init-Data") ||
+    new URL(request.url).searchParams.get("init_data") || "";
+
   const user = await verifyTelegramInitData(initData, env.TELEGRAM_BOT_TOKEN);
-  if (!user?.id) return {ok: false, code: 401};
+  if (!user?.id) return {ok:false, code:401, reason:"telegram_auth_invalid"};
 
   if (!env.MVP_CHANNEL_ID || !env.MVP_DISCUSSION_ID) {
-    return {ok: false, code: 503};
+    return {ok:false, code:503, reason:"membership_config_missing"};
   }
-
-  // Short cache: avoids calling Telegram for every page/image request,
-  // while still re-checking membership frequently.
-  const cache = caches.default;
-  const cacheKey = new Request(
-    `${new URL(request.url).origin}/__mvp_access/${user.id}`
-  );
-  const cached = await cache.match(cacheKey);
-  if (cached) return {ok: true, user};
 
   const [mvp, discussion] = await Promise.all([
     telegramMemberStatus(env, env.MVP_CHANNEL_ID, user.id),
     telegramMemberStatus(env, env.MVP_DISCUSSION_ID, user.id)
   ]);
 
-  if (mvp !== true || discussion !== true) {
-    return {ok: false, code: 403};
+  if (mvp === null || discussion === null) {
+    return {ok:false, code:503, reason:"telegram_membership_check_failed"};
   }
 
-  const response = new Response("ok", {
-    headers: {"cache-control": "private, max-age=60"}
-  });
-  // Cloudflare cache is used only as a short-lived membership check cache.
-  await cache.put(cacheKey, response.clone());
+  if (mvp !== true || discussion !== true) {
+    return {ok:false, code:403, reason:"not_member"};
+  }
 
-  return {ok: true, user};
+  return {ok:true, user};
 }
+
 
 export default {
   async fetch(request, env) {
@@ -124,17 +156,16 @@ export default {
     if (url.pathname === "/api/access" && request.method === "GET") {
       const access = await checkAccess(request, env);
       if (!access.ok) {
-        return json(
-          {ok: false, code: access.code},
-          access.code === 403 ? 403 : access.code === 401 ? 401 : 503
-        );
+        return json({ok:false, code:access.code, reason:access.reason}, access.code);
       }
+      const grant = await signGrant(env, access.user.id, 30);
       return json({
         ok: true,
         user: {
           id: String(access.user.id),
           username: access.user.username || ""
-        }
+        },
+        grant
       });
     }
 
@@ -143,7 +174,7 @@ export default {
     if (url.pathname === "/api/catalog" && request.method === "GET") {
       const access = await checkAccess(request, env);
       if (!access.ok) {
-        return json({ok: false, code: access.code}, access.code);
+        return json({ok:false, code:access.code, reason:access.reason}, access.code);
       }
 
       const catalog = await env.LIBRARY.get("catalog", "json");
@@ -170,10 +201,18 @@ export default {
     // Proxies Telegram-hosted images through the Worker.
     // The bot token stays in Cloudflare Secret and is never sent to the browser.
     if (url.pathname === "/api/file" && request.method === "GET") {
-      const access = await checkAccess(request, env);
-      if (!access.ok) {
-        return json({ok: false, code: access.code}, access.code);
+      const initData =
+        request.headers.get("X-Telegram-Init-Data") ||
+        url.searchParams.get("init_data") || "";
+      const user = await verifyTelegramInitData(initData, env.TELEGRAM_BOT_TOKEN);
+      if (!user?.id) return json({ok:false, code:401, reason:"telegram_auth_invalid"},401);
+
+      const grant = request.headers.get("X-MVP-Access-Grant") ||
+        url.searchParams.get("grant") || "";
+      if (!(await verifyGrant(env, grant, user.id))) {
+        return json({ok:false, code:403, reason:"access_grant_expired"},403);
       }
+
       const fileId = url.searchParams.get("file_id");
       if (!fileId) return new Response("Missing file_id", {status: 400});
 
