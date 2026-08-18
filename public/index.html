@@ -15,10 +15,13 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:#a6a6b0}.search{width
 .back{border:0;background:#24242a;color:#fff;padding:9px 12px;border-radius:10px}.detailcover{width:min(260px,75%);aspect-ratio:2/3;object-fit:cover;border-radius:16px;margin-top:16px}
 .chapters{display:flex;flex-direction:column;gap:9px;margin-top:14px}.chapter{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:#19191f;border:1px solid #2b2b31;border-radius:12px}
 .notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}
-.readerhead{position:sticky;top:0;z-index:5;padding:10px 0;background:#0f0f12e6;backdrop-filter:blur(10px)}
-.readerpages{display:flex;flex-direction:column;align-items:center;gap:0;margin-top:10px}
-.readerpage{display:block;width:min(900px,100%);height:auto;margin:0;padding:0;background:#000}
+.readerhead{position:sticky;top:0;z-index:5;padding:10px 12px;background:#0f0f12e6;backdrop-filter:blur(10px)}
+.readerpages{display:flex;flex-direction:column;align-items:stretch;gap:0;margin:0;padding:0}
+.readerpage{display:block;width:100vw;max-width:none;height:auto;margin:0;padding:0;background:#000}
 .readererror{padding:18px;text-align:center;border:1px solid #55333a;border-radius:12px;background:#24181b;margin-top:12px}
+.reader-watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;pointer-events:none;text-align:center;line-height:1.15;opacity:.34;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.75);white-space:nowrap;font-weight:700}
+.reader-watermark .wm-title{font-size:18px}
+.reader-watermark .wm-user{font-size:12px;font-weight:600;margin-top:3px}
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -35,6 +38,10 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:#a6a6b0}.search{width
 <div id="reader" class="wrap hidden">
   <button class="back" onclick="closeReader()">← Kembali</button>
   <div id="readerContent" style="margin-top:18px"></div>
+  <div id="readerWatermark" class="reader-watermark hidden">
+    <div class="wm-title">👑 MVP</div>
+    <div id="readerWatermarkUser" class="wm-user"></div>
+  </div>
 </div>
 <script>
 const tg=window.Telegram?.WebApp;
@@ -72,6 +79,25 @@ function openProject(id){
       <div class="chapter"><span>Chapter ${esc(c.chapter)} ${c.decensored?"🔞":""}</span>
       <button class="btn" onclick="openReader('${esc(p.id)}','${esc(c.chapter)}',${c.decensored?'true':'false'})">Baca</button></div>`).join("")}</div>`;
 }
+function getTelegramIdentity(){
+  const u=tg?.initDataUnsafe?.user;
+  if(!u) return {id:"", username:""};
+  return {
+    id:String(u.id||""),
+    username:u.username ? `@${u.username}` : ""
+  };
+}
+
+function showReaderWatermark(){
+  const u=getTelegramIdentity();
+  $("readerWatermarkUser").textContent=[u.id,u.username].filter(Boolean).join(" | ");
+  $("readerWatermark").classList.remove("hidden");
+}
+
+function hideReaderWatermark(){
+  $("readerWatermark").classList.add("hidden");
+}
+
 async function openReader(projectId, chapterName, decensored){
   const p=catalog.find(x=>x.id===projectId);
   if(!p)return;
@@ -84,11 +110,11 @@ async function openReader(projectId, chapterName, decensored){
   $("home").classList.add("hidden");
   $("detail").classList.add("hidden");
   $("reader").classList.remove("hidden");
+  showReaderWatermark();
 
   $("readerContent").innerHTML=`
     <div class="readerhead">
       <h2>${esc(p.title)} · Chapter ${esc(chapterName)}${decensored?" 🔞":""}</h2>
-      <p class="muted" style="margin-top:5px">${c.file_ids.length} halaman</p>
     </div>
     <div id="readerPages" class="readerpages"></div>`;
 
@@ -110,6 +136,7 @@ async function openReader(projectId, chapterName, decensored){
 }
 
 function closeReader(){
+  hideReaderWatermark();
   $("reader").classList.add("hidden");
   $("detail").classList.remove("hidden");
 }
