@@ -1,79 +1,77 @@
 <!doctype html>
 <html lang="id">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#111111">
-  <title>MVP Library</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    :root { color-scheme: dark; }
-    * { box-sizing: border-box; }
-    html, body { margin:0; min-height:100%; background:#0f0f12; color:#f5f5f7; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
-    body { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
-    .card { width:min(520px,100%); text-align:center; padding:32px 24px; border:1px solid #2b2b31; border-radius:24px; background:#17171c; }
-    .icon { font-size:48px; margin-bottom:12px; }
-    h1 { margin:0 0 10px; font-size:28px; }
-    p { margin:0; color:#a8a8b3; line-height:1.5; }
-    .hidden { display:none !important; }
-    .notice { margin-top:18px; padding:14px 16px; border-radius:14px; background:#202027; color:#cfcfd8; }
-    .badge { display:inline-block; margin-top:18px; padding:7px 11px; border-radius:999px; background:#25252d; color:#bdbdc8; font-size:13px; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0f0f12">
+<title>MVP Library</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:#0f0f12;color:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.wrap{max-width:900px;margin:auto;padding:20px}
+header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:#a6a6b0}.search{width:100%;padding:13px 15px;border:1px solid #303038;border-radius:14px;background:#19191f;color:#fff;font-size:16px;margin:12px 0 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px}.card{border:1px solid #2b2b31;border-radius:18px;overflow:hidden;background:#18181d;cursor:pointer}
+.cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:#24242a}.cardbody{padding:12px}.title{font-weight:700}.btn{display:inline-block;border:0;border-radius:10px;padding:9px 12px;background:#30303a;color:#fff;text-decoration:none}
+.back{border:0;background:#24242a;color:#fff;padding:9px 12px;border-radius:10px}.detailcover{width:min(260px,75%);aspect-ratio:2/3;object-fit:cover;border-radius:16px;margin-top:16px}
+.chapters{display:flex;flex-direction:column;gap:9px;margin-top:14px}.chapter{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:#19191f;border:1px solid #2b2b31;border-radius:12px}
+.notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}
+</style>
 </head>
-<body>
-  <main id="app" class="card hidden">
-    <div class="icon">📚</div>
-    <h1>MVP Library</h1>
-    <p>Library MVP berhasil terhubung.</p>
-    <span id="platformBadge" class="badge"></span>
-  </main>
-
-  <main id="blocked" class="card hidden">
-    <div class="icon">🔒</div>
-    <h1>Akses ditolak</h1>
-    <p id="blockedText">MVP Library hanya dapat dibuka melalui aplikasi Telegram mobile.</p>
-  </main>
-
-  <script>
-    (() => {
-      const tg = window.Telegram?.WebApp;
-      const blocked = document.getElementById("blocked");
-      const app = document.getElementById("app");
-      const blockedText = document.getElementById("blockedText");
-      const badge = document.getElementById("platformBadge");
-
-      if (!tg) {
-        blockedText.textContent = "MVP Library hanya dapat dibuka melalui aplikasi Telegram mobile.";
-        blocked.classList.remove("hidden");
-        return;
-      }
-
-      tg.ready();
-      tg.expand();
-
-      const platform = String(tg.platform || "").toLowerCase();
-      const initData = String(tg.initData || "");
-
-      // Telegram mobile platforms allowed for the Library.
-      const isAndroid = platform === "android";
-      const isIOS = platform === "ios";
-      const isMobileTelegram = isAndroid || isIOS;
-
-      // Direct browser access and Telegram Web/Desktop are rejected.
-      if (!initData || !isMobileTelegram) {
-        if (platform === "android" || platform === "ios") {
-          blockedText.textContent = "MVP Library hanya dapat dibuka melalui sesi Telegram yang valid.";
-        } else {
-          blockedText.textContent = "MVP Library hanya dapat dibuka melalui aplikasi Telegram di Android atau iPhone/iPad.";
-        }
-        blocked.classList.remove("hidden");
-        return;
-      }
-
-      app.classList.remove("hidden");
-      badge.textContent = isAndroid ? "Android • Decensored eligible" : "iOS • Standard content";
-      document.body.style.background = tg.backgroundColor || "#0f0f12";
-    })();
-  </script>
+<body oncontextmenu="return false">
+<div id="gate" class="notice hidden"><div><h2>🔒 Akses ditolak</h2><p class="muted" style="margin-top:8px">MVP Library hanya dapat dibuka melalui Telegram Android atau iOS.</p></div></div>
+<div id="home" class="wrap hidden">
+<header><h1>📚 MVP Library</h1><p class="muted">Pilih project untuk melihat detail dan chapter.</p></header>
+<input id="search" class="search" placeholder="Cari PJ...">
+<div id="grid" class="grid"></div>
+</div>
+<div id="detail" class="wrap hidden">
+<button class="back" onclick="showHome()">← Kembali</button>
+<div id="detailContent" style="margin-top:18px"></div>
+</div>
+<script>
+const tg=window.Telegram?.WebApp;
+let catalog=[];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+function deny(){ $("gate").classList.remove("hidden"); }
+function showHome(){ $("detail").classList.add("hidden"); $("home").classList.remove("hidden"); }
+function render(list){
+  $("grid").innerHTML=list.length?list.map(p=>`
+    <article class="card" onclick="openProject('${esc(p.id)}')">
+      <div class="cover"></div>
+      <div class="cardbody"><div class="title">${esc(p.title)}</div>
+      <div class="muted" style="margin-top:5px">${(p.chapters||[]).length} chapter</div></div>
+    </article>`).join(""):"<p class='muted'>Belum ada PJ.</p>";
+}
+function openProject(id){
+  const p=catalog.find(x=>x.id===id); if(!p)return;
+  $("home").classList.add("hidden"); $("detail").classList.remove("hidden");
+  const comment=p.comment_link?`<p style="margin:16px 0"><a class="btn" href="${esc(p.comment_link)}">💬 Komentar di Lapak</a></p>`:"";
+  $("detailContent").innerHTML=`
+    <h1>${esc(p.title)}</h1>
+    <p class="muted" style="margin-top:8px;white-space:pre-line">${esc(p.description)}</p>
+    ${comment}
+    <h2 style="margin-top:24px">Chapters</h2>
+    <div class="chapters">${(p.chapters||[]).map(c=>`
+      <div class="chapter"><span>Chapter ${esc(c.chapter)} ${c.decensored?"🔞":""}</span>
+      <button class="btn" onclick="alert('Reader akan dipasang setelah katalog sync lulus.')">Baca</button></div>`).join("")}</div>`;
+}
+$("search").oninput=e=>{const q=e.target.value.toLowerCase();render(catalog.filter(p=>p.title.toLowerCase().includes(q)));};
+(async()=>{
+  if(!tg){deny();return;}
+  tg.ready();tg.expand();
+  const platform=String(tg.platform||"").toLowerCase();
+  if(!tg.initData || !["android","android_x","ios"].includes(platform)){deny();return;}
+  try{
+    const r=await fetch("/api/catalog",{cache:"no-store"});
+    if(!r.ok)throw new Error("catalog");
+    catalog=await r.json();
+    $("home").classList.remove("hidden"); render(catalog);
+  }catch(e){
+    $("home").classList.remove("hidden");
+    $("grid").innerHTML="<p class='muted'>Library belum tersambung ke katalog.</p>";
+  }
+})();
+</script>
 </body>
 </html>
