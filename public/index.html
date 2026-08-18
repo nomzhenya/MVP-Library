@@ -15,6 +15,10 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:#a6a6b0}.search{width
 .back{border:0;background:#24242a;color:#fff;padding:9px 12px;border-radius:10px}.detailcover{width:min(260px,75%);aspect-ratio:2/3;object-fit:cover;border-radius:16px;margin-top:16px}
 .chapters{display:flex;flex-direction:column;gap:9px;margin-top:14px}.chapter{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:#19191f;border:1px solid #2b2b31;border-radius:12px}
 .notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}
+.readerhead{position:sticky;top:0;z-index:5;padding:10px 0;background:#0f0f12e6;backdrop-filter:blur(10px)}
+.readerpages{display:flex;flex-direction:column;align-items:center;gap:0;margin-top:10px}
+.readerpage{display:block;width:min(900px,100%);height:auto;margin:0;padding:0;background:#000}
+.readererror{padding:18px;text-align:center;border:1px solid #55333a;border-radius:12px;background:#24181b;margin-top:12px}
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -27,6 +31,10 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:#a6a6b0}.search{width
 <div id="detail" class="wrap hidden">
 <button class="back" onclick="showHome()">← Kembali</button>
 <div id="detailContent" style="margin-top:18px"></div>
+</div>
+<div id="reader" class="wrap hidden">
+  <button class="back" onclick="closeReader()">← Kembali</button>
+  <div id="readerContent" style="margin-top:18px"></div>
 </div>
 <script>
 const tg=window.Telegram?.WebApp;
@@ -62,8 +70,50 @@ function openProject(id){
     <h2 style="margin-top:24px">Chapters</h2>
     <div class="chapters">${(p.chapters||[]).map(c=>`
       <div class="chapter"><span>Chapter ${esc(c.chapter)} ${c.decensored?"🔞":""}</span>
-      <button class="btn" onclick="alert('Reader akan dipasang setelah katalog sync lulus.')">Baca</button></div>`).join("")}</div>`;
+      <button class="btn" onclick="openReader('${esc(p.id)}','${esc(c.chapter)}',${c.decensored?'true':'false'})">Baca</button></div>`).join("")}</div>`;
 }
+async function openReader(projectId, chapterName, decensored){
+  const p=catalog.find(x=>x.id===projectId);
+  if(!p)return;
+  const c=(p.chapters||[]).find(x=>String(x.chapter)===String(chapterName) && Boolean(x.decensored)===Boolean(decensored));
+  if(!c || !Array.isArray(c.file_ids) || !c.file_ids.length){
+    alert("Halaman chapter belum tersedia.");
+    return;
+  }
+
+  $("home").classList.add("hidden");
+  $("detail").classList.add("hidden");
+  $("reader").classList.remove("hidden");
+
+  $("readerContent").innerHTML=`
+    <div class="readerhead">
+      <h2>${esc(p.title)} · Chapter ${esc(chapterName)}${decensored?" 🔞":""}</h2>
+      <p class="muted" style="margin-top:5px">${c.file_ids.length} halaman</p>
+    </div>
+    <div id="readerPages" class="readerpages"></div>`;
+
+  const pages=$("readerPages");
+  c.file_ids.forEach((fid,i)=>{
+    const img=document.createElement("img");
+    img.className="readerpage";
+    img.alt=`${p.title} Chapter ${chapterName} Page ${i+1}`;
+    img.loading=i<2?"eager":"lazy";
+    img.src=fileUrl(fid);
+    img.onerror=()=>{
+      const err=document.createElement("div");
+      err.className="readererror";
+      err.textContent=`Gagal memuat halaman ${i+1}.`;
+      img.replaceWith(err);
+    };
+    pages.appendChild(img);
+  });
+}
+
+function closeReader(){
+  $("reader").classList.add("hidden");
+  $("detail").classList.remove("hidden");
+}
+
 $("search").oninput=e=>{const q=e.target.value.toLowerCase();render(catalog.filter(p=>p.title.toLowerCase().includes(q)));};
 (async()=>{
   if(!tg){deny();return;}
