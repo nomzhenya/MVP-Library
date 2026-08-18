@@ -59,8 +59,9 @@ let catalog=[];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const API_BASE=location.origin;
-const fileUrl=fileId=>`${API_BASE}/api/file?file_id=${encodeURIComponent(fileId)}&init_data=${encodeURIComponent(tg?.initData||"")}`;
+const fileUrl=fileId=>`${API_BASE}/api/file?file_id=${encodeURIComponent(fileId)}&init_data=${encodeURIComponent(tg?.initData||"")}&grant=${encodeURIComponent(accessGrant)}`;
 let accessUser=null;
+let accessGrant="";
 let accessDenied=false;
 
 function accessHeaders(){
@@ -79,13 +80,20 @@ function showDenied(){
 async function requireAccess(){
   if(accessDenied) return false;
   const r=await fetch("/api/access",{cache:"no-store",headers:accessHeaders()});
-  if(r.status===403 || r.status===401){
+  const data=await r.json().catch(()=>({}));
+  if(r.status===403){
     showDenied();
     return false;
   }
-  if(!r.ok) throw new Error("access");
-  const data=await r.json();
+  if(r.status===401){
+    showDenied();
+    return false;
+  }
+  if(!r.ok){
+    throw new Error(`access:${data.reason||r.status}`);
+  }
   accessUser=data.user||null;
+  accessGrant=data.grant||"";
   return true;
 }
 function deny(){ $("gate").classList.remove("hidden"); }
@@ -231,8 +239,11 @@ $("search").oninput=e=>{const q=e.target.value.toLowerCase();render(catalog.filt
     $("home").classList.remove("hidden"); render(catalog);
   }catch(e){
     if(accessDenied) return;
-    $("home").classList.remove("hidden");
-    $("grid").innerHTML="<p class='muted'>Library belum tersambung ke katalog.</p>";
+    $("home").classList.add("hidden");
+    $("detail").classList.add("hidden");
+    $("reader").classList.add("hidden");
+    $("gate").classList.remove("hidden");
+    $("gate").innerHTML=`<div><h2>🔒 Akses Ditolak</h2><p class="muted" style="margin-top:8px">Anda bukan bagian dari MVP</p><button class="btn" style="margin-top:16px" onclick="tg?.close()">Kembali ke Telegram</button></div>`;
   }
 })();
 </script>
