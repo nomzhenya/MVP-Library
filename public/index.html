@@ -78,15 +78,29 @@ function showDenied(){
 
 async function requireAccess(){
   if(accessDenied) return false;
-  const r=await fetch("/api/access",{cache:"no-store",headers:accessHeaders()});
-  const data=await r.json().catch(()=>({}));
+  let r;
+  try{
+    r=await fetch("/api/access",{cache:"no-store",headers:accessHeaders()});
+  }catch(e){
+    $("gate").classList.remove("hidden");
+    $("gate").innerHTML=`<div><h2>Library tidak dapat diakses</h2><p class="muted" style="margin-top:8px">Koneksi ke server gagal.</p></div>`;
+    return false;
+  }
   if(r.status===403 || r.status===401){
     showDenied();
     return false;
   }
-  if(!r.ok){
-    throw new Error(data.reason || "access");
+  if(r.status===503){
+    $("gate").classList.remove("hidden");
+    $("gate").innerHTML=`<div><h2>Library belum dikonfigurasi</h2><p class="muted" style="margin-top:8px">Membership gate belum tersambung.</p></div>`;
+    return false;
   }
+  if(!r.ok){
+    $("gate").classList.remove("hidden");
+    $("gate").innerHTML=`<div><h2>Library tidak dapat diakses</h2><p class="muted" style="margin-top:8px">Server mengembalikan error ${r.status}.</p></div>`;
+    return false;
+  }
+  const data=await r.json();
   accessUser=data.user||null;
   return true;
 }
@@ -233,8 +247,8 @@ $("search").oninput=e=>{const q=e.target.value.toLowerCase();render(catalog.filt
     $("home").classList.remove("hidden"); render(catalog);
   }catch(e){
     if(accessDenied) return;
-    $("home").classList.remove("hidden");
-    $("grid").innerHTML="<p class='muted'>Library belum tersambung ke katalog.</p>";
+    $("gate").classList.remove("hidden");
+    $("gate").innerHTML=`<div><h2>Library tidak dapat diakses</h2><p class="muted" style="margin-top:8px">Terjadi kesalahan saat memuat library.</p></div>`;
   }
 })();
 </script>
