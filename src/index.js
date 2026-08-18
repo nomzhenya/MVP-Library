@@ -9,7 +9,7 @@ function cors(headers = {}) {
     ...headers,
     "access-control-allow-origin": "*",
     "access-control-allow-methods": "GET,PUT,OPTIONS",
-    "access-control-allow-headers": "Content-Type,X-Library-Secret"
+    "access-control-allow-headers": "Content-Type,X-Library-Secret,X-Telegram-Init-Data"
   };
 }
 
@@ -66,86 +66,38 @@ async function verifyTelegramInitData(initData, botToken) {
 }
 
 async function telegramMemberStatus(env, chatId, userId) {
-  if (!chatId) return {ok:false, member:false, status:"missing_chat_id"};
-
   const r = await fetch(
     `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getChatMember?chat_id=${encodeURIComponent(chatId)}&user_id=${encodeURIComponent(userId)}`
   );
+  if (!r.ok) return null;
+  const data = await r.json();
+  if (!data.ok) return null;
 
-  let data = null;
-  try { data = await r.json(); } catch {}
-
-  if (!r.ok || !data?.ok) {
-    return {
-      ok:false,
-      member:false,
-      status:"telegram_error",
-      error_code:data?.error_code || r.status,
-      description:data?.description || ""
-    };
-  }
-
-  const result = data.result || {};
-  const status = result.status || "";
-  // Telegram can return "restricted" for a user who is still a member.
-  const member =
-    ["creator", "administrator", "member"].includes(status) ||
-    (status === "restricted" && result.is_member === true);
-
-  return {ok:true, member, status};
+  const status = data.result?.status;
+  return ["creator", "administrator", "member"].includes(status);
 }
 
 async function checkAccess(request, env) {
-  const requestUrl = new URL(request.url);
-  const initData =
-    request.headers.get("X-Telegram-Init-Data") ||
-    requestUrl.searchParams.get("init_data") ||
-    "";
-
+  const initData = request.headers.get("X-Telegram-Init-Data") || new URL(request.url).searchParams.get("init_data") || "";
   const user = await verifyTelegramInitData(initData, env.TELEGRAM_BOT_TOKEN);
-  if (!user?.id) {
-    return {ok:false, code:401, reason:"invalid_telegram_session"};
-  }
+  if (!user?.id) return {ok: false, code: 401};
 
   if (!env.MVP_CHANNEL_ID || !env.MVP_DISCUSSION_ID) {
-    return {ok:false, code:503, reason:"membership_ids_not_configured"};
+    return {ok: false, code: 503};
   }
 
-  // Cache ONLY successful checks for 30 seconds.
-  // This reduces Telegram API calls while keeping membership changes reasonably fresh.
-  const cache = caches.default;
-  const cacheKey = new Request(
-    `${requestUrl.origin}/__mvp_access/${user.id}`
-  );
-  const cached = await cache.match(cacheKey);
-  if (cached) return {ok:true, user};
-
+  // Membership is checked live here. This endpoint is intentionally not
+  // cached so a refresh can revoke access promptly.
   const [mvp, discussion] = await Promise.all([
     telegramMemberStatus(env, env.MVP_CHANNEL_ID, user.id),
     telegramMemberStatus(env, env.MVP_DISCUSSION_ID, user.id)
   ]);
 
-  if (mvp.member !== true || discussion.member !== true) {
-    return {
-      ok:false,
-      code:403,
-      reason:"not_member",
-      checks:{
-        mvp:{ok:mvp.ok, member:mvp.member, status:mvp.status},
-        discussion:{ok:discussion.ok, member:discussion.member, status:discussion.status}
-      }
-    };
+  if (mvp !== true || discussion !== true) {
+    return {ok: false, code: 403};
   }
 
-  const response = new Response("ok", {
-    headers: {
-      "cache-control": "private, max-age=30",
-      "x-mvp-access": "verified"
-    }
-  });
-  await cache.put(cacheKey, response.clone());
-
-  return {ok:true, user};
+  return {ok: true, user};
 }
 
 export default {
@@ -160,16 +112,18 @@ export default {
       const access = await checkAccess(request, env);
       if (!access.ok) {
         return json(
-          {ok: false, code: access.code, reason: access.reason, checks: access.checks || undefined},
+          {ok: false, code: access.code},
           access.code === 403 ? 403 : access.code === 401 ? 401 : 503
         );
       }
-      return json({
+      return new Response(JSON.stringify({
         ok: true,
         user: {
           id: String(access.user.id),
           username: access.user.username || ""
         }
+      }), {
+        headers: cors({"content-type": "application/json; charset=utf-8"})
       });
     }
 
