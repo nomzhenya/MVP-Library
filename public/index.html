@@ -33,12 +33,16 @@ const tg=window.Telegram?.WebApp;
 let catalog=[];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const API_BASE=location.origin;
+const fileUrl=fileId=>`${API_BASE}/api/file?file_id=${encodeURIComponent(fileId)}`;
 function deny(){ $("gate").classList.remove("hidden"); }
 function showHome(){ $("detail").classList.add("hidden"); $("home").classList.remove("hidden"); }
 function render(list){
   $("grid").innerHTML=list.length?list.map(p=>`
     <article class="card" onclick="openProject('${esc(p.id)}')">
-      <div class="cover"></div>
+      ${p.cover_file_id
+        ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">`
+        : `<div class="cover"></div>`}
       <div class="cardbody"><div class="title">${esc(p.title)}</div>
       <div class="muted" style="margin-top:5px">${(p.chapters||[]).length} chapter</div></div>
     </article>`).join(""):"<p class='muted'>Belum ada PJ.</p>";
@@ -47,8 +51,12 @@ function openProject(id){
   const p=catalog.find(x=>x.id===id); if(!p)return;
   $("home").classList.add("hidden"); $("detail").classList.remove("hidden");
   const comment=p.comment_link?`<p style="margin:16px 0"><a class="btn" href="${esc(p.comment_link)}">💬 Komentar di Lapak</a></p>`:"";
+  const cover=p.cover_file_id
+    ? `<img class="detailcover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" onerror="this.style.display='none'">`
+    : "";
   $("detailContent").innerHTML=`
-    <h1>${esc(p.title)}</h1>
+    ${cover}
+    <h1 style="margin-top:16px">${esc(p.title)}</h1>
     <p class="muted" style="margin-top:8px;white-space:pre-line">${esc(p.description)}</p>
     ${comment}
     <h2 style="margin-top:24px">Chapters</h2>
