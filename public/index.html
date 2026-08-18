@@ -59,7 +59,35 @@ let catalog=[];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const API_BASE=location.origin;
-const fileUrl=fileId=>`${API_BASE}/api/file?file_id=${encodeURIComponent(fileId)}`;
+const fileUrl=fileId=>`${API_BASE}/api/file?file_id=${encodeURIComponent(fileId)}&init_data=${encodeURIComponent(tg?.initData||"")}`;
+let accessUser=null;
+let accessDenied=false;
+
+function accessHeaders(){
+  return {"X-Telegram-Init-Data":tg?.initData||""};
+}
+
+function showDenied(){
+  accessDenied=true;
+  $("home").classList.add("hidden");
+  $("detail").classList.add("hidden");
+  $("reader").classList.add("hidden");
+  $("gate").classList.remove("hidden");
+  $("gate").innerHTML=`<div><h2>🔒 Akses Ditolak</h2><p class="muted" style="margin-top:8px">Anda bukan bagian dari MVP</p><button class="btn" style="margin-top:16px" onclick="tg?.close()">Kembali ke Telegram</button></div>`;
+}
+
+async function requireAccess(){
+  if(accessDenied) return false;
+  const r=await fetch("/api/access",{cache:"no-store",headers:accessHeaders()});
+  if(r.status===403 || r.status===401){
+    showDenied();
+    return false;
+  }
+  if(!r.ok) throw new Error("access");
+  const data=await r.json();
+  accessUser=data.user||null;
+  return true;
+}
 function deny(){ $("gate").classList.remove("hidden"); }
 function showHome(){ $("detail").classList.add("hidden"); $("home").classList.remove("hidden"); }
 function render(list){
@@ -72,7 +100,8 @@ function render(list){
       <div class="muted" style="margin-top:5px">${(p.chapters||[]).length} chapter</div></div>
     </article>`).join(""):"<p class='muted'>Belum ada PJ.</p>";
 }
-function openProject(id){
+async function openProject(id){
+  if(!(await requireAccess())) return;
   const p=catalog.find(x=>x.id===id); if(!p)return;
   $("home").classList.add("hidden"); $("detail").classList.remove("hidden");
   const comment=p.comment_link?`<p style="margin:16px 0"><a class="btn" href="${esc(p.comment_link)}">💬 Komentar di Lapak</a></p>`:"";
@@ -114,7 +143,8 @@ function chapterIndex(projectId, chapterName, decensored){
   return (p.chapters||[]).findIndex(c=>String(c.chapter)===String(chapterName) && Boolean(c.decensored)===Boolean(decensored));
 }
 
-function openChapter(projectId, index){
+async function openChapter(projectId, index){
+  if(!(await requireAccess())) return;
   const p=catalog.find(x=>x.id===projectId);
   if(!p || !p.chapters?.[index]) return;
   const c=p.chapters[index];
@@ -126,6 +156,7 @@ function chapterCommentLink(p){
 }
 
 async function openReader(projectId, chapterName, decensored){
+  if(!(await requireAccess())) return;
   const p=catalog.find(x=>x.id===projectId);
   if(!p)return;
   const c=(p.chapters||[]).find(x=>String(x.chapter)===String(chapterName) && Boolean(x.decensored)===Boolean(decensored));
@@ -192,11 +223,14 @@ $("search").oninput=e=>{const q=e.target.value.toLowerCase();render(catalog.filt
   const platform=String(tg.platform||"").toLowerCase();
   if(!tg.initData || !["android","android_x","ios"].includes(platform)){deny();return;}
   try{
-    const r=await fetch("/api/catalog",{cache:"no-store"});
+    if(!(await requireAccess())) return;
+    const r=await fetch("/api/catalog",{cache:"no-store",headers:accessHeaders()});
+    if(r.status===403 || r.status===401){showDenied();return;}
     if(!r.ok)throw new Error("catalog");
     catalog=await r.json();
     $("home").classList.remove("hidden"); render(catalog);
   }catch(e){
+    if(accessDenied) return;
     $("home").classList.remove("hidden");
     $("grid").innerHTML="<p class='muted'>Library belum tersambung ke katalog.</p>";
   }
