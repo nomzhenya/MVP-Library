@@ -69,31 +69,29 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
   .popular-card .title{font-size:13px}
 }
 
-
 .readerhead{position:sticky;top:0;z-index:25;padding:8px 8px;background:var(--bg)e6;backdrop-filter:blur(10px)}
 .reader-topbar{display:flex;align-items:center;gap:7px;width:100%;position:relative}
 .reader-info{flex:0 0 auto;border:0;border-radius:9px;padding:10px 11px;background:var(--panel2);color:var(--text);font-weight:700}
 .reader-chapter-wrap{flex:1;min-width:0;position:relative}
 .reader-chapter-btn{width:100%;border:2px solid #f4f4f5;border-radius:9px;padding:9px 12px;background:var(--panel2);color:var(--text);font-size:16px;font-weight:700;text-align:left}
 .reader-chapter-menu{position:absolute;left:0;top:calc(100% + 3px);width:min(310px,78vw);max-height:65vh;overflow-y:auto;background:#333338;border-radius:0 0 5px 5px;box-shadow:0 8px 20px rgba(0,0,0,.45);z-index:40}
-
-/* REVISI: Mengubah color:var(--text) menjadi color:#fff pada list menu chapter */
 .reader-chapter-option{display:block;width:100%;border:0;background:transparent;color:#fff;text-align:left;padding:13px 20px;font-size:16px}
-
 .reader-chapter-option:active,.reader-chapter-option.current{background:#44444a}
 .reader-arrow{flex:0 0 42px;border:0;border-radius:9px;padding:10px 4px;background:var(--panel2);color:var(--text);font-size:18px;font-weight:700}
 .reader-arrow.disabled{opacity:.35;pointer-events:none}
 .readerpages{display:flex;flex-direction:column;align-items:center;gap:0;margin:0;padding:0;width:100vw;max-width:100vw;overflow-x:hidden}
 .readerpage{display:block;width:100vw;max-width:100vw;height:auto;margin:0;padding:0;background:#000;object-fit:contain}
 .readererror{padding:18px;text-align:center;border:1px solid #55333a;border-radius:12px;background:#24181b;margin-top:12px}
-.reader-nav{display:flex;align-items:center;gap:8px;padding:14px 10px calc(14px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid #2b2b31}
+
+/* REVISI TATA LETAK NAVIGASI BAWAH AGAR RAPI (2 BARIS) */
+.reader-nav{display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:14px 10px calc(14px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--border)}
 .reader-nav .navbtn{flex:1;min-width:0;text-align:center;border:0;border-radius:10px;padding:11px 8px;background:var(--panel2);color:var(--text);font-weight:700}
-.reader-nav .commentbtn{flex:1.3}
 .reader-nav-row{display:flex;align-items:center;gap:8px;width:100%}
 .reader-nav-row .navbtn{flex:1;min-width:0}
 .reader-nav-row .upbtn{flex:.72}
-.reader-nav>.commentbtn{width:100%;margin-top:8px}
+.reader-nav .commentbtn{width:100%;margin-top:2px}
 .reader-nav .disabled{opacity:.35;pointer-events:none}
+
 .reader-watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;pointer-events:none;text-align:center;line-height:1.15;opacity:.34;color:var(--text);text-shadow:0 1px 3px rgba(0,0,0,.75);white-space:nowrap;font-weight:700}
 .reader-watermark .wm-title{font-size:18px}
 .reader-watermark .wm-user{font-size:12px;font-weight:600;margin-top:3px}
@@ -331,8 +329,9 @@ function renderCards(list, targetId, popular=false){
     : "<p class='muted'>Belum ada PJ.</p>";
 }
 
+// REVISI FILTER TAG: Memastikan array tag dibersihkan dari timestamp / angka murni
 function renderTagFilter(list){
-  const tags=[...new Set(list.flatMap(p=>Array.isArray(p.tags)?p.tags:[]).map(t=>String(t).trim()).filter(Boolean))]
+  const tags=[...new Set(list.flatMap(p=>Array.isArray(p.tags)?p.tags:[]).map(t=>String(t).trim()).filter(t => t && isNaN(Number(t))))]
     .sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:"base"}));
   $("tagFilter").innerHTML=tags.length
     ? tags.map(t=>`<button class="tag ${currentTag===t.toLowerCase()?"active":""}" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")
@@ -351,7 +350,6 @@ function openCatalog(type){
 
 function renderCatalog(){
   const list=getFilteredProjects();
-  // Popular is temporarily the first three catalog projects.
   renderCards(list.slice(0,3),"popularGrid",true);
   renderCards(list,"grid",false);
   renderTagFilter(allTypeProjects(currentType));
@@ -377,9 +375,13 @@ async function openProject(id){
   const cover=p.cover_file_id
     ? `<img class="detailcover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" onerror="this.style.display='none'">`
     : "";
-  const tags=Array.isArray(p.tags)&&p.tags.length
-    ? `<div class="tags">${p.tags.map(t=>`<button class="tag" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
+  
+  // REVISI FILTER TAG UNTUK DETAIL PROJECT
+  const validTags = (Array.isArray(p.tags) ? p.tags : []).filter(t => t && isNaN(Number(t)));
+  const tags=validTags.length
+    ? `<div class="tags">${validTags.map(t=>`<button class="tag" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
     : "";
+    
   $("detailContent").innerHTML=`
     ${cover}
     <h1 style="margin-top:16px">${esc(p.title)}</h1>
@@ -491,18 +493,19 @@ async function openNovelReader(projectId, idx){
       `<div class="readererror">Gagal memuat chapter novel.</div>`;
   }
 
+  // REVISI TATA LETAK MENU BAWAH NOVEL
   const commentUrl=chapterCommentLink(p);
   $("readerNav").innerHTML=`
     <div class="reader-nav-row">
       <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
-        onclick="openChapter('${esc(p.id)}',${idx-1})">« Ch Sebelumnya</button>
+        onclick="openChapter('${esc(p.id)}',${idx-1})">« Prev</button>
       <button class="navbtn upbtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Up</button>
       <button class="navbtn ${idx>=chapters.length-1?"disabled":""}" ${idx>=chapters.length-1?"disabled":""}
-        onclick="openChapter('${esc(p.id)}',${idx+1})">Ch Selanjutnya »</button>
+        onclick="openChapter('${esc(p.id)}',${idx+1})">Next »</button>
     </div>
     <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
-      ${commentUrl?`onclick="location.href='${esc(commentUrl)}'"`:"disabled"}>
-      💬 Komentar
+      ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
+      💬 Komentar di Lapak
     </button>`;
 }
 
@@ -552,19 +555,21 @@ async function openReader(projectId, chapterName, decensored){
     <div id="readerNav" class="reader-nav"></div>`;
 
   const pages=$("readerPages");
+  
+  // REVISI TATA LETAK MENU BAWAH KOMIK (DIJADIKAN SAMA DENGAN NOVEL)
   const commentUrl=chapterCommentLink(p);
-
   $("readerNav").innerHTML=`
     <div class="reader-nav-row">
-      <button class="navbtn ${idx>=chapters.length-1?"disabled":""}" ${idx>=chapters.length-1?"disabled":""}
-        onclick="openChapter('${esc(p.id)}',${idx+1})">→</button>
-      <button class="navbtn upbtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">UP</button>
       <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
-        onclick="openChapter('${esc(p.id)}',${idx-1})">←</button>
-      <button class="navbtn commentbtn ${commentUrl?"":"disabled"}" ${commentUrl?`onclick="location.href='${esc(commentUrl)}'"`:"disabled"}>
-        💬
-      </button>
+        onclick="openChapter('${esc(p.id)}',${idx-1})">« Prev</button>
+      <button class="navbtn upbtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Up</button>
+      <button class="navbtn ${idx>=chapters.length-1?"disabled":""}" ${idx>=chapters.length-1?"disabled":""}
+        onclick="openChapter('${esc(p.id)}',${idx+1})">Next »</button>
     </div>
+    <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
+      ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
+      💬 Komentar di Lapak
+    </button>
   `;
 
   c.file_ids.forEach((fid,i)=>{
