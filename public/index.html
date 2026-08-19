@@ -20,7 +20,11 @@ body.light{--bg:#f5f5f7;--text:#17171b;--muted:#666670;--panel:#fff;--panel2:#e9
 }
 header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{width:100%;padding:13px 15px;border:1px solid var(--border2);border-radius:14px;background:var(--input);color:var(--text);font-size:16px;margin:12px 0 18px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px}.card{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:var(--panel);cursor:pointer}
-.cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--panel2)}.cardbody{padding:12px}.title{font-weight:700}.btn{display:inline-block;border:0;border-radius:10px;padding:9px 12px;background:#30303a;color:var(--text);text-decoration:none}
+.cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--panel2)}.cardbody{padding:12px}.title{font-weight:700}
+
+/* REVISI: Mengubah color:var(--text) menjadi color:#fff agar tombol hitam teksnya selalu putih */
+.btn{display:inline-block;border:0;border-radius:10px;padding:9px 12px;background:#30303a;color:#fff;text-decoration:none}
+
 .back{border:0;background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:10px}
 .tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
 .tag{border:1px solid var(--border2);background:var(--panel2);color:var(--text);border-radius:999px;padding:6px 10px;font-size:13px;cursor:pointer}
@@ -35,7 +39,10 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .reader-chapter-wrap{flex:1;min-width:0;position:relative}
 .reader-chapter-btn{width:100%;border:2px solid #f4f4f5;border-radius:9px;padding:9px 12px;background:var(--panel2);color:var(--text);font-size:16px;font-weight:700;text-align:left}
 .reader-chapter-menu{position:absolute;left:0;top:calc(100% + 3px);width:min(310px,78vw);max-height:65vh;overflow-y:auto;background:#333338;border-radius:0 0 5px 5px;box-shadow:0 8px 20px rgba(0,0,0,.45);z-index:40}
-.reader-chapter-option{display:block;width:100%;border:0;background:transparent;color:var(--text);text-align:left;padding:13px 20px;font-size:16px}
+
+/* REVISI: Mengubah color:var(--text) menjadi color:#fff pada list menu chapter */
+.reader-chapter-option{display:block;width:100%;border:0;background:transparent;color:#fff;text-align:left;padding:13px 20px;font-size:16px}
+
 .reader-chapter-option:active,.reader-chapter-option.current{background:#44444a}
 .reader-arrow{flex:0 0 42px;border:0;border-radius:9px;padding:10px 4px;background:var(--panel2);color:var(--text);font-size:18px;font-weight:700}
 .reader-arrow.disabled{opacity:.35;pointer-events:none}
@@ -86,18 +93,15 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const API_BASE=location.origin;
 
-// PERBAIKAN 1: fileUrl harus melampirkan init_data untuk melewati checkAccess Worker
 const fileUrl=fileId=>`${API_BASE}/api/file?file_id=${encodeURIComponent(fileId)}&init_data=${encodeURIComponent(tg?.initData||"")}`;
 
 let accessUser=null;
 let accessDenied=false;
 
-// PERBAIKAN 2: Fungsi untuk menambahkan Header X-Telegram-Init-Data
 function accessHeaders(){
   return {"X-Telegram-Init-Data":tg?.initData||""};
 }
 
-// PERBAIKAN 3: Fungsi untuk menampilkan UI akses ditolak
 function showDenied(){
   accessDenied=true;
   $("home").classList.add("hidden");
@@ -107,10 +111,8 @@ function showDenied(){
   $("gate").innerHTML=`<div><h2>🔒 Akses Ditolak</h2><p class="muted" style="margin-top:8px">Anda bukan bagian dari MVP</p><button class="btn" style="margin-top:16px" onclick="tg?.close()">Kembali ke Telegram</button></div>`;
 }
 
-// PERBAIKAN 4: Fungsi Utama untuk mengecek akses sebelum membuka halaman
 async function requireAccess(){
   if(accessDenied) return false;
-  // Cek ke worker Cloudflare menggunakan endpoint /api/access
   const r=await fetch("/api/access",{cache:"no-store",headers:accessHeaders()});
   const data=await r.json().catch(()=>({}));
   if(r.status===403 || r.status===401){
@@ -145,9 +147,8 @@ function filterByTag(tag){
   render(filtered);
 }
 
-// PERBAIKAN 5: Tambahkan validasi await requireAccess() saat membuka project
 async function openProject(id){
-  if(!(await requireAccess())) return; // Wajib ada agar tidak bisa di-bypass
+  if(!(await requireAccess())) return; 
   const p=catalog.find(x=>x.id===id); if(!p)return;
   $("home").classList.add("hidden"); $("detail").classList.remove("hidden");
   const comment=p.comment_link?`<p style="margin:16px 0"><a class="btn" href="${esc(p.comment_link)}">💬 Komentar di Lapak</a></p>`:"";
@@ -194,7 +195,6 @@ function chapterIndex(projectId, chapterName, decensored){
   return (p.chapters||[]).findIndex(c=>String(c.chapter)===String(chapterName) && Boolean(c.decensored)===Boolean(decensored));
 }
 
-// PERBAIKAN 6: Tambahkan await requireAccess() untuk fitur navigasi Next/Prev Chapter
 async function openChapter(projectId, index){
   if(!(await requireAccess())) return;
   const p=catalog.find(x=>x.id===projectId);
@@ -207,7 +207,6 @@ function chapterCommentLink(p){
   return p?.comment_link || "";
 }
 
-// PERBAIKAN 7: Tambahkan await requireAccess() sebelum meload gambar reader
 async function openReader(projectId, chapterName, decensored){
   if(!(await requireAccess())) return;
   const p=catalog.find(x=>x.id===projectId);
@@ -321,21 +320,19 @@ function toggleTheme(){
   applyTheme(document.body.classList.contains("light")?"dark":"light");
 }
 
-// SUDAH DIPERBAIKI: Penutup fungsi yang tadinya hilang
 (function initTheme(){
   let theme="dark";
   try{theme=localStorage.getItem("mvp_theme")||"dark"}catch(e){}
   applyTheme(theme);
 })(); 
 
-// PERBAIKAN 8: Pengiriman header saat meload data catalog pertama kali
 (async()=>{
   if(!tg){deny();return;}
   tg.ready();tg.expand();
   const platform=String(tg.platform||"").toLowerCase();
   if(!tg.initData || !["android","android_x","ios"].includes(platform)){deny();return;}
   try{
-    if(!(await requireAccess())) return; // Wajib lulus cek akses dulu
+    if(!(await requireAccess())) return;
     const r=await fetch("/api/catalog",{cache:"no-store",headers:accessHeaders()});
     if(r.status===403 || r.status===401){showDenied();return;}
     if(!r.ok)throw new Error("catalog");
