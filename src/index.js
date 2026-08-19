@@ -82,15 +82,19 @@ async function checkAccess(request, env) {
   const user = await verifyTelegramInitData(initData, env.TELEGRAM_BOT_TOKEN);
   if (!user?.id) return {ok: false, code: 401};
 
-  if (!env.MVP_CHANNEL_ID || !env.MVP_DISCUSSION_ID) {
+  // 1. Tulis langsung ID Grup dan Channel di sini sebagai fallback
+  const CHANNEL_ID = env.MVP_CHANNEL_ID || "-1004459399775";
+  const DISCUSSION_ID = env.MVP_DISCUSSION_ID || "-1003923062839";
+
+  // 2. Ganti env.MVP_CHANNEL_ID dengan variabel baru di atas
+  if (!CHANNEL_ID || !DISCUSSION_ID) {
     return {ok: false, code: 503};
   }
 
-  // Membership is checked live here. This endpoint is intentionally not
-  // cached so a refresh can revoke access promptly.
+  // 3. Gunakan CHANNEL_ID dan DISCUSSION_ID untuk mengecek status
   const [mvp, discussion] = await Promise.all([
-    telegramMemberStatus(env, env.MVP_CHANNEL_ID, user.id),
-    telegramMemberStatus(env, env.MVP_DISCUSSION_ID, user.id)
+    telegramMemberStatus(env, CHANNEL_ID, user.id),
+    telegramMemberStatus(env, DISCUSSION_ID, user.id)
   ]);
 
   if (mvp !== true || discussion !== true) {
