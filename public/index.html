@@ -235,7 +235,8 @@ function latestUpdates(type){
   return allTypeProjects(type)
     .map(p=>{
       const latest=projectLatestChapter(p);
-      return latest ? {p,latest} : null;
+      if(!latest || latest.chapter == null || String(latest.chapter.chapter||"").trim()==="") return null;
+      return {p,latest};
     })
     .filter(Boolean)
     .sort((a,b)=>{
