@@ -89,6 +89,10 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .reader-nav{display:flex;align-items:center;gap:8px;padding:14px 10px calc(14px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid #2b2b31}
 .reader-nav .navbtn{flex:1;min-width:0;text-align:center;border:0;border-radius:10px;padding:11px 8px;background:var(--panel2);color:var(--text);font-weight:700}
 .reader-nav .commentbtn{flex:1.3}
+.reader-nav-row{display:flex;align-items:center;gap:8px;width:100%}
+.reader-nav-row .navbtn{flex:1;min-width:0}
+.reader-nav-row .upbtn{flex:.72}
+.reader-nav>.commentbtn{width:100%;margin-top:8px}
 .reader-nav .disabled{opacity:.35;pointer-events:none}
 .reader-watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;pointer-events:none;text-align:center;line-height:1.15;opacity:.34;color:var(--text);text-shadow:0 1px 3px rgba(0,0,0,.75);white-space:nowrap;font-weight:700}
 .reader-watermark .wm-title{font-size:18px}
@@ -327,9 +331,8 @@ function renderCards(list, targetId, popular=false){
     : "<p class='muted'>Belum ada PJ.</p>";
 }
 
-// REVISI FILTER TAG: Hapus tag yang isinya cuma angka (seperti timestamp)
 function renderTagFilter(list){
-  const tags=[...new Set(list.flatMap(p=>Array.isArray(p.tags)?p.tags:[]).map(t=>String(t).trim()).filter(t => t && isNaN(Number(t))))]
+  const tags=[...new Set(list.flatMap(p=>Array.isArray(p.tags)?p.tags:[]).map(t=>String(t).trim()).filter(Boolean))]
     .sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:"base"}));
   $("tagFilter").innerHTML=tags.length
     ? tags.map(t=>`<button class="tag ${currentTag===t.toLowerCase()?"active":""}" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")
@@ -374,13 +377,9 @@ async function openProject(id){
   const cover=p.cover_file_id
     ? `<img class="detailcover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" onerror="this.style.display='none'">`
     : "";
-  
-  // REVISI FILTER TAG: Memastikan timestamp angka tidak dicetak di detail project
-  const validTags = (Array.isArray(p.tags) ? p.tags : []).filter(t => t && isNaN(Number(t)));
-  const tags=validTags.length
-    ? `<div class="tags">${validTags.map(t=>`<button class="tag" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
+  const tags=Array.isArray(p.tags)&&p.tags.length
+    ? `<div class="tags">${p.tags.map(t=>`<button class="tag" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
     : "";
-    
   $("detailContent").innerHTML=`
     ${cover}
     <h1 style="margin-top:16px">${esc(p.title)}</h1>
@@ -494,14 +493,17 @@ async function openNovelReader(projectId, idx){
 
   const commentUrl=chapterCommentLink(p);
   $("readerNav").innerHTML=`
-    <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
-      onclick="openChapter('${esc(p.id)}',${idx-1})">« Ch</button>
+    <div class="reader-nav-row">
+      <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
+        onclick="openChapter('${esc(p.id)}',${idx-1})">« Ch Sebelumnya</button>
+      <button class="navbtn upbtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Up</button>
+      <button class="navbtn ${idx>=chapters.length-1?"disabled":""}" ${idx>=chapters.length-1?"disabled":""}
+        onclick="openChapter('${esc(p.id)}',${idx+1})">Ch Selanjutnya »</button>
+    </div>
     <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
-      ${commentUrl?`onclick="location.href='${esc(commentUrl)}'`:"disabled"}>
-      💬 Comment
-    </button>
-    <button class="navbtn ${idx>=chapters.length-1?"disabled":""}" ${idx>=chapters.length-1?"disabled":""}
-      onclick="openChapter('${esc(p.id)}',${idx+1})">Ch »</button>`;
+      ${commentUrl?`onclick="location.href='${esc(commentUrl)}'"`:"disabled"}>
+      💬 Komentar
+    </button>`;
 }
 
 async function openReader(projectId, chapterName, decensored){
@@ -553,13 +555,16 @@ async function openReader(projectId, chapterName, decensored){
   const commentUrl=chapterCommentLink(p);
 
   $("readerNav").innerHTML=`
-    <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
-      onclick="openChapter('${esc(p.id)}',${idx-1})">« Ch</button>
+    <div class="reader-nav-row">
+      <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
+        onclick="openChapter('${esc(p.id)}',${idx-1})">« Ch Sebelumnya</button>
+      <button class="navbtn upbtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Up</button>
+      <button class="navbtn ${idx>=chapters.length-1?"disabled":""}" ${idx>=chapters.length-1?"disabled":""}
+        onclick="openChapter('${esc(p.id)}',${idx+1})">Ch Selanjutnya »</button>
+    </div>
     <button class="navbtn commentbtn ${commentUrl?"":"disabled"}" ${commentUrl?`onclick="location.href='${esc(commentUrl)}'"`:"disabled"}>
-      💬 Comment
+      💬 Komentar
     </button>
-    <button class="navbtn ${idx>=chapters.length-1?"disabled":""}" ${idx>=chapters.length-1?"disabled":""}
-      onclick="openChapter('${esc(p.id)}',${idx+1})">Ch »</button>
   `;
 
   c.file_ids.forEach((fid,i)=>{
