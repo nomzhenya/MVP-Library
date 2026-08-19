@@ -21,10 +21,7 @@ body.light{--bg:#f5f5f7;--text:#17171b;--muted:#666670;--panel:#fff;--panel2:#e9
 header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{width:100%;padding:13px 15px;border:1px solid var(--border2);border-radius:14px;background:var(--input);color:var(--text);font-size:16px;margin:12px 0 18px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px}.card{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:var(--panel);cursor:pointer}
 .cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--panel2)}.cardbody{padding:12px}.title{font-weight:700}
-
-/* REVISI: Mengubah color:var(--text) menjadi color:#fff agar tombol hitam teksnya selalu putih */
 .btn{display:inline-block;border:0;border-radius:10px;padding:9px 12px;background:#30303a;color:#fff;text-decoration:none}
-
 .back{border:0;background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:10px}
 .tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
 .tag{border:1px solid var(--border2);background:var(--panel2);color:var(--text);border-radius:999px;padding:6px 10px;font-size:13px;cursor:pointer}
@@ -61,9 +58,6 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 @media(max-width:420px){
   .update-strip{gap:7px}
   .update-card .cardbody{padding:7px}
-}
-
-@media(max-width:420px){
   .popular-grid{gap:7px}
   .popular-card .cardbody{padding:7px}
   .popular-card .title{font-size:13px}
@@ -83,7 +77,6 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .readerpage{display:block;width:100vw;max-width:100vw;height:auto;margin:0;padding:0;background:#000;object-fit:contain}
 .readererror{padding:18px;text-align:center;border:1px solid #55333a;border-radius:12px;background:#24181b;margin-top:12px}
 
-/* REVISI TATA LETAK NAVIGASI BAWAH AGAR RAPI (2 BARIS) */
 .reader-nav{display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:14px 10px calc(14px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--border)}
 .reader-nav .navbtn{flex:1;min-width:0;text-align:center;border:0;border-radius:10px;padding:11px 8px;background:var(--panel2);color:var(--text);font-weight:700}
 .reader-nav-row{display:flex;align-items:center;gap:8px;width:100%}
@@ -329,7 +322,6 @@ function renderCards(list, targetId, popular=false){
     : "<p class='muted'>Belum ada PJ.</p>";
 }
 
-// REVISI FILTER TAG: Memastikan array tag dibersihkan dari timestamp / angka murni
 function renderTagFilter(list){
   const tags=[...new Set(list.flatMap(p=>Array.isArray(p.tags)?p.tags:[]).map(t=>String(t).trim()).filter(t => t && isNaN(Number(t))))]
     .sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:"base"}));
@@ -371,12 +363,16 @@ async function openProject(id){
   if(!(await requireAccess())) return; 
   const p=catalog.find(x=>x.id===id); if(!p)return;
   $("home").classList.add("hidden"); $("detail").classList.remove("hidden");
-  const comment=p.comment_link?`<p style="margin:16px 0"><a class="btn" href="${esc(p.comment_link)}">💬 Komentar di Lapak</a></p>`:"";
+  
+  const comment=p.comment_link?`<p style="margin:16px 0"><a class="btn" href="${esc(p.comment_link)}">💬 Tulis Komentar</a></p>`:"";
+  
   const cover=p.cover_file_id
     ? `<img class="detailcover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" onerror="this.style.display='none'">`
     : "";
   
-  // REVISI FILTER TAG UNTUK DETAIL PROJECT
+  // Menampilkan Info Author/Artist jika ada
+  const authorInfo=p.author ? `<div style="margin-top:6px;font-size:14px;color:var(--muted)">👤 <b>Author/Artist:</b> ${esc(p.author)}</div>` : "";
+
   const validTags = (Array.isArray(p.tags) ? p.tags : []).filter(t => t && isNaN(Number(t)));
   const tags=validTags.length
     ? `<div class="tags">${validTags.map(t=>`<button class="tag" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
@@ -385,6 +381,7 @@ async function openProject(id){
   $("detailContent").innerHTML=`
     ${cover}
     <h1 style="margin-top:16px">${esc(p.title)}</h1>
+    ${authorInfo}
     ${tags}
     <p class="muted" style="margin-top:12px;white-space:pre-line">${esc(p.description)}</p>
     ${comment}
@@ -493,7 +490,6 @@ async function openNovelReader(projectId, idx){
       `<div class="readererror">Gagal memuat chapter novel.</div>`;
   }
 
-  // REVISI TATA LETAK MENU BAWAH NOVEL
   const commentUrl=chapterCommentLink(p);
   $("readerNav").innerHTML=`
     <div class="reader-nav-row">
@@ -505,7 +501,7 @@ async function openNovelReader(projectId, idx){
     </div>
     <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
       ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
-      💬 Komentar di Lapak
+      💬 Tulis Komentar
     </button>`;
 }
 
@@ -555,9 +551,8 @@ async function openReader(projectId, chapterName, decensored){
     <div id="readerNav" class="reader-nav"></div>`;
 
   const pages=$("readerPages");
-  
-  // REVISI TATA LETAK MENU BAWAH KOMIK (DIJADIKAN SAMA DENGAN NOVEL)
   const commentUrl=chapterCommentLink(p);
+
   $("readerNav").innerHTML=`
     <div class="reader-nav-row">
       <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
@@ -568,7 +563,7 @@ async function openReader(projectId, chapterName, decensored){
     </div>
     <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
       ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
-      💬 Komentar di Lapak
+      💬 Tulis Komentar
     </button>
   `;
 
