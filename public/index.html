@@ -32,6 +32,26 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .chapters{display:flex;flex-direction:column;gap:9px;margin-top:14px}.chapter{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:var(--input);border:1px solid var(--border);border-radius:12px}
 .notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}.theme-toggle{border:1px solid var(--border2);border-radius:10px;padding:9px 11px;background:var(--panel2);color:var(--text);font-size:15px;font-weight:700;cursor:pointer}
 .home-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.home-filters{display:flex;gap:8px;margin:4px 0 14px}
+.type-btn{flex:1;border:1px solid var(--border2);border-radius:12px;padding:10px 12px;background:var(--panel2);color:var(--muted);font-weight:800}
+.type-btn.active{background:#30303a;color:#fff}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:22px 0 10px}
+.section-title{font-size:18px;font-weight:800}
+.section-sub{font-size:12px;color:var(--muted)}
+.popular-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.popular-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer}
+.popular-card .cover{aspect-ratio:2/3}
+.popular-card .cardbody{padding:9px}
+.popular-card .title{font-size:14px}
+.all-title{margin-top:24px}
+.tag-filter{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px}
+.tag-filter .tag.active{background:#30303a;color:#fff}
+@media(max-width:420px){
+  .popular-grid{gap:7px}
+  .popular-card .cardbody{padding:7px}
+  .popular-card .title{font-size:13px}
+}
+
 
 .readerhead{position:sticky;top:0;z-index:25;padding:8px 8px;background:var(--bg)e6;backdrop-filter:blur(10px)}
 .reader-topbar{display:flex;align-items:center;gap:7px;width:100%;position:relative}
@@ -71,6 +91,19 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
   </div>
 </header>
 <input id="search" class="search" placeholder="Cari PJ...">
+<div class="home-filters">
+  <button id="comicTab" class="type-btn active" onclick="setTypeFilter('comic')">COMIC</button>
+  <button id="novelTab" class="type-btn" onclick="setTypeFilter('novel')">NOVEL</button>
+</div>
+<div id="tagFilter" class="tag-filter"></div>
+<div class="section-head">
+  <div class="section-title">Popular</div>
+  <div class="section-sub">3 project teratas</div>
+</div>
+<div id="popularGrid" class="popular-grid"></div>
+<div class="section-head all-title">
+  <div class="section-title">All Project</div>
+</div>
 <div id="grid" class="grid"></div>
 </div>
 <div id="detail" class="wrap hidden">
@@ -127,24 +160,76 @@ async function requireAccess(){
 }
 
 function deny(){ $("gate").classList.remove("hidden"); }
-function showHome(){ $("detail").classList.add("hidden"); $("home").classList.remove("hidden"); }
-function render(list){
-  $("grid").innerHTML=list.length?list.map(p=>`
-    <article class="card" onclick="openProject('${esc(p.id)}')">
+function showHome(){
+  $("detail").classList.add("hidden");
+  $("reader").classList.add("hidden");
+  $("home").classList.remove("hidden");
+  renderHome();
+}
+
+let currentType="comic";
+let currentTag="";
+
+function normalizeType(p){
+  return String(p?.type||"comic").toLowerCase()==="novel" ? "novel" : "comic";
+}
+
+function getFilteredProjects(){
+  const q=String($("search")?.value||"").trim().toLowerCase();
+  return catalog.filter(p=>{
+    if(normalizeType(p)!==currentType) return false;
+    if(currentTag && !(Array.isArray(p.tags)?p.tags:[]).some(t=>String(t).toLowerCase()===currentTag)) return false;
+    if(q && !String(p.title||"").toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=>String(a.title||"").localeCompare(String(b.title||""),undefined,{sensitivity:"base"}));
+}
+
+function renderCards(list, targetId, popular=false){
+  const target=$(targetId);
+  if(!target)return;
+  target.innerHTML=list.length?list.map(p=>`
+    <article class="${popular?"popular-card":"card"}" onclick="openProject('${esc(p.id)}')">
       ${p.cover_file_id
         ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">`
         : `<div class="cover"></div>`}
       <div class="cardbody"><div class="title">${esc(p.title)}</div>
-      <div class="muted" style="margin-top:5px">${(p.chapters||[]).length} chapter</div></div>
+      ${popular?"":`<div class="muted" style="margin-top:5px">${(p.chapters||[]).length} chapter</div>`}</div>
     </article>`).join(""):"<p class='muted'>Belum ada PJ.</p>";
+}
+
+function renderTagFilter(list){
+  const tags=[...new Set(list.flatMap(p=>Array.isArray(p.tags)?p.tags:[]).map(t=>String(t).trim()).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:"base"}));
+  $("tagFilter").innerHTML=tags.length
+    ? tags.map(t=>`<button class="tag ${currentTag===t.toLowerCase()?"active":""}" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")
+    : "";
+}
+
+function renderHome(){
+  const list=getFilteredProjects();
+  // Popularity data is not present in the current catalog schema, so keep
+  // the first three catalog entries as the temporary "Popular" section.
+  const popular=list.slice(0,3);
+  renderCards(popular,"popularGrid",true);
+  renderCards(list,"grid",false);
+  renderTagFilter(catalog.filter(p=>normalizeType(p)===currentType));
+  $("comicTab").classList.toggle("active",currentType==="comic");
+  $("novelTab").classList.toggle("active",currentType==="novel");
+}
+
+function setTypeFilter(type){
+  currentType=type==="novel"?"novel":"comic";
+  currentTag="";
+  $("search").value="";
+  renderHome();
 }
 
 function filterByTag(tag){
   const q=String(tag||"").toLowerCase();
-  const filtered=catalog.filter(p=>(Array.isArray(p.tags)?p.tags:[]).some(t=>String(t).toLowerCase()===q));
+  currentTag=currentTag===q?"":q;
   $("detail").classList.add("hidden");
   $("home").classList.remove("hidden");
-  render(filtered);
+  renderHome();
 }
 
 async function openProject(id){
@@ -306,7 +391,7 @@ function closeReader(){
   $("detail").classList.remove("hidden");
 }
 
-$("search").oninput=e=>{const q=e.target.value.toLowerCase();render(catalog.filter(p=>p.title.toLowerCase().includes(q)));};
+$("search").oninput=()=>renderHome();
 
 function applyTheme(theme){
   const light=theme==="light";
@@ -337,7 +422,7 @@ function toggleTheme(){
     if(r.status===403 || r.status===401){showDenied();return;}
     if(!r.ok)throw new Error("catalog");
     catalog=await r.json();
-    $("home").classList.remove("hidden"); render(catalog);
+    $("home").classList.remove("hidden"); renderHome();
   }catch(e){
     if(accessDenied) return;
     $("home").classList.remove("hidden");
