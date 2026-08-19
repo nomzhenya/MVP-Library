@@ -46,6 +46,23 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .all-title{margin-top:24px}
 .tag-filter{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px}
 .tag-filter .tag.active{background:#30303a;color:#fff}
+.home-layer{display:none}
+.home-layer.active{display:block}
+.catalog-layer{display:none}
+.catalog-layer.active{display:block}
+.catalog-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.catalog-back{border:0;background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:10px}
+.update-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.update-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer}
+.update-card .cover{aspect-ratio:2/3}
+.update-card .cardbody{padding:9px}
+.update-card .title{font-size:13px}
+.update-card .chapter-label{font-size:12px;color:var(--muted);margin-top:4px}
+@media(max-width:420px){
+  .update-strip{gap:7px}
+  .update-card .cardbody{padding:7px}
+}
+
 @media(max-width:420px){
   .popular-grid{gap:7px}
   .popular-card .cardbody{padding:7px}
@@ -90,21 +107,44 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
     <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema">☀️</button>
   </div>
 </header>
-<input id="search" class="search" placeholder="Cari PJ...">
-<div class="home-filters">
-  <button id="comicTab" class="type-btn active" onclick="setTypeFilter('comic')">COMIC</button>
-  <button id="novelTab" class="type-btn" onclick="setTypeFilter('novel')">NOVEL</button>
+
+<div id="homeLayer" class="home-layer active">
+  <input id="search" class="search" placeholder="Cari PJ...">
+
+  <div class="home-filters">
+    <button class="type-btn active" onclick="openCatalog('comic')">COMIC</button>
+    <button class="type-btn" onclick="openCatalog('novel')">NOVEL</button>
+  </div>
+
+  <div class="section-head">
+    <div class="section-title">✨ Latest Updates · Comic</div>
+  </div>
+  <div id="latestComic" class="update-strip"></div>
+
+  <div class="section-head">
+    <div class="section-title">✨ Latest Updates · Novel</div>
+  </div>
+  <div id="latestNovel" class="update-strip"></div>
 </div>
-<div id="tagFilter" class="tag-filter"></div>
-<div class="section-head">
-  <div class="section-title">Popular</div>
-  <div class="section-sub">3 project teratas</div>
+
+<div id="catalogLayer" class="catalog-layer">
+  <div class="catalog-head">
+    <button class="catalog-back" onclick="showHome()">⌂ Home</button>
+    <h2 id="catalogTitle">Comic</h2>
+  </div>
+
+  <div id="tagFilter" class="tag-filter"></div>
+
+  <div class="section-head">
+    <div class="section-title">🔥 Popular</div>
+  </div>
+  <div id="popularGrid" class="popular-grid"></div>
+
+  <div class="section-head all-title">
+    <div class="section-title">All Project</div>
+  </div>
+  <div id="grid" class="grid"></div>
 </div>
-<div id="popularGrid" class="popular-grid"></div>
-<div class="section-head all-title">
-  <div class="section-title">All Project</div>
-</div>
-<div id="grid" class="grid"></div>
 </div>
 <div id="detail" class="wrap hidden">
 <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
@@ -164,6 +204,9 @@ function showHome(){
   $("detail").classList.add("hidden");
   $("reader").classList.add("hidden");
   $("home").classList.remove("hidden");
+  $("homeLayer").classList.add("active");
+  $("catalogLayer").classList.remove("active");
+  $("search").value="";
   renderHome();
 }
 
@@ -174,10 +217,59 @@ function normalizeType(p){
   return String(p?.type||"comic").toLowerCase()==="novel" ? "novel" : "comic";
 }
 
+function allTypeProjects(type){
+  return catalog.filter(p=>normalizeType(p)===type);
+}
+
+function projectLatestChapter(p){
+  const chapters=Array.isArray(p?.chapters)?p.chapters:[];
+  let best=null;
+  chapters.forEach((c,i)=>{
+    const ts=Number(c.updated_at||0);
+    if(!best || ts>best.ts || (ts===best.ts && i>best.i)) best={chapter:c,i,ts};
+  });
+  return best;
+}
+
+function latestUpdates(type){
+  return allTypeProjects(type)
+    .map(p=>{
+      const latest=projectLatestChapter(p);
+      return latest ? {p,latest} : null;
+    })
+    .filter(Boolean)
+    .sort((a,b)=>{
+      const ta=Number(a.latest.ts||0), tb=Number(b.latest.ts||0);
+      if(tb!==ta) return tb-ta;
+      return String(a.p.title||"").localeCompare(String(b.p.title||""),undefined,{sensitivity:"base"});
+    })
+    .slice(0,3);
+}
+
+function renderLatest(type,targetId){
+  const target=$(targetId);
+  const updates=latestUpdates(type);
+  target.innerHTML=updates.length ? updates.map(({p,latest})=>`
+    <article class="update-card" onclick="openReader('${esc(p.id)}','${esc(latest.chapter.chapter)}',${latest.chapter.decensored?'true':'false'})">
+      ${p.cover_file_id
+        ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">`
+        : `<div class="cover"></div>`}
+      <div class="cardbody">
+        <div class="title">${esc(p.title)}</div>
+        <div class="chapter-label">Chapter ${esc(latest.chapter.chapter)}${latest.chapter.decensored?" 🔞":""}</div>
+      </div>
+    </article>`).join("")
+    : "<p class='muted'>Belum ada update.</p>";
+}
+
+function renderHome(){
+  renderLatest("comic","latestComic");
+  renderLatest("novel","latestNovel");
+}
+
 function getFilteredProjects(){
   const q=String($("search")?.value||"").trim().toLowerCase();
-  return catalog.filter(p=>{
-    if(normalizeType(p)!==currentType) return false;
+  return allTypeProjects(currentType).filter(p=>{
     if(currentTag && !(Array.isArray(p.tags)?p.tags:[]).some(t=>String(t).toLowerCase()===currentTag)) return false;
     if(q && !String(p.title||"").toLowerCase().includes(q)) return false;
     return true;
@@ -205,31 +297,34 @@ function renderTagFilter(list){
     : "";
 }
 
-function renderHome(){
+function openCatalog(type){
+  currentType=type==="novel"?"novel":"comic";
+  currentTag="";
+  $("homeLayer").classList.remove("active");
+  $("catalogLayer").classList.add("active");
+  $("catalogTitle").textContent=currentType==="novel"?"Novel":"Comic";
+  $("search").value="";
+  renderCatalog();
+}
+
+function renderCatalog(){
   const list=getFilteredProjects();
-  // Popularity data is not present in the current catalog schema, so keep
-  // the first three catalog entries as the temporary "Popular" section.
-  const popular=list.slice(0,3);
-  renderCards(popular,"popularGrid",true);
+  // Popular is intentionally the first three catalog projects for now.
+  renderCards(list.slice(0,3),"popularGrid",true);
   renderCards(list,"grid",false);
-  renderTagFilter(catalog.filter(p=>normalizeType(p)===currentType));
-  $("comicTab").classList.toggle("active",currentType==="comic");
-  $("novelTab").classList.toggle("active",currentType==="novel");
+  renderTagFilter(allTypeProjects(currentType));
 }
 
 function setTypeFilter(type){
-  currentType=type==="novel"?"novel":"comic";
-  currentTag="";
-  $("search").value="";
-  renderHome();
+  openCatalog(type);
 }
 
 function filterByTag(tag){
   const q=String(tag||"").toLowerCase();
   currentTag=currentTag===q?"":q;
-  $("detail").classList.add("hidden");
-  $("home").classList.remove("hidden");
-  renderHome();
+  $("homeLayer").classList.remove("active");
+  $("catalogLayer").classList.add("active");
+  renderCatalog();
 }
 
 async function openProject(id){
@@ -391,7 +486,7 @@ function closeReader(){
   $("detail").classList.remove("hidden");
 }
 
-$("search").oninput=()=>renderHome();
+$("search").oninput=()=>{if($("catalogLayer").classList.contains("active")) renderCatalog();};
 
 function applyTheme(theme){
   const light=theme==="light";
