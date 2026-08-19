@@ -11,7 +11,6 @@
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.wrap{max-width:900px;margin:auto;padding:20px}
 #reader.wrap{width:100vw;max-width:none;margin:0;padding:0;overflow-x:hidden}
 #readerContent{width:100vw;max-width:none;margin:0!important;padding:0}
-#reader .back{position:fixed;top:10px;left:10px;z-index:30;opacity:.82}
 @media(max-width:900px){
   #reader.wrap{width:100vw}
 }
@@ -50,11 +49,12 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:#a6a6b0}.search{width
 <div id="grid" class="grid"></div>
 </div>
 <div id="detail" class="wrap hidden">
-<button class="back" onclick="showHome()">← Kembali</button>
-<div id="detailContent" style="margin-top:18px"></div>
+<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+<button class="btn" onclick="showHome()">⌂ Home</button>
+</div>
+<div id="detailContent"></div>
 </div>
 <div id="reader" class="wrap hidden">
-  <button class="back" onclick="closeReader()">← Kembali</button>
   <div id="readerContent" style="margin-top:18px"></div>
   <div id="readerWatermark" class="reader-watermark hidden">
     <div class="wm-title">👑 MVP</div>
