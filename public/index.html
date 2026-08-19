@@ -24,9 +24,13 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:#a6a6b0}.search{width
 .chapters{display:flex;flex-direction:column;gap:9px;margin-top:14px}.chapter{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:#19191f;border:1px solid #2b2b31;border-radius:12px}
 .notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}
 .readerhead{position:sticky;top:0;z-index:25;padding:8px 8px;background:#0f0f12e6;backdrop-filter:blur(10px)}
-.reader-topbar{display:flex;align-items:center;gap:7px;width:100%}
+.reader-topbar{display:flex;align-items:center;gap:7px;width:100%;position:relative}
 .reader-info{flex:0 0 auto;border:0;border-radius:9px;padding:10px 11px;background:#24242a;color:#fff;font-weight:700}
-.reader-select{flex:1;min-width:0;border:1px solid #3a3a43;border-radius:9px;padding:10px 9px;background:#24242a;color:#fff;font-size:15px;font-weight:700}
+.reader-chapter-wrap{flex:1;min-width:0;position:relative}
+.reader-chapter-btn{width:100%;border:2px solid #f4f4f5;border-radius:9px;padding:9px 12px;background:#24242a;color:#fff;font-size:16px;font-weight:700;text-align:left}
+.reader-chapter-menu{position:absolute;left:0;top:calc(100% + 3px);width:min(310px,78vw);max-height:65vh;overflow-y:auto;background:#333338;border-radius:0 0 5px 5px;box-shadow:0 8px 20px rgba(0,0,0,.45);z-index:40}
+.reader-chapter-option{display:block;width:100%;border:0;background:transparent;color:#fff;text-align:left;padding:13px 20px;font-size:16px}
+.reader-chapter-option:active,.reader-chapter-option.current{background:#44444a}
 .reader-arrow{flex:0 0 42px;border:0;border-radius:9px;padding:10px 4px;background:#24242a;color:#fff;font-size:18px;font-weight:700}
 .reader-arrow.disabled{opacity:.35;pointer-events:none}
 .readerpages{display:flex;flex-direction:column;align-items:center;gap:0;margin:0;padding:0;width:100vw;max-width:100vw;overflow-x:hidden}
@@ -211,9 +215,17 @@ async function openReader(projectId, chapterName, decensored){
     <div class="readerhead">
       <div class="reader-topbar">
         <button class="reader-info" onclick="readerInfo('${esc(p.id)}')">INFO »</button>
-        <select class="reader-select" onchange="readerSelectChapter('${esc(p.id)}',this.value)">
-          ${chapters.map((ch,i)=>`<option value="${i}" ${i===idx?"selected":""}>Ch.${esc(ch.chapter)}${ch.decensored?" 🔞":""}</option>`).join("")}
-        </select>
+        <div class="reader-chapter-wrap">
+          <button id="readerChapterButton" class="reader-chapter-btn" onclick="toggleChapterMenu(event)">
+            Ch.${esc(chapters[idx].chapter)}${chapters[idx].decensored?" 🔞":""}
+          </button>
+          <div id="readerChapterMenu" class="reader-chapter-menu hidden">
+            ${chapters.map((ch,i)=>`
+              <button class="reader-chapter-option ${i===idx?"current":""}" onclick="selectReaderChapter('${esc(p.id)}',${i})">
+                Ch.${esc(ch.chapter)}${ch.decensored?" 🔞":""}
+              </button>`).join("")}
+          </div>
+        </div>
         <button class="reader-arrow ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""} onclick="openChapter('${esc(p.id)}',${idx-1})">←</button>
         <button class="reader-arrow ${idx>=chapters.length-1?"disabled":""}" ${idx>=chapters.length-1?"disabled":""} onclick="openChapter('${esc(p.id)}',${idx+1})">→</button>
       </div>
@@ -250,13 +262,25 @@ async function openReader(projectId, chapterName, decensored){
   });
 }
 
-function readerSelectChapter(projectId,value){
+function toggleChapterMenu(e){
+  e?.stopPropagation();
+  const menu=$("readerChapterMenu");
+  if(menu) menu.classList.toggle("hidden");
+}
+
+function selectReaderChapter(projectId,index){
   const p=catalog.find(x=>x.id===projectId);
-  const i=Number(value);
-  if(!p || !p.chapters?.[i])return;
-  const c=p.chapters[i];
+  if(!p || !p.chapters?.[index])return;
+  $("readerChapterMenu")?.classList.add("hidden");
+  const c=p.chapters[index];
   openReader(projectId,c.chapter,Boolean(c.decensored));
 }
+
+document.addEventListener("click",e=>{
+  const menu=$("readerChapterMenu");
+  const wrap=menu?.parentElement;
+  if(menu && wrap && !wrap.contains(e.target)) menu.classList.add("hidden");
+});
 
 function readerInfo(projectId){
   hideReaderWatermark();
