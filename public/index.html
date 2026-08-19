@@ -18,9 +18,12 @@ body.light{--bg:#f5f5f7;--text:#17171b;--muted:#666670;--panel:#fff;--panel2:#e9
 @media(max-width:900px){
   #reader.wrap{width:100vw}
 }
-header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{width:100%;padding:13px 15px;border:1px solid var(--border2);border-radius:14px;background:var(--input);color:var(--text);font-size:16px;margin:12px 0 18px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px}.card{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:var(--panel);cursor:pointer}
-.cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--panel2)}.cardbody{padding:12px}.title{font-weight:700}
+header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{width:100%;padding:13px 15px;border:1px solid var(--border2);border-radius:14px;background:var(--input);color:var(--text);font-size:16px;margin:12px 0 18px; transition: border 0.2s}
+.search:focus{outline:none;border-color:#4a90e2}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px}.card{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s}
+.card:active{transform:scale(0.97)}
+.cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--panel2)}.cardbody{padding:12px}.title{font-weight:700;line-height:1.2;font-size:15px}
+
 .btn{display:inline-block;border:0;border-radius:10px;padding:9px 12px;background:#30303a;color:#fff;text-decoration:none}
 .back{border:0;background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:10px}
 .tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
@@ -29,38 +32,43 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .chapters{display:flex;flex-direction:column;gap:9px;margin-top:14px}.chapter{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:var(--input);border:1px solid var(--border);border-radius:12px}
 .notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}.theme-toggle{border:1px solid var(--border2);border-radius:10px;padding:9px 11px;background:var(--panel2);color:var(--text);font-size:15px;font-weight:700;cursor:pointer}
 .home-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.home-filters{display:flex;gap:8px;margin:4px 0 14px}
-.type-btn{flex:1;border:1px solid var(--border2);border-radius:12px;padding:10px 12px;background:var(--panel2);color:var(--muted);font-weight:800}
-.type-btn.active{background:#30303a;color:#fff}
-.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:22px 0 10px}
-.section-title{font-size:18px;font-weight:800}
+
+.home-filters{display:flex;gap:8px;margin:8px 0 16px}
+.type-btn{flex:1;border:1px solid var(--border2);border-radius:12px;padding:12px 12px;background:var(--panel2);color:var(--muted);font-weight:800;font-size:15px;transition:all 0.2s}
+.type-btn.active{background:#30303a;color:#fff;border-color:#4a4a58}
+
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:22px 0 12px}
+.section-title{font-size:18px;font-weight:800;display:flex;align-items:center;gap:6px}
 .section-sub{font-size:12px;color:var(--muted)}
 .popular-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .popular-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer}
 .popular-card .cover{aspect-ratio:2/3}
 .popular-card .cardbody{padding:9px}
-.popular-card .title{font-size:14px}
+.popular-card .title{font-size:13px}
 .all-title{margin-top:24px}
 .tag-filter{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px}
 .tag-filter .tag.active{background:#30303a;color:#fff}
+
 .home-layer{display:none}
 .home-layer.active{display:block}
 .catalog-layer{display:none}
 .catalog-layer.active{display:block}
 .catalog-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.catalog-back{border:0;background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:10px}
+.catalog-back{border:0;background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:10px;font-weight:bold}
+
 .update-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.update-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer}
+.update-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s}
+.update-card:active{transform:scale(0.97)}
 .update-card .cover{aspect-ratio:2/3}
 .update-card .cardbody{padding:9px}
-.update-card .title{font-size:13px}
-.update-card .chapter-label{font-size:12px;color:var(--muted);margin-top:4px}
+.update-card .title{font-size:13px;line-height:1.2;margin-bottom:4px}
+.update-card .chapter-label{font-size:12px;color:var(--muted)}
+
 @media(max-width:420px){
   .update-strip{gap:7px}
   .update-card .cardbody{padding:7px}
   .popular-grid{gap:7px}
   .popular-card .cardbody{padding:7px}
-  .popular-card .title{font-size:13px}
 }
 
 .readerhead{position:sticky;top:0;z-index:25;padding:8px 8px;background:var(--bg)e6;backdrop-filter:blur(10px)}
@@ -93,66 +101,80 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .novel-reader h1,.novel-reader h2,.novel-reader h3{line-height:1.35;margin:1.5em 0 .75em}
 .novel-reader blockquote{margin:1em 0;padding-left:16px;border-left:3px solid var(--border2);color:var(--muted)}
 .novel-loading{padding:40px 18px;text-align:center;color:var(--muted)}
-
 </style>
 </head>
 <body oncontextmenu="return false">
 <div id="gate" class="notice hidden"><div><h2>🔒 Akses ditolak</h2><p class="muted" style="margin-top:8px">MVP Library hanya dapat dibuka melalui Telegram Android atau iOS.</p></div></div>
+
 <div id="home" class="wrap hidden">
 <header>
   <div class="home-top">
     <div>
       <h1>📚 MVP Library</h1>
-      <p class="muted" style="margin-top:4px">Pilih project untuk melihat detail dan chapter.</p>
+      <p class="muted" style="margin-top:4px">Koleksi Project MVP Translator.</p>
     </div>
     <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema">☀️</button>
   </div>
 </header>
 
-<div id="homeLayer" class="home-layer active">
-  <input id="search" class="search" placeholder="Cari PJ...">
+<!-- SEARCH BAR ADA DI ATAS UNTUK SEMUA LAYER -->
+<input id="search" class="search" placeholder="🔍 Cari Judul atau Author...">
 
+<div id="homeLayer" class="home-layer active">
+  <!-- HISTORY SECTION -->
+  <div id="historySection" style="display:none;margin-bottom:12px">
+    <div class="section-head" style="margin-top:10px">
+      <div class="section-title">⏱️ Terakhir Dibaca</div>
+    </div>
+    <div id="historyStrip" class="update-strip"></div>
+  </div>
+
+  <!-- COMIC / NOVEL TOGGLE -->
   <div class="home-filters">
-    <button class="type-btn active" onclick="openCatalog('comic')">COMIC</button>
-    <button class="type-btn" onclick="openCatalog('novel')">NOVEL</button>
+    <button class="type-btn" onclick="openCatalog('comic')">📚 COMIC</button>
+    <button class="type-btn" onclick="openCatalog('novel')">📖 NOVEL</button>
   </div>
 
   <div class="section-head">
-    <div class="section-title">Latest Updates · Comic</div>
+    <div class="section-title">🔥 Latest Updates · Comic</div>
   </div>
   <div id="latestComic" class="update-strip"></div>
 
   <div class="section-head">
-    <div class="section-title">Latest Updates · Novel</div>
+    <div class="section-title">🔥 Latest Updates · Novel</div>
   </div>
   <div id="latestNovel" class="update-strip"></div>
 </div>
 
 <div id="catalogLayer" class="catalog-layer">
   <div class="catalog-head">
-    <button class="catalog-back" onclick="showHome()">⌂ Home</button>
-    <h2 id="catalogTitle">Comic</h2>
+    <button class="catalog-back" onclick="showHome()">← Beranda</button>
+    <h2 id="catalogTitle">Katalog</h2>
   </div>
 
   <div id="tagFilter" class="tag-filter"></div>
 
-  <div class="section-head">
-    <div class="section-title">Popular</div>
+  <div id="popularSection">
+    <div class="section-head" style="margin-top:10px">
+      <div class="section-title">⭐ Populer</div>
+    </div>
+    <div id="popularGrid" class="popular-grid"></div>
   </div>
-  <div id="popularGrid" class="popular-grid"></div>
 
   <div class="section-head all-title">
-    <div class="section-title">All Project</div>
+    <div class="section-title">📑 Semua Project</div>
   </div>
   <div id="grid" class="grid"></div>
 </div>
 </div>
+
 <div id="detail" class="wrap hidden">
 <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-<button class="btn" onclick="showHome()">⌂ Home</button>
+<button class="btn" onclick="showHome()">⌂ Beranda</button>
 </div>
 <div id="detailContent"></div>
 </div>
+
 <div id="reader" class="wrap hidden">
   <div id="readerContent" style="margin-top:18px"></div>
   <div id="readerWatermark" class="reader-watermark hidden">
@@ -160,17 +182,19 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
     <div id="readerWatermarkUser" class="wm-user"></div>
   </div>
 </div>
+
 <script>
 const tg=window.Telegram?.WebApp;
 let catalog=[];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const API_BASE=location.origin;
-
 const fileUrl=fileId=>`${API_BASE}/api/file?file_id=${encodeURIComponent(fileId)}&init_data=${encodeURIComponent(tg?.initData||"")}`;
 
 let accessUser=null;
 let accessDenied=false;
+let currentType="comic";
+let currentTag="";
 
 function accessHeaders(){
   return {"X-Telegram-Init-Data":tg?.initData||""};
@@ -201,6 +225,7 @@ async function requireAccess(){
 }
 
 function deny(){ $("gate").classList.remove("hidden"); }
+
 function showHome(){
   $("detail").classList.add("hidden");
   $("reader").classList.add("hidden");
@@ -208,11 +233,9 @@ function showHome(){
   $("homeLayer").classList.add("active");
   $("catalogLayer").classList.remove("active");
   $("search").value="";
+  currentTag="";
   renderHome();
 }
-
-let currentType="comic";
-let currentTag="";
 
 function normalizeType(p){
   return String(p?.type||"comic").toLowerCase()==="novel" ? "novel" : "comic";
@@ -248,6 +271,46 @@ function latestUpdates(type){
     .slice(0,3);
 }
 
+// LOGIKA PENYIMPANAN HISTORY (TERAKHIR DIBACA)
+function saveHistory(projectId, chapterName, decensored) {
+  try {
+    let hist = JSON.parse(localStorage.getItem("mvp_history") || "{}");
+    hist[projectId] = { chapter: chapterName, decensored: Boolean(decensored), ts: Date.now() };
+    localStorage.setItem("mvp_history", JSON.stringify(hist));
+  } catch(e) {}
+}
+
+function renderHistory() {
+  const target = $("historyStrip");
+  if(!target) return;
+  let hist = {};
+  try { hist = JSON.parse(localStorage.getItem("mvp_history") || "{}"); } catch(e){}
+
+  // Ambil 3 data terbaru
+  const recent = Object.keys(hist).map(pid => ({
+    pid, ...hist[pid]
+  })).sort((a,b) => b.ts - a.ts).slice(0, 3);
+
+  const validRecent = recent.map(h => {
+    const p = catalog.find(x => x.id === h.pid);
+    return p ? { p, hist: h } : null;
+  }).filter(Boolean);
+
+  if(validRecent.length > 0) {
+    $("historySection").style.display = "block";
+    target.innerHTML = validRecent.map(({p, hist}) => `
+      <article class="update-card" style="border:1px solid #4a90e2" onclick="openReader('${esc(p.id)}','${esc(hist.chapter)}',${hist.decensored?'true':'false'})">
+        ${p.cover_file_id ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="cover"></div>`}
+        <div class="cardbody">
+          <div class="title">${esc(p.title)}</div>
+          <div class="chapter-label" style="color:#4a90e2;font-weight:bold;margin-top:6px">Lanjut Ch. ${esc(hist.chapter)}${hist.decensored?" 🔞":""}</div>
+        </div>
+      </article>`).join("");
+  } else {
+    $("historySection").style.display = "none";
+  }
+}
+
 function renderLatest(type,targetId){
   const target=$(targetId);
   const updates=latestUpdates(type);
@@ -265,18 +328,51 @@ function renderLatest(type,targetId){
 }
 
 function renderHome(){
+  renderHistory();
   renderLatest("comic","latestComic");
   renderLatest("novel","latestNovel");
 }
 
+// LOGIKA SEARCH BAR CERDAS (Bisa cari Judul & Author dari Semua Tipe)
 function getFilteredProjects(){
-  const q=String($("search")?.value||"").trim().toLowerCase();
-  return allTypeProjects(currentType).filter(p=>{
+  const q = String($("search")?.value||"").trim().toLowerCase();
+  
+  // Jika kolom search diisi, tampilkan dari semua tipe (Comic & Novel)
+  const baseList = q ? catalog : allTypeProjects(currentType);
+
+  return baseList.filter(p=>{
     if(currentTag && !(Array.isArray(p.tags)?p.tags:[]).some(t=>String(t).toLowerCase()===currentTag)) return false;
-    if(q && !String(p.title||"").toLowerCase().includes(q)) return false;
+    if(q) {
+      const t = String(p.title||"").toLowerCase();
+      const a = String(p.author||"").toLowerCase();
+      if(!t.includes(q) && !a.includes(q)) return false;
+    }
     return true;
   }).sort((a,b)=>String(a.title||"").localeCompare(String(b.title||""),undefined,{sensitivity:"base"}));
 }
+
+// KETIKA USER MENGETIK DI KOLOM SEARCH
+$("search").oninput = () => {
+  const val = $("search").value.trim();
+  if(val !== "") {
+    // Otomatis pindah ke halaman hasil pencarian (Catalog)
+    $("homeLayer").classList.remove("active");
+    $("catalogLayer").classList.add("active");
+    $("catalogTitle").textContent = "Hasil Pencarian";
+    $("popularSection").style.display = "none"; // Sembunyikan populer saat mencari
+    renderCatalog(false);
+  } else {
+    // Kalau kosong, kembalikan ke layar yang seharusnya
+    if(!currentTag) {
+      $("catalogLayer").classList.remove("active");
+      $("homeLayer").classList.add("active");
+    } else {
+      $("catalogTitle").textContent = currentType === "novel" ? "Novel" : "Comic";
+    }
+    $("popularSection").style.display = "block";
+    renderCatalog();
+  }
+};
 
 function renderCards(list, targetId, popular=false){
   const target=$(targetId);
@@ -308,7 +404,7 @@ function renderCards(list, targetId, popular=false){
                 </button>`).join("")}
             </div>
           </section>`).join("")
-      : "<p class='muted'>Belum ada PJ.</p>";
+      : "<p class='muted'>Tidak ditemukan.</p>";
     return;
   }
 
@@ -335,20 +431,23 @@ function openCatalog(type){
   currentTag="";
   $("homeLayer").classList.remove("active");
   $("catalogLayer").classList.add("active");
-  $("catalogTitle").textContent=currentType==="novel"?"Novel":"Comic";
+  $("catalogTitle").textContent=currentType==="novel"?"Katalog Novel":"Katalog Comic";
+  $("popularSection").style.display = "block";
   $("search").value="";
   renderCatalog();
 }
 
-function renderCatalog(){
+function renderCatalog(withPopular = true){
   const list=getFilteredProjects();
-  renderCards(list.slice(0,3),"popularGrid",true);
+  if(withPopular) renderCards(list.slice(0,3),"popularGrid",true);
   renderCards(list,"grid",false);
-  renderTagFilter(allTypeProjects(currentType));
-}
-
-function setTypeFilter(type){
-  openCatalog(type);
+  
+  // Jika sedang mode pencarian lintas tipe, filter tag disembunyikan agar tidak bingung
+  if($("search").value.trim() !== "") {
+    $("tagFilter").innerHTML = "";
+  } else {
+    renderTagFilter(allTypeProjects(currentType));
+  }
 }
 
 function filterByTag(tag){
@@ -364,13 +463,10 @@ async function openProject(id){
   const p=catalog.find(x=>x.id===id); if(!p)return;
   $("home").classList.add("hidden"); $("detail").classList.remove("hidden");
   
-  const comment=p.comment_link?`<p style="margin:16px 0"><a class="btn" href="${esc(p.comment_link)}">💬 Tulis Komentar</a></p>`:"";
-  
   const cover=p.cover_file_id
     ? `<img class="detailcover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" onerror="this.style.display='none'">`
     : "";
   
-  // Menampilkan Info Author/Artist jika ada
   const authorInfo=p.author ? `<div style="margin-top:6px;font-size:14px;color:var(--muted)">👤 <b>Author/Artist:</b> ${esc(p.author)}</div>` : "";
 
   const validTags = (Array.isArray(p.tags) ? p.tags : []).filter(t => t && isNaN(Number(t)));
@@ -378,13 +474,13 @@ async function openProject(id){
     ? `<div class="tags">${validTags.map(t=>`<button class="tag" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
     : "";
     
+  // TOMBOL TULIS KOMENTAR SUDAH DIHAPUS DARI SINI SESUAI REQUEST
   $("detailContent").innerHTML=`
     ${cover}
     <h1 style="margin-top:16px">${esc(p.title)}</h1>
     ${authorInfo}
     ${tags}
     <p class="muted" style="margin-top:12px;white-space:pre-line">${esc(p.description)}</p>
-    ${comment}
     <h2 style="margin-top:24px">Chapters</h2>
     <div class="chapters">${(p.chapters||[]).map((c,i)=>`
       <div class="chapter"><span>Chapter ${esc(c.chapter)} ${c.decensored?"🔞":""}</span>
@@ -437,6 +533,9 @@ async function openNovelReader(projectId, idx){
   const chapters=p.chapters||[];
   const c=chapters[idx];
   if(!c)return;
+
+  // SIMPAN HISTORY
+  saveHistory(projectId, c.chapter, Boolean(c.decensored));
 
   $("home").classList.add("hidden");
   $("detail").classList.add("hidden");
@@ -522,6 +621,9 @@ async function openReader(projectId, chapterName, decensored){
     alert("Halaman chapter belum tersedia.");
     return;
   }
+
+  // SIMPAN HISTORY
+  saveHistory(projectId, c.chapter, Boolean(c.decensored));
 
   $("home").classList.add("hidden");
   $("detail").classList.add("hidden");
@@ -613,8 +715,6 @@ function closeReader(){
   $("reader").classList.add("hidden");
   $("detail").classList.remove("hidden");
 }
-
-$("search").oninput=()=>{if($("catalogLayer").classList.contains("active")) renderCatalog();};
 
 function applyTheme(theme){
   const light=theme==="light";
