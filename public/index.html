@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#0f0f12">
-<title>MVP Library</title>
+<title>MVP Miniweb</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{box-sizing:border-box}
@@ -30,7 +30,7 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .tag{border:1px solid var(--border2);background:var(--panel2);color:var(--text);border-radius:999px;padding:6px 10px;font-size:13px;cursor:pointer}
 .detailcover{width:min(260px,75%);aspect-ratio:2/3;object-fit:cover;border-radius:16px;margin-top:16px}
 .chapters{display:flex;flex-direction:column;gap:9px;margin-top:14px}.chapter{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:var(--input);border:1px solid var(--border);border-radius:12px}
-.notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}.theme-toggle{border:1px solid var(--border2);border-radius:10px;padding:9px 11px;background:var(--panel2);color:var(--text);font-size:15px;font-weight:700;cursor:pointer}
+.notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}.theme-toggle{border:1px solid var(--border2);border-radius:10px;padding:9px 11px;background:var(--panel2);color:var(--text);font-size:14px;font-weight:700;cursor:pointer}
 .home-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 
 .home-filters{display:flex;gap:8px;margin:8px 0 16px}
@@ -104,44 +104,41 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 </style>
 </head>
 <body oncontextmenu="return false">
-<div id="gate" class="notice hidden"><div><h2>🔒 Akses ditolak</h2><p class="muted" style="margin-top:8px">MVP Library hanya dapat dibuka melalui Telegram Android atau iOS.</p></div></div>
+<div id="gate" class="notice hidden"><div><h2>Akses ditolak</h2><p class="muted" style="margin-top:8px">MVP Miniweb hanya dapat dibuka melalui Telegram Android atau iOS.</p></div></div>
 
 <div id="home" class="wrap hidden">
 <header>
   <div class="home-top">
     <div>
-      <h1>📚 MVP Library</h1>
-      <p class="muted" style="margin-top:4px">Koleksi Project MVP Translator.</p>
+      <h1>MVP Miniweb</h1>
+      <p class="muted" style="margin-top:4px">Pusat bacaan komik dan novel MVP.</p>
     </div>
-    <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema">☀️</button>
+    <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema">Terang</button>
   </div>
 </header>
 
-<!-- SEARCH BAR ADA DI ATAS UNTUK SEMUA LAYER -->
 <input id="search" class="search" placeholder="🔍 Cari Judul atau Author...">
 
 <div id="homeLayer" class="home-layer active">
-  <!-- HISTORY SECTION -->
   <div id="historySection" style="display:none;margin-bottom:12px">
     <div class="section-head" style="margin-top:10px">
-      <div class="section-title">⏱️ Terakhir Dibaca</div>
+      <div class="section-title">Terakhir Dibaca</div>
     </div>
     <div id="historyStrip" class="update-strip"></div>
   </div>
 
-  <!-- COMIC / NOVEL TOGGLE -->
   <div class="home-filters">
-    <button class="type-btn" onclick="openCatalog('comic')">📚 COMIC</button>
-    <button class="type-btn" onclick="openCatalog('novel')">📖 NOVEL</button>
+    <button class="type-btn active" onclick="openCatalog('comic')">COMIC</button>
+    <button class="type-btn" onclick="openCatalog('novel')">NOVEL</button>
   </div>
 
   <div class="section-head">
-    <div class="section-title">🔥 Latest Updates · Comic</div>
+    <div class="section-title">Latest Updates · Comic</div>
   </div>
   <div id="latestComic" class="update-strip"></div>
 
   <div class="section-head">
-    <div class="section-title">🔥 Latest Updates · Novel</div>
+    <div class="section-title">Latest Updates · Novel</div>
   </div>
   <div id="latestNovel" class="update-strip"></div>
 </div>
@@ -156,13 +153,13 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 
   <div id="popularSection">
     <div class="section-head" style="margin-top:10px">
-      <div class="section-title">⭐ Populer</div>
+      <div class="section-title">Populer</div>
     </div>
     <div id="popularGrid" class="popular-grid"></div>
   </div>
 
   <div class="section-head all-title">
-    <div class="section-title">📑 Semua Project</div>
+    <div class="section-title">Semua Project</div>
   </div>
   <div id="grid" class="grid"></div>
 </div>
@@ -170,7 +167,7 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 
 <div id="detail" class="wrap hidden">
 <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-<button class="btn" onclick="showHome()">⌂ Beranda</button>
+<button class="btn" onclick="showHome()">Beranda</button>
 </div>
 <div id="detailContent"></div>
 </div>
@@ -178,7 +175,7 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 <div id="reader" class="wrap hidden">
   <div id="readerContent" style="margin-top:18px"></div>
   <div id="readerWatermark" class="reader-watermark hidden">
-    <div class="wm-title">👑 MVP</div>
+    <div class="wm-title">MVP</div>
     <div id="readerWatermarkUser" class="wm-user"></div>
   </div>
 </div>
@@ -196,6 +193,9 @@ let accessDenied=false;
 let currentType="comic";
 let currentTag="";
 
+// REVISI: Mengubah emoji menjadi teks dalam bracket [Decensored] / [Uncensored]
+const decBadge = d => Number(d) === 1 ? " [Decensored]" : Number(d) === 2 ? " [Uncensored]" : "";
+
 function accessHeaders(){
   return {"X-Telegram-Init-Data":tg?.initData||""};
 }
@@ -205,8 +205,8 @@ function showDenied(){
   $("home").classList.add("hidden");
   $("detail").classList.add("hidden");
   $("reader").classList.add("hidden");
+  $("gate").innerHTML=`<div><h2>Akses Ditolak</h2><p class="muted" style="margin-top:8px">MVP Miniweb eksklusif hanya dapat dibuka melalui aplikasi Telegram di HP (Android & iOS).</p></div>`;
   $("gate").classList.remove("hidden");
-  $("gate").innerHTML=`<div><h2>🔒 Akses Ditolak</h2><p class="muted" style="margin-top:8px">Anda bukan bagian dari MVP</p><button class="btn" style="margin-top:16px" onclick="tg?.close()">Kembali ke Telegram</button></div>`;
 }
 
 async function requireAccess(){
@@ -214,7 +214,12 @@ async function requireAccess(){
   const r=await fetch("/api/access",{cache:"no-store",headers:accessHeaders()});
   const data=await r.json().catch(()=>({}));
   if(r.status===403 || r.status===401){
-    showDenied();
+    accessDenied=true;
+    $("home").classList.add("hidden");
+    $("detail").classList.add("hidden");
+    $("reader").classList.add("hidden");
+    $("gate").innerHTML=`<div><h2>Akses Ditolak</h2><p class="muted" style="margin-top:8px">Anda bukan bagian dari MVP</p><button class="btn" style="margin-top:16px" onclick="tg?.close()">Kembali ke Telegram</button></div>`;
+    $("gate").classList.remove("hidden");
     return false;
   }
   if(!r.ok){
@@ -271,11 +276,10 @@ function latestUpdates(type){
     .slice(0,3);
 }
 
-// LOGIKA PENYIMPANAN HISTORY (TERAKHIR DIBACA)
 function saveHistory(projectId, chapterName, decensored) {
   try {
     let hist = JSON.parse(localStorage.getItem("mvp_history") || "{}");
-    hist[projectId] = { chapter: chapterName, decensored: Boolean(decensored), ts: Date.now() };
+    hist[projectId] = { chapter: chapterName, decensored: Number(decensored), ts: Date.now() };
     localStorage.setItem("mvp_history", JSON.stringify(hist));
   } catch(e) {}
 }
@@ -286,7 +290,6 @@ function renderHistory() {
   let hist = {};
   try { hist = JSON.parse(localStorage.getItem("mvp_history") || "{}"); } catch(e){}
 
-  // Ambil 3 data terbaru
   const recent = Object.keys(hist).map(pid => ({
     pid, ...hist[pid]
   })).sort((a,b) => b.ts - a.ts).slice(0, 3);
@@ -299,11 +302,11 @@ function renderHistory() {
   if(validRecent.length > 0) {
     $("historySection").style.display = "block";
     target.innerHTML = validRecent.map(({p, hist}) => `
-      <article class="update-card" style="border:1px solid #4a90e2" onclick="openReader('${esc(p.id)}','${esc(hist.chapter)}',${hist.decensored?'true':'false'})">
+      <article class="update-card" style="border:1px solid #4a90e2" onclick="openReader('${esc(p.id)}','${esc(hist.chapter)}',${hist.decensored})">
         ${p.cover_file_id ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="cover"></div>`}
         <div class="cardbody">
           <div class="title">${esc(p.title)}</div>
-          <div class="chapter-label" style="color:#4a90e2;font-weight:bold;margin-top:6px">Lanjut Ch. ${esc(hist.chapter)}${hist.decensored?" 🔞":""}</div>
+          <div class="chapter-label" style="color:#4a90e2;font-weight:bold;margin-top:6px">Lanjut Ch. ${esc(hist.chapter)}${decBadge(hist.decensored)}</div>
         </div>
       </article>`).join("");
   } else {
@@ -315,13 +318,13 @@ function renderLatest(type,targetId){
   const target=$(targetId);
   const updates=latestUpdates(type);
   target.innerHTML=updates.length ? updates.map(({p,latest})=>`
-    <article class="update-card" onclick="openReader('${esc(p.id)}','${esc(latest.chapter.chapter)}',${latest.chapter.decensored?'true':'false'})">
+    <article class="update-card" onclick="openReader('${esc(p.id)}','${esc(latest.chapter.chapter)}',${latest.chapter.decensored})">
       ${p.cover_file_id
         ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">`
         : `<div class="cover"></div>`}
       <div class="cardbody">
         <div class="title">${esc(p.title)}</div>
-        <div class="chapter-label">Chapter ${esc(latest.chapter.chapter)}${latest.chapter.decensored?" 🔞":""}</div>
+        <div class="chapter-label">Chapter ${esc(latest.chapter.chapter)}${decBadge(latest.chapter.decensored)}</div>
       </div>
     </article>`).join("")
     : "<p class='muted'>Belum ada update.</p>";
@@ -333,11 +336,8 @@ function renderHome(){
   renderLatest("novel","latestNovel");
 }
 
-// LOGIKA SEARCH BAR CERDAS (Bisa cari Judul & Author dari Semua Tipe)
 function getFilteredProjects(){
   const q = String($("search")?.value||"").trim().toLowerCase();
-  
-  // Jika kolom search diisi, tampilkan dari semua tipe (Comic & Novel)
   const baseList = q ? catalog : allTypeProjects(currentType);
 
   return baseList.filter(p=>{
@@ -351,18 +351,15 @@ function getFilteredProjects(){
   }).sort((a,b)=>String(a.title||"").localeCompare(String(b.title||""),undefined,{sensitivity:"base"}));
 }
 
-// KETIKA USER MENGETIK DI KOLOM SEARCH
 $("search").oninput = () => {
   const val = $("search").value.trim();
   if(val !== "") {
-    // Otomatis pindah ke halaman hasil pencarian (Catalog)
     $("homeLayer").classList.remove("active");
     $("catalogLayer").classList.add("active");
     $("catalogTitle").textContent = "Hasil Pencarian";
-    $("popularSection").style.display = "none"; // Sembunyikan populer saat mencari
+    $("popularSection").style.display = "none"; 
     renderCatalog(false);
   } else {
-    // Kalau kosong, kembalikan ke layar yang seharusnya
     if(!currentTag) {
       $("catalogLayer").classList.remove("active");
       $("homeLayer").classList.add("active");
@@ -442,7 +439,6 @@ function renderCatalog(withPopular = true){
   if(withPopular) renderCards(list.slice(0,3),"popularGrid",true);
   renderCards(list,"grid",false);
   
-  // Jika sedang mode pencarian lintas tipe, filter tag disembunyikan agar tidak bingung
   if($("search").value.trim() !== "") {
     $("tagFilter").innerHTML = "";
   } else {
@@ -467,14 +463,13 @@ async function openProject(id){
     ? `<img class="detailcover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" onerror="this.style.display='none'">`
     : "";
   
-  const authorInfo=p.author ? `<div style="margin-top:6px;font-size:14px;color:var(--muted)">👤 <b>Author/Artist:</b> ${esc(p.author)}</div>` : "";
+  const authorInfo=p.author ? `<div style="margin-top:6px;font-size:14px;color:var(--muted)"><b>Author/Artist:</b> ${esc(p.author)}</div>` : "";
 
   const validTags = (Array.isArray(p.tags) ? p.tags : []).filter(t => t && isNaN(Number(t)));
   const tags=validTags.length
     ? `<div class="tags">${validTags.map(t=>`<button class="tag" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
     : "";
     
-  // TOMBOL TULIS KOMENTAR SUDAH DIHAPUS DARI SINI SESUAI REQUEST
   $("detailContent").innerHTML=`
     ${cover}
     <h1 style="margin-top:16px">${esc(p.title)}</h1>
@@ -483,8 +478,8 @@ async function openProject(id){
     <p class="muted" style="margin-top:12px;white-space:pre-line">${esc(p.description)}</p>
     <h2 style="margin-top:24px">Chapters</h2>
     <div class="chapters">${(p.chapters||[]).map((c,i)=>`
-      <div class="chapter"><span>Chapter ${esc(c.chapter)} ${c.decensored?"🔞":""}</span>
-      <button class="btn" onclick="openReader('${esc(p.id)}','${esc(c.chapter)}',${c.decensored?'true':'false'})">Baca</button></div>`).join("")}</div>`;
+      <div class="chapter"><span>Chapter ${esc(c.chapter)} ${decBadge(c.decensored)}</span>
+      <button class="btn" onclick="openReader('${esc(p.id)}','${esc(c.chapter)}',${c.decensored})">Baca</button></div>`).join("")}</div>`;
 }
 
 function getTelegramIdentity(){
@@ -509,7 +504,7 @@ function hideReaderWatermark(){
 function chapterIndex(projectId, chapterName, decensored){
   const p=catalog.find(x=>x.id===projectId);
   if(!p) return -1;
-  return (p.chapters||[]).findIndex(c=>String(c.chapter)===String(chapterName) && Boolean(c.decensored)===Boolean(decensored));
+  return (p.chapters||[]).findIndex(c=>String(c.chapter)===String(chapterName) && Number(c.decensored)===Number(decensored));
 }
 
 async function openChapter(projectId, index){
@@ -517,7 +512,7 @@ async function openChapter(projectId, index){
   const p=catalog.find(x=>x.id===projectId);
   if(!p || !p.chapters?.[index]) return;
   const c=p.chapters[index];
-  openReader(projectId, c.chapter, Boolean(c.decensored));
+  openReader(projectId, c.chapter, Number(c.decensored));
 }
 
 function chapterCommentLink(p){
@@ -525,17 +520,11 @@ function chapterCommentLink(p){
 }
 
 async function openNovelReader(projectId, idx){
-  if(!(await requireAccess())) return;
-
   const p=catalog.find(x=>x.id===projectId);
-  if(!p)return;
+  const c=p?.chapters?.[idx];
+  if(!c) return;
 
-  const chapters=p.chapters||[];
-  const c=chapters[idx];
-  if(!c)return;
-
-  // SIMPAN HISTORY
-  saveHistory(projectId, c.chapter, Boolean(c.decensored));
+  saveHistory(projectId, c.chapter, Number(c.decensored));
 
   $("home").classList.add("hidden");
   $("detail").classList.add("hidden");
@@ -549,20 +538,20 @@ async function openNovelReader(projectId, idx){
 
         <div class="reader-chapter-wrap">
           <button id="readerChapterButton" class="reader-chapter-btn" onclick="toggleChapterMenu(event)">
-            Ch.${esc(c.chapter)}
+            Ch.${esc(c.chapter)}${decBadge(c.decensored)}
           </button>
           <div id="readerChapterMenu" class="reader-chapter-menu hidden">
-            ${chapters.map((ch,i)=>`
+            ${(p.chapters||[]).map((ch,i)=>`
               <button class="reader-chapter-option ${i===idx?"current":""}"
                 onclick="selectReaderChapter('${esc(p.id)}',${i})">
-                Ch.${esc(ch.chapter)}${ch.decensored?" 🔞":""}
+                Ch.${esc(ch.chapter)}${decBadge(ch.decensored)}
               </button>`).join("")}
           </div>
         </div>
 
         <button class="reader-arrow ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
           onclick="openChapter('${esc(p.id)}',${idx-1})">←</button>
-        <button class="reader-arrow ${idx>=chapters.length-1?"disabled":""}" ${idx>=chapters.length-1?"disabled":""}
+        <button class="reader-arrow ${idx>=(p.chapters||[]).length-1?"disabled":""}" ${idx>=(p.chapters||[]).length-1?"disabled":""}
           onclick="openChapter('${esc(p.id)}',${idx+1})">→</button>
       </div>
     </div>
@@ -574,7 +563,7 @@ async function openNovelReader(projectId, idx){
 
   try{
     const r=await fetch(
-      `/api/novel?project_id=${encodeURIComponent(projectId)}&chapter=${encodeURIComponent(c.chapter)}&decensored=${c.decensored?1:0}`,
+      `/api/novel?project_id=${encodeURIComponent(projectId)}&chapter=${encodeURIComponent(c.chapter)}&decensored=${c.decensored}`,
       {cache:"no-store",headers:accessHeaders()}
     );
     if(!r.ok) throw new Error("novel");
@@ -595,35 +584,42 @@ async function openNovelReader(projectId, idx){
       <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
         onclick="openChapter('${esc(p.id)}',${idx-1})">« Prev</button>
       <button class="navbtn upbtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Up</button>
-      <button class="navbtn ${idx>=chapters.length-1?"disabled":""}" ${idx>=chapters.length-1?"disabled":""}
+      <button class="navbtn ${idx>=(p.chapters||[]).length-1?"disabled":""}" ${idx>=(p.chapters||[]).length-1?"disabled":""}
         onclick="openChapter('${esc(p.id)}',${idx+1})">Next »</button>
     </div>
     <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
       ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
-      💬 Tulis Komentar
+      Tulis Komentar
     </button>`;
 }
 
 async function openReader(projectId, chapterName, decensored){
   if(!(await requireAccess())) return;
+  
   const p=catalog.find(x=>x.id===projectId);
-  if(!p)return;
-  const chapters=p.chapters||[];
+  if(!p) return;
   const idx=chapterIndex(projectId, chapterName, decensored);
-  const c=chapters[idx];
+  const c=p.chapters[idx];
+  if(!c) return;
+
+  // FITUR PLATFORM GUARD: Blokir jika pengguna iOS memaksa buka Decensored [Decensored]
+  const platform = String(tg?.platform || "").toLowerCase();
+  if (Number(c.decensored) === 1 && !["android", "android_x"].includes(platform)) {
+      alert("Akses Ditolak!\n\nChapter [Decensored] ini eksklusif hanya dapat dibuka melalui aplikasi Telegram di Android.");
+      return;
+  }
 
   if(c?.content_type==="docx"){
     await openNovelReader(projectId, idx);
     return;
   }
 
-  if(!c || !Array.isArray(c.file_ids) || !c.file_ids.length){
+  if(!Array.isArray(c.file_ids) || !c.file_ids.length){
     alert("Halaman chapter belum tersedia.");
     return;
   }
 
-  // SIMPAN HISTORY
-  saveHistory(projectId, c.chapter, Boolean(c.decensored));
+  saveHistory(projectId, c.chapter, Number(c.decensored));
 
   $("home").classList.add("hidden");
   $("detail").classList.add("hidden");
@@ -636,17 +632,17 @@ async function openReader(projectId, chapterName, decensored){
         <button class="reader-info" onclick="readerInfo('${esc(p.id)}')">INFO »</button>
         <div class="reader-chapter-wrap">
           <button id="readerChapterButton" class="reader-chapter-btn" onclick="toggleChapterMenu(event)">
-            Ch.${esc(chapters[idx].chapter)}${chapters[idx].decensored?" 🔞":""}
+            Ch.${esc(c.chapter)}${decBadge(c.decensored)}
           </button>
           <div id="readerChapterMenu" class="reader-chapter-menu hidden">
-            ${chapters.map((ch,i)=>`
+            ${(p.chapters||[]).map((ch,i)=>`
               <button class="reader-chapter-option ${i===idx?"current":""}" onclick="selectReaderChapter('${esc(p.id)}',${i})">
-                Ch.${esc(ch.chapter)}${ch.decensored?" 🔞":""}
+                Ch.${esc(ch.chapter)}${decBadge(ch.decensored)}
               </button>`).join("")}
           </div>
         </div>
         <button class="reader-arrow ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""} onclick="openChapter('${esc(p.id)}',${idx-1})">←</button>
-        <button class="reader-arrow ${idx>=chapters.length-1?"disabled":""}" ${idx>=chapters.length-1?"disabled":""} onclick="openChapter('${esc(p.id)}',${idx+1})">→</button>
+        <button class="reader-arrow ${idx>=(p.chapters||[]).length-1?"disabled":""}" ${idx>=(p.chapters||[]).length-1?"disabled":""} onclick="openChapter('${esc(p.id)}',${idx+1})">→</button>
       </div>
     </div>
     <div id="readerPages" class="readerpages"></div>
@@ -660,12 +656,12 @@ async function openReader(projectId, chapterName, decensored){
       <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
         onclick="openChapter('${esc(p.id)}',${idx-1})">« Prev</button>
       <button class="navbtn upbtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Up</button>
-      <button class="navbtn ${idx>=chapters.length-1?"disabled":""}" ${idx>=chapters.length-1?"disabled":""}
+      <button class="navbtn ${idx>=(p.chapters||[]).length-1?"disabled":""}" ${idx>=(p.chapters||[]).length-1?"disabled":""}
         onclick="openChapter('${esc(p.id)}',${idx+1})">Next »</button>
     </div>
     <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
       ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
-      💬 Tulis Komentar
+      Tulis Komentar
     </button>
   `;
 
@@ -696,7 +692,7 @@ function selectReaderChapter(projectId,index){
   if(!p || !p.chapters?.[index])return;
   $("readerChapterMenu")?.classList.add("hidden");
   const c=p.chapters[index];
-  openReader(projectId,c.chapter,Boolean(c.decensored));
+  openReader(projectId,c.chapter,Number(c.decensored));
 }
 
 document.addEventListener("click",e=>{
@@ -720,7 +716,7 @@ function applyTheme(theme){
   const light=theme==="light";
   document.body.classList.toggle("light",light);
   const btn=$("themeToggle");
-  if(btn) btn.textContent=light?"🌙":"☀️";
+  if(btn) btn.textContent=light?"Gelap":"Terang";
   try{localStorage.setItem("mvp_theme",light?"light":"dark")}catch(e){}
 }
 
@@ -734,11 +730,17 @@ function toggleTheme(){
   applyTheme(theme);
 })(); 
 
+// FUNGSI INIT GLOBAL: Langsung blokir PC/Web di awal
 (async()=>{
-  if(!tg){deny();return;}
+  if(!tg){showDenied();return;}
   tg.ready();tg.expand();
+  
   const platform=String(tg.platform||"").toLowerCase();
-  if(!tg.initData || !["android","android_x","ios"].includes(platform)){deny();return;}
+  if(!tg.initData || !["android","android_x","ios"].includes(platform)){
+    showDenied();
+    return;
+  }
+  
   try{
     if(!(await requireAccess())) return;
     const r=await fetch("/api/catalog",{cache:"no-store",headers:accessHeaders()});
