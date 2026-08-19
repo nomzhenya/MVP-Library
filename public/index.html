@@ -30,7 +30,7 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .tag{border:1px solid var(--border2);background:var(--panel2);color:var(--text);border-radius:999px;padding:6px 10px;font-size:13px;cursor:pointer}
 .detailcover{width:min(260px,75%);aspect-ratio:2/3;object-fit:cover;border-radius:16px;margin-top:16px}
 .chapters{display:flex;flex-direction:column;gap:9px;margin-top:14px}.chapter{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:var(--input);border:1px solid var(--border);border-radius:12px}
-.notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}.theme-toggle{border:1px solid var(--border2);border-radius:10px;padding:9px 11px;background:var(--panel2);color:var(--text);font-size:14px;font-weight:700;cursor:pointer}
+.notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}.theme-toggle{border:1px solid var(--border2);border-radius:10px;padding:9px 11px;background:var(--panel2);color:var(--text);font-size:15px;font-weight:700;cursor:pointer}
 .home-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 
 .home-filters{display:flex;gap:8px;margin:8px 0 16px}
@@ -104,7 +104,7 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 </style>
 </head>
 <body oncontextmenu="return false">
-<div id="gate" class="notice hidden"><div><h2>Akses ditolak</h2><p class="muted" style="margin-top:8px">MVP Miniweb hanya dapat dibuka melalui Telegram Android atau iOS.</p></div></div>
+<div id="gate" class="notice hidden"><div><h2>Akses Ditolak</h2><p class="muted" style="margin-top:8px">MVP Miniweb eksklusif hanya dapat dibuka melalui aplikasi Telegram di HP (Android & iOS).</p></div></div>
 
 <div id="home" class="wrap hidden">
 <header>
@@ -113,7 +113,8 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
       <h1>MVP Miniweb</h1>
       <p class="muted" style="margin-top:4px">Pusat bacaan komik dan novel MVP.</p>
     </div>
-    <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema">Terang</button>
+    <!-- REVISI: Mengembalikan emoji ☀️ untuk tombol tema -->
+    <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema">☀️</button>
   </div>
 </header>
 
@@ -193,7 +194,6 @@ let accessDenied=false;
 let currentType="comic";
 let currentTag="";
 
-// REVISI: Mengubah emoji menjadi teks dalam bracket [Decensored] / [Uncensored]
 const decBadge = d => Number(d) === 1 ? " [Decensored]" : Number(d) === 2 ? " [Uncensored]" : "";
 
 function accessHeaders(){
@@ -602,7 +602,6 @@ async function openReader(projectId, chapterName, decensored){
   const c=p.chapters[idx];
   if(!c) return;
 
-  // FITUR PLATFORM GUARD: Blokir jika pengguna iOS memaksa buka Decensored [Decensored]
   const platform = String(tg?.platform || "").toLowerCase();
   if (Number(c.decensored) === 1 && !["android", "android_x"].includes(platform)) {
       alert("Akses Ditolak!\n\nChapter [Decensored] ini eksklusif hanya dapat dibuka melalui aplikasi Telegram di Android.");
@@ -712,11 +711,12 @@ function closeReader(){
   $("detail").classList.remove("hidden");
 }
 
+// REVISI: Mengembalikan teks "Terang/Gelap" menjadi emoji ☀️/🌙
 function applyTheme(theme){
   const light=theme==="light";
   document.body.classList.toggle("light",light);
   const btn=$("themeToggle");
-  if(btn) btn.textContent=light?"Gelap":"Terang";
+  if(btn) btn.textContent=light?"🌙":"☀️";
   try{localStorage.setItem("mvp_theme",light?"light":"dark")}catch(e){}
 }
 
@@ -747,7 +747,20 @@ function toggleTheme(){
     if(r.status===403 || r.status===401){showDenied();return;}
     if(!r.ok)throw new Error("catalog");
     catalog=await r.json();
-    $("home").classList.remove("hidden"); renderHome();
+    $("home").classList.remove("hidden"); 
+    
+    renderHome();
+
+    // TAMBAHAN FITUR DEEP LINK UNTUK BC CHANNEL
+    const startParam = tg?.initDataUnsafe?.start_param;
+    if (startParam) {
+      // Cek apakah startParam adalah ID project yang valid
+      const p = catalog.find(x => x.id === startParam);
+      if (p) {
+        openProject(startParam); // Otomatis lompat ke halaman Info Project!
+      }
+    }
+
   }catch(e){
     if(accessDenied) return;
     $("home").classList.remove("hidden");
