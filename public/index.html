@@ -556,15 +556,15 @@ async function openReader(projectId, chapterName, decensored){
 
   $("readerNav").innerHTML=`
     <div class="reader-nav-row">
-      <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
-        onclick="openChapter('${esc(p.id)}',${idx-1})">« Ch Sebelumnya</button>
-      <button class="navbtn upbtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Up</button>
       <button class="navbtn ${idx>=chapters.length-1?"disabled":""}" ${idx>=chapters.length-1?"disabled":""}
-        onclick="openChapter('${esc(p.id)}',${idx+1})">Ch Selanjutnya »</button>
+        onclick="openChapter('${esc(p.id)}',${idx+1})">→</button>
+      <button class="navbtn upbtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">UP</button>
+      <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
+        onclick="openChapter('${esc(p.id)}',${idx-1})">←</button>
+      <button class="navbtn commentbtn ${commentUrl?"":"disabled"}" ${commentUrl?`onclick="location.href='${esc(commentUrl)}'"`:"disabled"}>
+        💬
+      </button>
     </div>
-    <button class="navbtn commentbtn ${commentUrl?"":"disabled"}" ${commentUrl?`onclick="location.href='${esc(commentUrl)}'"`:"disabled"}>
-      💬 Komentar
-    </button>
   `;
 
   c.file_ids.forEach((fid,i)=>{
