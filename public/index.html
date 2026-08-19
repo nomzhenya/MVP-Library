@@ -18,10 +18,18 @@ body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.wrap{
 header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:#a6a6b0}.search{width:100%;padding:13px 15px;border:1px solid #303038;border-radius:14px;background:#19191f;color:#fff;font-size:16px;margin:12px 0 18px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px}.card{border:1px solid #2b2b31;border-radius:18px;overflow:hidden;background:#18181d;cursor:pointer}
 .cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:#24242a}.cardbody{padding:12px}.title{font-weight:700}.btn{display:inline-block;border:0;border-radius:10px;padding:9px 12px;background:#30303a;color:#fff;text-decoration:none}
-.back{border:0;background:#24242a;color:#fff;padding:9px 12px;border-radius:10px}.detailcover{width:min(260px,75%);aspect-ratio:2/3;object-fit:cover;border-radius:16px;margin-top:16px}
+.back{border:0;background:#24242a;color:#fff;padding:9px 12px;border-radius:10px}
+.tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.tag{border:1px solid #3a3a43;background:#24242a;color:#fff;border-radius:999px;padding:6px 10px;font-size:13px;cursor:pointer}
+.detailcover{width:min(260px,75%);aspect-ratio:2/3;object-fit:cover;border-radius:16px;margin-top:16px}
 .chapters{display:flex;flex-direction:column;gap:9px;margin-top:14px}.chapter{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:#19191f;border:1px solid #2b2b31;border-radius:12px}
 .notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}
-.readerhead{position:sticky;top:0;z-index:5;padding:10px 12px;background:#0f0f12e6;backdrop-filter:blur(10px)}
+.readerhead{position:sticky;top:0;z-index:25;padding:8px 8px;background:#0f0f12e6;backdrop-filter:blur(10px)}
+.reader-topbar{display:flex;align-items:center;gap:7px;width:100%}
+.reader-info{flex:0 0 auto;border:0;border-radius:9px;padding:10px 11px;background:#24242a;color:#fff;font-weight:700}
+.reader-select{flex:1;min-width:0;border:1px solid #3a3a43;border-radius:9px;padding:10px 9px;background:#24242a;color:#fff;font-size:15px;font-weight:700}
+.reader-arrow{flex:0 0 42px;border:0;border-radius:9px;padding:10px 4px;background:#24242a;color:#fff;font-size:18px;font-weight:700}
+.reader-arrow.disabled{opacity:.35;pointer-events:none}
 .readerpages{display:flex;flex-direction:column;align-items:center;gap:0;margin:0;padding:0;width:100vw;max-width:100vw;overflow-x:hidden}
 .readerpage{display:block;width:100vw;max-width:100vw;height:auto;margin:0;padding:0;background:#000;object-fit:contain}
 .readererror{padding:18px;text-align:center;border:1px solid #55333a;border-radius:12px;background:#24181b;margin-top:12px}
@@ -59,51 +67,7 @@ let catalog=[];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const API_BASE=location.origin;
-const fileUrl=fileId=>`${API_BASE}/api/file?file_id=${encodeURIComponent(fileId)}&init_data=${encodeURIComponent(tg?.initData||"")}`;
-let accessUser=null;
-let accessDenied=false;
-
-function accessHeaders(){
-  return {"X-Telegram-Init-Data":tg?.initData||""};
-}
-
-function showDenied(){
-  accessDenied=true;
-  $("home").classList.add("hidden");
-  $("detail").classList.add("hidden");
-  $("reader").classList.add("hidden");
-  $("gate").classList.remove("hidden");
-  $("gate").innerHTML=`<div><h2>🔒 Akses Ditolak</h2><p class="muted" style="margin-top:8px">Anda bukan bagian dari MVP</p><button class="btn" style="margin-top:16px" onclick="tg?.close()">Kembali ke Telegram</button></div>`;
-}
-
-async function requireAccess(){
-  if(accessDenied) return false;
-  let r;
-  try{
-    r=await fetch("/api/access",{cache:"no-store",headers:accessHeaders()});
-  }catch(e){
-    $("gate").classList.remove("hidden");
-    $("gate").innerHTML=`<div><h2>Library tidak dapat diakses</h2><p class="muted" style="margin-top:8px">Koneksi ke server gagal.</p></div>`;
-    return false;
-  }
-  if(r.status===403 || r.status===401){
-    showDenied();
-    return false;
-  }
-  if(r.status===503){
-    $("gate").classList.remove("hidden");
-    $("gate").innerHTML=`<div><h2>Library belum dikonfigurasi</h2><p class="muted" style="margin-top:8px">Membership gate belum tersambung.</p></div>`;
-    return false;
-  }
-  if(!r.ok){
-    $("gate").classList.remove("hidden");
-    $("gate").innerHTML=`<div><h2>Library tidak dapat diakses</h2><p class="muted" style="margin-top:8px">Server mengembalikan error ${r.status}.</p></div>`;
-    return false;
-  }
-  const data=await r.json();
-  accessUser=data.user||null;
-  return true;
-}
+const fileUrl=fileId=>`${API_BASE}/api/file?file_id=${encodeURIComponent(fileId)}`;
 function deny(){ $("gate").classList.remove("hidden"); }
 function showHome(){ $("detail").classList.add("hidden"); $("home").classList.remove("hidden"); }
 function render(list){
@@ -116,21 +80,32 @@ function render(list){
       <div class="muted" style="margin-top:5px">${(p.chapters||[]).length} chapter</div></div>
     </article>`).join(""):"<p class='muted'>Belum ada PJ.</p>";
 }
-async function openProject(id){
-  if(!(await requireAccess())) return;
+function filterByTag(tag){
+  const q=String(tag||"").toLowerCase();
+  const filtered=catalog.filter(p=>(Array.isArray(p.tags)?p.tags:[]).some(t=>String(t).toLowerCase()===q));
+  $("detail").classList.add("hidden");
+  $("home").classList.remove("hidden");
+  render(filtered);
+}
+
+function openProject(id){
   const p=catalog.find(x=>x.id===id); if(!p)return;
   $("home").classList.add("hidden"); $("detail").classList.remove("hidden");
   const comment=p.comment_link?`<p style="margin:16px 0"><a class="btn" href="${esc(p.comment_link)}">💬 Komentar di Lapak</a></p>`:"";
   const cover=p.cover_file_id
     ? `<img class="detailcover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" onerror="this.style.display='none'">`
     : "";
+  const tags=Array.isArray(p.tags)&&p.tags.length
+    ? `<div class="tags">${p.tags.map(t=>`<button class="tag" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
+    : "";
   $("detailContent").innerHTML=`
     ${cover}
     <h1 style="margin-top:16px">${esc(p.title)}</h1>
-    <p class="muted" style="margin-top:8px;white-space:pre-line">${esc(p.description)}</p>
+    ${tags}
+    <p class="muted" style="margin-top:12px;white-space:pre-line">${esc(p.description)}</p>
     ${comment}
     <h2 style="margin-top:24px">Chapters</h2>
-    <div class="chapters">${(p.chapters||[]).map(c=>`
+    <div class="chapters">${(p.chapters||[]).map((c,i)=>`
       <div class="chapter"><span>Chapter ${esc(c.chapter)} ${c.decensored?"🔞":""}</span>
       <button class="btn" onclick="openReader('${esc(p.id)}','${esc(c.chapter)}',${c.decensored?'true':'false'})">Baca</button></div>`).join("")}</div>`;
 }
@@ -159,8 +134,7 @@ function chapterIndex(projectId, chapterName, decensored){
   return (p.chapters||[]).findIndex(c=>String(c.chapter)===String(chapterName) && Boolean(c.decensored)===Boolean(decensored));
 }
 
-async function openChapter(projectId, index){
-  if(!(await requireAccess())) return;
+function openChapter(projectId, index){
   const p=catalog.find(x=>x.id===projectId);
   if(!p || !p.chapters?.[index]) return;
   const c=p.chapters[index];
@@ -172,10 +146,11 @@ function chapterCommentLink(p){
 }
 
 async function openReader(projectId, chapterName, decensored){
-  if(!(await requireAccess())) return;
   const p=catalog.find(x=>x.id===projectId);
   if(!p)return;
-  const c=(p.chapters||[]).find(x=>String(x.chapter)===String(chapterName) && Boolean(x.decensored)===Boolean(decensored));
+  const chapters=p.chapters||[];
+  const idx=chapterIndex(projectId, chapterName, decensored);
+  const c=chapters[idx];
   if(!c || !Array.isArray(c.file_ids) || !c.file_ids.length){
     alert("Halaman chapter belum tersedia.");
     return;
@@ -188,26 +163,29 @@ async function openReader(projectId, chapterName, decensored){
 
   $("readerContent").innerHTML=`
     <div class="readerhead">
-      <h2>${esc(p.title)} · Chapter ${esc(chapterName)}${decensored?" 🔞":""}</h2>
+      <div class="reader-topbar">
+        <button class="reader-info" onclick="readerInfo('${esc(p.id)}')">INFO »</button>
+        <select class="reader-select" onchange="readerSelectChapter('${esc(p.id)}',this.value)">
+          ${chapters.map((ch,i)=>`<option value="${i}" ${i===idx?"selected":""}>Ch.${esc(ch.chapter)}${ch.decensored?" 🔞":""}</option>`).join("")}
+        </select>
+        <button class="reader-arrow ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""} onclick="openChapter('${esc(p.id)}',${idx-1})">←</button>
+        <button class="reader-arrow ${idx>=chapters.length-1?"disabled":""}" ${idx>=chapters.length-1?"disabled":""} onclick="openChapter('${esc(p.id)}',${idx+1})">→</button>
+      </div>
     </div>
     <div id="readerPages" class="readerpages"></div>
     <div id="readerNav" class="reader-nav"></div>`;
 
   const pages=$("readerPages");
-
-  const idx=chapterIndex(projectId, chapterName, decensored);
-  const prevIndex=idx>0 ? idx-1 : -1;
-  const nextIndex=(idx>=0 && idx<(p.chapters||[]).length-1) ? idx+1 : -1;
   const commentUrl=chapterCommentLink(p);
 
   $("readerNav").innerHTML=`
-    <button class="navbtn ${prevIndex<0?"disabled":""}" ${prevIndex<0?"disabled":""}
-      onclick="openChapter('${esc(p.id)}',${prevIndex})">« Ch</button>
+    <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
+      onclick="openChapter('${esc(p.id)}',${idx-1})">« Ch</button>
     <button class="navbtn commentbtn ${commentUrl?"":"disabled"}" ${commentUrl?`onclick="location.href='${esc(commentUrl)}'"`:"disabled"}>
       💬 Comment
     </button>
-    <button class="navbtn ${nextIndex<0?"disabled":""}" ${nextIndex<0?"disabled":""}
-      onclick="openChapter('${esc(p.id)}',${nextIndex})">Ch »</button>
+    <button class="navbtn ${idx>=chapters.length-1?"disabled":""}" ${idx>=chapters.length-1?"disabled":""}
+      onclick="openChapter('${esc(p.id)}',${idx+1})">Ch »</button>
   `;
 
   c.file_ids.forEach((fid,i)=>{
@@ -226,6 +204,19 @@ async function openReader(projectId, chapterName, decensored){
   });
 }
 
+function readerSelectChapter(projectId,value){
+  const p=catalog.find(x=>x.id===projectId);
+  const i=Number(value);
+  if(!p || !p.chapters?.[i])return;
+  const c=p.chapters[i];
+  openReader(projectId,c.chapter,Boolean(c.decensored));
+}
+
+function readerInfo(projectId){
+  hideReaderWatermark();
+  $("reader").classList.add("hidden");
+  openProject(projectId);
+}
 function closeReader(){
   hideReaderWatermark();
   $("reader").classList.add("hidden");
@@ -239,16 +230,13 @@ $("search").oninput=e=>{const q=e.target.value.toLowerCase();render(catalog.filt
   const platform=String(tg.platform||"").toLowerCase();
   if(!tg.initData || !["android","android_x","ios"].includes(platform)){deny();return;}
   try{
-    if(!(await requireAccess())) return;
-    const r=await fetch("/api/catalog",{cache:"no-store",headers:accessHeaders()});
-    if(r.status===403 || r.status===401){showDenied();return;}
+    const r=await fetch("/api/catalog",{cache:"no-store"});
     if(!r.ok)throw new Error("catalog");
     catalog=await r.json();
     $("home").classList.remove("hidden"); render(catalog);
   }catch(e){
-    if(accessDenied) return;
-    $("gate").classList.remove("hidden");
-    $("gate").innerHTML=`<div><h2>Library tidak dapat diakses</h2><p class="muted" style="margin-top:8px">Terjadi kesalahan saat memuat library.</p></div>`;
+    $("home").classList.remove("hidden");
+    $("grid").innerHTML="<p class='muted'>Library belum tersambung ke katalog.</p>";
   }
 })();
 </script>
