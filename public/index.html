@@ -327,8 +327,9 @@ function renderCards(list, targetId, popular=false){
     : "<p class='muted'>Belum ada PJ.</p>";
 }
 
+// REVISI FILTER TAG: Hapus tag yang isinya cuma angka (seperti timestamp)
 function renderTagFilter(list){
-  const tags=[...new Set(list.flatMap(p=>Array.isArray(p.tags)?p.tags:[]).map(t=>String(t).trim()).filter(Boolean))]
+  const tags=[...new Set(list.flatMap(p=>Array.isArray(p.tags)?p.tags:[]).map(t=>String(t).trim()).filter(t => t && isNaN(Number(t))))]
     .sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:"base"}));
   $("tagFilter").innerHTML=tags.length
     ? tags.map(t=>`<button class="tag ${currentTag===t.toLowerCase()?"active":""}" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")
@@ -373,9 +374,13 @@ async function openProject(id){
   const cover=p.cover_file_id
     ? `<img class="detailcover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" onerror="this.style.display='none'">`
     : "";
-  const tags=Array.isArray(p.tags)&&p.tags.length
-    ? `<div class="tags">${p.tags.map(t=>`<button class="tag" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
+  
+  // REVISI FILTER TAG: Memastikan timestamp angka tidak dicetak di detail project
+  const validTags = (Array.isArray(p.tags) ? p.tags : []).filter(t => t && isNaN(Number(t)));
+  const tags=validTags.length
+    ? `<div class="tags">${validTags.map(t=>`<button class="tag" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
     : "";
+    
   $("detailContent").innerHTML=`
     ${cover}
     <h1 style="margin-top:16px">${esc(p.title)}</h1>
