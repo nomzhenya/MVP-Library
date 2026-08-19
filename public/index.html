@@ -117,12 +117,12 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
   </div>
 
   <div class="section-head">
-    <div class="section-title">✨ Latest Updates · Comic</div>
+    <div class="section-title">Latest Updates · Comic</div>
   </div>
   <div id="latestComic" class="update-strip"></div>
 
   <div class="section-head">
-    <div class="section-title">✨ Latest Updates · Novel</div>
+    <div class="section-title">Latest Updates · Novel</div>
   </div>
   <div id="latestNovel" class="update-strip"></div>
 </div>
@@ -136,7 +136,7 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
   <div id="tagFilter" class="tag-filter"></div>
 
   <div class="section-head">
-    <div class="section-title">🔥 Popular</div>
+    <div class="section-title">Popular</div>
   </div>
   <div id="popularGrid" class="popular-grid"></div>
 
@@ -279,14 +279,45 @@ function getFilteredProjects(){
 function renderCards(list, targetId, popular=false){
   const target=$(targetId);
   if(!target)return;
+
+  if(!popular){
+    const groups={};
+    list.forEach(p=>{
+      const letter=(String(p.title||"").trim().charAt(0)||"#").toUpperCase();
+      const key=/[A-Z]/.test(letter)?letter:"#";
+      (groups[key] ||= []).push(p);
+    });
+
+    const letters=Object.keys(groups).sort((a,b)=>{
+      if(a==="#") return 1;
+      if(b==="#") return -1;
+      return a.localeCompare(b);
+    });
+
+    target.innerHTML=letters.length
+      ? letters.map(letter=>`
+          <section style="margin-bottom:18px">
+            <div style="font-size:14px;font-weight:800;color:var(--muted);margin-bottom:7px">${esc(letter)}</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              ${groups[letter].map(p=>`
+                <button onclick="openProject('${esc(p.id)}')"
+                  style="width:100%;text-align:left;border:1px solid var(--border);border-radius:10px;padding:11px 13px;background:var(--panel);color:var(--text);font-size:15px;font-weight:650">
+                  ${esc(p.title)}
+                </button>`).join("")}
+            </div>
+          </section>`).join("")
+      : "<p class='muted'>Belum ada PJ.</p>";
+    return;
+  }
+
   target.innerHTML=list.length?list.map(p=>`
-    <article class="${popular?"popular-card":"card"}" onclick="openProject('${esc(p.id)}')">
+    <article class="popular-card" onclick="openProject('${esc(p.id)}')">
       ${p.cover_file_id
         ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">`
         : `<div class="cover"></div>`}
-      <div class="cardbody"><div class="title">${esc(p.title)}</div>
-      ${popular?"":`<div class="muted" style="margin-top:5px">${(p.chapters||[]).length} chapter</div>`}</div>
-    </article>`).join(""):"<p class='muted'>Belum ada PJ.</p>";
+      <div class="cardbody"><div class="title">${esc(p.title)}</div></div>
+    </article>`).join("")
+    : "<p class='muted'>Belum ada PJ.</p>";
 }
 
 function renderTagFilter(list){
@@ -309,7 +340,7 @@ function openCatalog(type){
 
 function renderCatalog(){
   const list=getFilteredProjects();
-  // Popular is intentionally the first three catalog projects for now.
+  // Popular is temporarily the first three catalog projects.
   renderCards(list.slice(0,3),"popularGrid",true);
   renderCards(list,"grid",false);
   renderTagFilter(allTypeProjects(currentType));
