@@ -22,7 +22,6 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px}.card{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:var(--panel);cursor:pointer}
 .cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--panel2)}.cardbody{padding:12px}.title{font-weight:700}
 
-/* REVISI: Mengubah color:var(--text) menjadi color:#fff agar tombol hitam teksnya selalu putih */
 .btn{display:inline-block;border:0;border-radius:10px;padding:9px 12px;background:#30303a;color:#fff;text-decoration:none}
 
 .back{border:0;background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:10px}
@@ -69,17 +68,13 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
   .popular-card .title{font-size:13px}
 }
 
-
 .readerhead{position:sticky;top:0;z-index:25;padding:8px 8px;background:var(--bg)e6;backdrop-filter:blur(10px)}
 .reader-topbar{display:flex;align-items:center;gap:7px;width:100%;position:relative}
 .reader-info{flex:0 0 auto;border:0;border-radius:9px;padding:10px 11px;background:var(--panel2);color:var(--text);font-weight:700}
 .reader-chapter-wrap{flex:1;min-width:0;position:relative}
 .reader-chapter-btn{width:100%;border:2px solid #f4f4f5;border-radius:9px;padding:9px 12px;background:var(--panel2);color:var(--text);font-size:16px;font-weight:700;text-align:left}
 .reader-chapter-menu{position:absolute;left:0;top:calc(100% + 3px);width:min(310px,78vw);max-height:65vh;overflow-y:auto;background:#333338;border-radius:0 0 5px 5px;box-shadow:0 8px 20px rgba(0,0,0,.45);z-index:40}
-
-/* REVISI: Mengubah color:var(--text) menjadi color:#fff pada list menu chapter */
 .reader-chapter-option{display:block;width:100%;border:0;background:transparent;color:#fff;text-align:left;padding:13px 20px;font-size:16px}
-
 .reader-chapter-option:active,.reader-chapter-option.current{background:#44444a}
 .reader-arrow{flex:0 0 42px;border:0;border-radius:9px;padding:10px 4px;background:var(--panel2);color:var(--text);font-size:18px;font-weight:700}
 .reader-arrow.disabled{opacity:.35;pointer-events:none}
@@ -321,8 +316,9 @@ function renderCards(list, targetId, popular=false){
     : "<p class='muted'>Belum ada PJ.</p>";
 }
 
+// REVISI FILTER TAG: Hapus tag yang isinya cuma angka (seperti timestamp)
 function renderTagFilter(list){
-  const tags=[...new Set(list.flatMap(p=>Array.isArray(p.tags)?p.tags:[]).map(t=>String(t).trim()).filter(Boolean))]
+  const tags=[...new Set(list.flatMap(p=>Array.isArray(p.tags)?p.tags:[]).map(t=>String(t).trim()).filter(t => t && isNaN(Number(t))))]
     .sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:"base"}));
   $("tagFilter").innerHTML=tags.length
     ? tags.map(t=>`<button class="tag ${currentTag===t.toLowerCase()?"active":""}" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")
@@ -367,9 +363,13 @@ async function openProject(id){
   const cover=p.cover_file_id
     ? `<img class="detailcover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" onerror="this.style.display='none'">`
     : "";
-  const tags=Array.isArray(p.tags)&&p.tags.length
-    ? `<div class="tags">${p.tags.map(t=>`<button class="tag" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
+  
+  // REVISI FILTER TAG: Memastikan timestamp angka tidak dicetak di detail project
+  const validTags = (Array.isArray(p.tags) ? p.tags : []).filter(t => t && isNaN(Number(t)));
+  const tags=validTags.length
+    ? `<div class="tags">${validTags.map(t=>`<button class="tag" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
     : "";
+    
   $("detailContent").innerHTML=`
     ${cover}
     <h1 style="margin-top:16px">${esc(p.title)}</h1>
