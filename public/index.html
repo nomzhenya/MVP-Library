@@ -1,310 +1,770 @@
-import logging
-import os
-import re
-import sqlite3
-import time
-import zipfile
-import xml.etree.ElementTree as ET
-import aiohttp
-import io
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0f0f12">
+<title>MVP Miniweb</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#0f0f12;--text:#f4f4f5;--muted:#a6a6b0;--panel:#19191f;--panel2:#24242a;--border:#2b2b31;--border2:#3a3a43;--input:#19191f}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden;transition:background .2s,color .2s}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body.light{--bg:#f5f5f7;--text:#17171b;--muted:#666670;--panel:#fff;--panel2:#e9e9ee;--border:#d7d7de;--border2:#c5c5ce;--input:#fff}
+.wrap{max-width:900px;margin:auto;padding:20px}
+#reader.wrap{width:100vw;max-width:none;margin:0;padding:0;overflow-x:hidden}
+#readerContent{width:100vw;max-width:none;margin:0!important;padding:0}
+@media(max-width:900px){
+  #reader.wrap{width:100vw}
+}
+header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{width:100%;padding:13px 15px;border:1px solid var(--border2);border-radius:14px;background:var(--input);color:var(--text);font-size:16px;margin:12px 0 18px; transition: border 0.2s}
+.search:focus{outline:none;border-color:#4a90e2}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px}.card{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s}
+.card:active{transform:scale(0.97)}
+.cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--panel2)}.cardbody{padding:12px}.title{font-weight:700;line-height:1.2;font-size:15px}
 
-from dotenv import load_dotenv
-from pathlib import Path
-from telegram import BotCommand, BotCommandScopeChat, InlineKeyboardButton, InlineKeyboardMarkup, Update, WebAppInfo
-from telegram.constants import ChatMemberStatus
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+.btn{display:inline-block;border:0;border-radius:10px;padding:9px 12px;background:#30303a;color:#fff;text-decoration:none}
+.back{border:0;background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:10px}
+.tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.tag{border:1px solid var(--border2);background:var(--panel2);color:var(--text);border-radius:999px;padding:6px 10px;font-size:13px;cursor:pointer}
+.detailcover{width:min(260px,75%);aspect-ratio:2/3;object-fit:cover;border-radius:16px;margin-top:16px}
+.chapters{display:flex;flex-direction:column;gap:9px;margin-top:14px}.chapter{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:var(--input);border:1px solid var(--border);border-radius:12px}
+.notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}.theme-toggle{border:1px solid var(--border2);border-radius:10px;padding:9px 11px;background:var(--panel2);color:var(--text);font-size:14px;font-weight:700;cursor:pointer}
+.home-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
-ENV_FILE = ROOT_DIR / ".env"
-load_dotenv(ENV_FILE, override=True)
-TOKEN = os.getenv("Zhenya_BOT_TOKEN")
-LIBRARY_URL = "https://mvp-library.vissarionova91.workers.dev"
-CHANNEL_ID = int(os.environ["MVP_CHANNEL_ID"])
-DISCUSSION_ID = int(os.environ["MVP_DISCUSSION_ID"])
-MVP_CORE_ID = int(os.environ["MVP_CORE_ID"])
-LIBRARY_SYNC_URL = os.getenv("LIBRARY_SYNC_URL", "").rstrip("/")
-LIBRARY_SYNC_SECRET = os.getenv("LIBRARY_SYNC_SECRET", "")
-LIBRARY_DB = os.getenv("ZHENYA_LIBRARY_DB", str(ROOT_DIR / "zhenya_library.db"))
-if not os.path.isabs(LIBRARY_DB):
-    LIBRARY_DB = str(ROOT_DIR / LIBRARY_DB)
+.home-filters{display:flex;gap:8px;margin:8px 0 16px}
+.type-btn{flex:1;border:1px solid var(--border2);border-radius:12px;padding:12px 12px;background:var(--panel2);color:var(--muted);font-weight:800;font-size:15px;transition:all 0.2s}
+.type-btn.active{background:#30303a;color:#fff;border-color:#4a4a58}
 
-db=sqlite3.connect(LIBRARY_DB,check_same_thread=False)
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:22px 0 12px}
+.section-title{font-size:18px;font-weight:800;display:flex;align-items:center;gap:6px}
+.section-sub{font-size:12px;color:var(--muted)}
+.popular-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.popular-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer}
+.popular-card .cover{aspect-ratio:2/3}
+.popular-card .cardbody{padding:9px}
+.popular-card .title{font-size:13px}
+.all-title{margin-top:24px}
+.tag-filter{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px}
+.tag-filter .tag.active{background:#30303a;color:#fff}
 
-db.execute("""CREATE TABLE IF NOT EXISTS projects(
-project_id TEXT PRIMARY KEY,title TEXT NOT NULL,project_type TEXT NOT NULL DEFAULT 'comic',
-description TEXT NOT NULL DEFAULT '',cover_file_id TEXT,comment_link TEXT,tags TEXT NOT NULL DEFAULT '',author TEXT NOT NULL DEFAULT '',updated_at INTEGER NOT NULL)""")
+.home-layer{display:none}
+.home-layer.active{display:block}
+.catalog-layer{display:none}
+.catalog-layer.active{display:block}
+.catalog-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.catalog-back{border:0;background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:10px;font-weight:bold}
 
-db.execute("""CREATE TABLE IF NOT EXISTS chapters(
-id INTEGER PRIMARY KEY AUTOINCREMENT,project_id TEXT NOT NULL,chapter TEXT NOT NULL,
-decensored INTEGER NOT NULL DEFAULT 0,file_id TEXT NOT NULL,message_id INTEGER NOT NULL UNIQUE,updated_at INTEGER NOT NULL DEFAULT 0,content_type TEXT NOT NULL DEFAULT 'image')""")
-db.commit()
+.update-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.update-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s}
+.update-card:active{transform:scale(0.97)}
+.update-card .cover{aspect-ratio:2/3}
+.update-card .cardbody{padding:9px}
+.update-card .title{font-size:13px;line-height:1.2;margin-bottom:4px}
+.update-card .chapter-label{font-size:12px;color:var(--muted)}
 
-for col in ["tags TEXT NOT NULL DEFAULT ''", "author TEXT NOT NULL DEFAULT ''"]:
-    try:
-        db.execute(f"ALTER TABLE projects ADD COLUMN {col}")
-        db.commit()
-    except sqlite3.OperationalError:
-        pass
+@media(max-width:420px){
+  .update-strip{gap:7px}
+  .update-card .cardbody{padding:7px}
+  .popular-grid{gap:7px}
+  .popular-card .cardbody{padding:7px}
+}
 
-for col in ["updated_at INTEGER NOT NULL DEFAULT 0", "content_type TEXT NOT NULL DEFAULT 'image'"]:
-    try:
-        db.execute(f"ALTER TABLE chapters ADD COLUMN {col}")
-        db.commit()
-    except sqlite3.OperationalError:
-        pass
+.readerhead{position:sticky;top:0;z-index:25;padding:8px 8px;background:var(--bg)e6;backdrop-filter:blur(10px)}
+.reader-topbar{display:flex;align-items:center;gap:7px;width:100%;position:relative}
+.reader-info{flex:0 0 auto;border:0;border-radius:9px;padding:10px 11px;background:var(--panel2);color:var(--text);font-weight:700}
+.reader-chapter-wrap{flex:1;min-width:0;position:relative}
+.reader-chapter-btn{width:100%;border:2px solid #f4f4f5;border-radius:9px;padding:9px 12px;background:var(--panel2);color:var(--text);font-size:16px;font-weight:700;text-align:left}
+.reader-chapter-menu{position:absolute;left:0;top:calc(100% + 3px);width:min(310px,78vw);max-height:65vh;overflow-y:auto;background:#333338;border-radius:0 0 5px 5px;box-shadow:0 8px 20px rgba(0,0,0,.45);z-index:40}
+.reader-chapter-option{display:block;width:100%;border:0;background:transparent;color:#fff;text-align:left;padding:13px 20px;font-size:16px}
+.reader-chapter-option:active,.reader-chapter-option.current{background:#44444a}
+.reader-arrow{flex:0 0 42px;border:0;border-radius:9px;padding:10px 4px;background:var(--panel2);color:var(--text);font-size:18px;font-weight:700}
+.reader-arrow.disabled{opacity:.35;pointer-events:none}
+.readerpages{display:flex;flex-direction:column;align-items:center;gap:0;margin:0;padding:0;width:100vw;max-width:100vw;overflow-x:hidden}
+.readerpage{display:block;width:100vw;max-width:100vw;height:auto;margin:0;padding:0;background:#000;object-fit:contain}
+.readererror{padding:18px;text-align:center;border:1px solid #55333a;border-radius:12px;background:#24181b;margin-top:12px}
 
-def parse_project(text):
-    m=re.search(r"\[PROJECT\](.*?)\[/PROJECT\]",text or "",re.I|re.S)
-    if not m:return None
-    d={}
-    for line in m.group(1).splitlines():
-        if ":" in line:
-            k,v=line.split(":",1);d[k.strip().upper()]=v.strip()
-    if not d.get("ID") or not d.get("TITLE"):return None
-    return d
+.reader-nav{display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:14px 10px calc(14px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--border)}
+.reader-nav .navbtn{flex:1;min-width:0;text-align:center;border:0;border-radius:10px;padding:11px 8px;background:var(--panel2);color:var(--text);font-weight:700}
+.reader-nav-row{display:flex;align-items:center;gap:8px;width:100%}
+.reader-nav-row .navbtn{flex:1;min-width:0}
+.reader-nav-row .upbtn{flex:.72}
+.reader-nav .commentbtn{width:100%;margin-top:2px}
+.reader-nav .disabled{opacity:.35;pointer-events:none}
 
-def docx_to_html(file_bytes):
-    with zipfile.ZipFile(file_bytes) as docx:
-        xml_data = docx.read("word/document.xml")
-    root = ET.fromstring(xml_data)
-    ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
-    parts = []
+.reader-watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;pointer-events:none;text-align:center;line-height:1.15;opacity:.34;color:var(--text);text-shadow:0 1px 3px rgba(0,0,0,.75);white-space:nowrap;font-weight:700}
+.reader-watermark .wm-title{font-size:18px}
+.reader-watermark .wm-user{font-size:12px;font-weight:600;margin-top:3px}
+.novel-reader{width:min(820px,100%);margin:0 auto;padding:26px 22px 46px;background:var(--panel);color:var(--text);line-height:1.8;font-size:17px;user-select:text;-webkit-user-select:text}
+.novel-reader p{margin:0 0 1.1em}
+.novel-reader h1,.novel-reader h2,.novel-reader h3{line-height:1.35;margin:1.5em 0 .75em}
+.novel-reader blockquote{margin:1em 0;padding-left:16px;border-left:3px solid var(--border2);color:var(--muted)}
+.novel-loading{padding:40px 18px;text-align:center;color:var(--muted)}
+</style>
+</head>
+<body oncontextmenu="return false">
+<div id="gate" class="notice hidden"><div><h2>Akses Ditolak</h2><p class="muted" style="margin-top:8px">MVP Miniweb eksklusif hanya dapat dibuka melalui aplikasi Telegram di HP (Android & iOS).</p></div></div>
+
+<div id="home" class="wrap hidden">
+<header>
+  <div class="home-top">
+    <div>
+      <h1>MVP Miniweb</h1>
+      <p class="muted" style="margin-top:4px">Pusat bacaan komik dan novel MVP.</p>
+    </div>
+    <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema">Terang</button>
+  </div>
+</header>
+
+<input id="search" class="search" placeholder="🔍 Cari Judul atau Author...">
+
+<div id="homeLayer" class="home-layer active">
+  <div id="historySection" style="display:none;margin-bottom:12px">
+    <div class="section-head" style="margin-top:10px">
+      <div class="section-title">Terakhir Dibaca</div>
+    </div>
+    <div id="historyStrip" class="update-strip"></div>
+  </div>
+
+  <div class="home-filters">
+    <button class="type-btn active" onclick="openCatalog('comic')">COMIC</button>
+    <button class="type-btn" onclick="openCatalog('novel')">NOVEL</button>
+  </div>
+
+  <div class="section-head">
+    <div class="section-title">Latest Updates · Comic</div>
+  </div>
+  <div id="latestComic" class="update-strip"></div>
+
+  <div class="section-head">
+    <div class="section-title">Latest Updates · Novel</div>
+  </div>
+  <div id="latestNovel" class="update-strip"></div>
+</div>
+
+<div id="catalogLayer" class="catalog-layer">
+  <div class="catalog-head">
+    <button class="catalog-back" onclick="showHome()">← Beranda</button>
+    <h2 id="catalogTitle">Katalog</h2>
+  </div>
+
+  <div id="tagFilter" class="tag-filter"></div>
+
+  <div id="popularSection">
+    <div class="section-head" style="margin-top:10px">
+      <div class="section-title">Populer</div>
+    </div>
+    <div id="popularGrid" class="popular-grid"></div>
+  </div>
+
+  <div class="section-head all-title">
+    <div class="section-title">Semua Project</div>
+  </div>
+  <div id="grid" class="grid"></div>
+</div>
+</div>
+
+<div id="detail" class="wrap hidden">
+<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+<button class="btn" onclick="showHome()">Beranda</button>
+</div>
+<div id="detailContent"></div>
+</div>
+
+<div id="reader" class="wrap hidden">
+  <div id="readerContent" style="margin-top:18px"></div>
+  <div id="readerWatermark" class="reader-watermark hidden">
+    <!-- REVISI: Mengembalikan Crown pada Watermark -->
+    <div class="wm-title">👑 MVP</div>
+    <div id="readerWatermarkUser" class="wm-user"></div>
+  </div>
+</div>
+
+<script>
+const tg=window.Telegram?.WebApp;
+let catalog=[];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const API_BASE=location.origin;
+const fileUrl=fileId=>`${API_BASE}/api/file?file_id=${encodeURIComponent(fileId)}&init_data=${encodeURIComponent(tg?.initData||"")}`;
+
+let accessUser=null;
+let accessDenied=false;
+let currentType="comic";
+let currentTag="";
+
+const decBadge = d => Number(d) === 1 ? " [Decensored]" : Number(d) === 2 ? " [Uncensored]" : "";
+
+function accessHeaders(){
+  return {"X-Telegram-Init-Data":tg?.initData||""};
+}
+
+function showDenied(){
+  accessDenied=true;
+  $("home").classList.add("hidden");
+  $("detail").classList.add("hidden");
+  $("reader").classList.add("hidden");
+  $("gate").innerHTML=`<div><h2>Akses Ditolak</h2><p class="muted" style="margin-top:8px">MVP Miniweb eksklusif hanya dapat dibuka melalui aplikasi Telegram di HP (Android & iOS).</p></div>`;
+  $("gate").classList.remove("hidden");
+}
+
+async function requireAccess(){
+  if(accessDenied) return false;
+  const r=await fetch("/api/access",{cache:"no-store",headers:accessHeaders()});
+  const data=await r.json().catch(()=>({}));
+  if(r.status===403 || r.status===401){
+    accessDenied=true;
+    $("home").classList.add("hidden");
+    $("detail").classList.add("hidden");
+    $("reader").classList.add("hidden");
+    $("gate").innerHTML=`<div><h2>Akses Ditolak</h2><p class="muted" style="margin-top:8px">Anda bukan bagian dari MVP</p><button class="btn" style="margin-top:16px" onclick="tg?.close()">Kembali ke Telegram</button></div>`;
+    $("gate").classList.remove("hidden");
+    return false;
+  }
+  if(!r.ok){
+    throw new Error(data.reason || "access");
+  }
+  accessUser=data.user||null;
+  return true;
+}
+
+function deny(){ $("gate").classList.remove("hidden"); }
+
+function showHome(){
+  $("detail").classList.add("hidden");
+  $("reader").classList.add("hidden");
+  $("home").classList.remove("hidden");
+  $("homeLayer").classList.add("active");
+  $("catalogLayer").classList.remove("active");
+  $("search").value="";
+  currentTag="";
+  renderHome();
+}
+
+function normalizeType(p){
+  return String(p?.type||"comic").toLowerCase()==="novel" ? "novel" : "comic";
+}
+
+function allTypeProjects(type){
+  return catalog.filter(p=>normalizeType(p)===type);
+}
+
+function projectLatestChapter(p){
+  const chapters=Array.isArray(p?.chapters)?p.chapters:[];
+  let best=null;
+  chapters.forEach((c,i)=>{
+    const ts=Number(c.updated_at||0);
+    if(!best || ts>best.ts || (ts===best.ts && i>best.i)) best={chapter:c,i,ts};
+  });
+  return best;
+}
+
+function latestUpdates(type){
+  return allTypeProjects(type)
+    .map(p=>{
+      const latest=projectLatestChapter(p);
+      if(!latest || latest.chapter == null || String(latest.chapter.chapter||"").trim()==="") return null;
+      return {p,latest};
+    })
+    .filter(Boolean)
+    .sort((a,b)=>{
+      const ta=Number(a.latest.ts||0), tb=Number(b.latest.ts||0);
+      if(tb!==ta) return tb-ta;
+      return String(a.p.title||"").localeCompare(String(b.p.title||""),undefined,{sensitivity:"base"});
+    })
+    .slice(0,3);
+}
+
+function saveHistory(projectId, chapterName, decensored) {
+  try {
+    let hist = JSON.parse(localStorage.getItem("mvp_history") || "{}");
+    hist[projectId] = { chapter: chapterName, decensored: Number(decensored), ts: Date.now() };
+    localStorage.setItem("mvp_history", JSON.stringify(hist));
+  } catch(e) {}
+}
+
+function renderHistory() {
+  const target = $("historyStrip");
+  if(!target) return;
+  let hist = {};
+  try { hist = JSON.parse(localStorage.getItem("mvp_history") || "{}"); } catch(e){}
+
+  const recent = Object.keys(hist).map(pid => ({
+    pid, ...hist[pid]
+  })).sort((a,b) => b.ts - a.ts).slice(0, 3);
+
+  const validRecent = recent.map(h => {
+    const p = catalog.find(x => x.id === h.pid);
+    return p ? { p, hist: h } : null;
+  }).filter(Boolean);
+
+  if(validRecent.length > 0) {
+    $("historySection").style.display = "block";
+    target.innerHTML = validRecent.map(({p, hist}) => `
+      <article class="update-card" style="border:1px solid #4a90e2" onclick="openReader('${esc(p.id)}','${esc(hist.chapter)}',${hist.decensored})">
+        ${p.cover_file_id ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="cover"></div>`}
+        <div class="cardbody">
+          <div class="title">${esc(p.title)}</div>
+          <div class="chapter-label" style="color:#4a90e2;font-weight:bold;margin-top:6px">Lanjut Ch. ${esc(hist.chapter)}${decBadge(hist.decensored)}</div>
+        </div>
+      </article>`).join("");
+  } else {
+    $("historySection").style.display = "none";
+  }
+}
+
+function renderLatest(type,targetId){
+  const target=$(targetId);
+  const updates=latestUpdates(type);
+  target.innerHTML=updates.length ? updates.map(({p,latest})=>`
+    <article class="update-card" onclick="openReader('${esc(p.id)}','${esc(latest.chapter.chapter)}',${latest.chapter.decensored})">
+      ${p.cover_file_id
+        ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">`
+        : `<div class="cover"></div>`}
+      <div class="cardbody">
+        <div class="title">${esc(p.title)}</div>
+        <div class="chapter-label">Chapter ${esc(latest.chapter.chapter)}${decBadge(latest.chapter.decensored)}</div>
+      </div>
+    </article>`).join("")
+    : "<p class='muted'>Belum ada update.</p>";
+}
+
+function renderHome(){
+  renderHistory();
+  renderLatest("comic","latestComic");
+  renderLatest("novel","latestNovel");
+}
+
+function getFilteredProjects(){
+  const q = String($("search")?.value||"").trim().toLowerCase();
+  const baseList = q ? catalog : allTypeProjects(currentType);
+
+  return baseList.filter(p=>{
+    if(currentTag && !(Array.isArray(p.tags)?p.tags:[]).some(t=>String(t).toLowerCase()===currentTag)) return false;
+    if(q) {
+      const t = String(p.title||"").toLowerCase();
+      const a = String(p.author||"").toLowerCase();
+      if(!t.includes(q) && !a.includes(q)) return false;
+    }
+    return true;
+  }).sort((a,b)=>String(a.title||"").localeCompare(String(b.title||""),undefined,{sensitivity:"base"}));
+}
+
+$("search").oninput = () => {
+  const val = $("search").value.trim();
+  if(val !== "") {
+    $("homeLayer").classList.remove("active");
+    $("catalogLayer").classList.add("active");
+    $("catalogTitle").textContent = "Hasil Pencarian";
+    $("popularSection").style.display = "none"; 
+    renderCatalog(false);
+  } else {
+    if(!currentTag) {
+      $("catalogLayer").classList.remove("active");
+      $("homeLayer").classList.add("active");
+    } else {
+      $("catalogTitle").textContent = currentType === "novel" ? "Novel" : "Comic";
+    }
+    $("popularSection").style.display = "block";
+    renderCatalog();
+  }
+};
+
+function renderCards(list, targetId, popular=false){
+  const target=$(targetId);
+  if(!target)return;
+
+  if(!popular){
+    const groups={};
+    list.forEach(p=>{
+      const letter=(String(p.title||"").trim().charAt(0)||"#").toUpperCase();
+      const key=/[A-Z]/.test(letter)?letter:"#";
+      (groups[key] ||= []).push(p);
+    });
+
+    const letters=Object.keys(groups).sort((a,b)=>{
+      if(a==="#") return 1;
+      if(b==="#") return -1;
+      return a.localeCompare(b);
+    });
+
+    target.innerHTML=letters.length
+      ? letters.map(letter=>`
+          <section style="margin-bottom:18px">
+            <div style="font-size:14px;font-weight:800;color:var(--muted);margin-bottom:7px">${esc(letter)}</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              ${groups[letter].map(p=>`
+                <button onclick="openProject('${esc(p.id)}')"
+                  style="width:100%;text-align:left;border:1px solid var(--border);border-radius:10px;padding:11px 13px;background:var(--panel);color:var(--text);font-size:15px;font-weight:650">
+                  ${esc(p.title)}
+                </button>`).join("")}
+            </div>
+          </section>`).join("")
+      : "<p class='muted'>Tidak ditemukan.</p>";
+    return;
+  }
+
+  target.innerHTML=list.length?list.map(p=>`
+    <article class="popular-card" onclick="openProject('${esc(p.id)}')">
+      ${p.cover_file_id
+        ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">`
+        : `<div class="cover"></div>`}
+      <div class="cardbody"><div class="title">${esc(p.title)}</div></div>
+    </article>`).join("")
+    : "<p class='muted'>Belum ada PJ.</p>";
+}
+
+function renderTagFilter(list){
+  const tags=[...new Set(list.flatMap(p=>Array.isArray(p.tags)?p.tags:[]).map(t=>String(t).trim()).filter(t => t && isNaN(Number(t))))]
+    .sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:"base"}));
+  $("tagFilter").innerHTML=tags.length
+    ? tags.map(t=>`<button class="tag ${currentTag===t.toLowerCase()?"active":""}" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")
+    : "";
+}
+
+function openCatalog(type){
+  currentType=type==="novel"?"novel":"comic";
+  currentTag="";
+  $("homeLayer").classList.remove("active");
+  $("catalogLayer").classList.add("active");
+  $("catalogTitle").textContent=currentType==="novel"?"Katalog Novel":"Katalog Comic";
+  $("popularSection").style.display = "block";
+  $("search").value="";
+  renderCatalog();
+}
+
+function renderCatalog(withPopular = true){
+  const list=getFilteredProjects();
+  if(withPopular) renderCards(list.slice(0,3),"popularGrid",true);
+  renderCards(list,"grid",false);
+  
+  if($("search").value.trim() !== "") {
+    $("tagFilter").innerHTML = "";
+  } else {
+    renderTagFilter(allTypeProjects(currentType));
+  }
+}
+
+function filterByTag(tag){
+  const q=String(tag||"").toLowerCase();
+  currentTag=currentTag===q?"":q;
+  $("homeLayer").classList.remove("active");
+  $("catalogLayer").classList.add("active");
+  renderCatalog();
+}
+
+async function openProject(id){
+  if(!(await requireAccess())) return; 
+  const p=catalog.find(x=>x.id===id); if(!p)return;
+  $("home").classList.add("hidden"); $("detail").classList.remove("hidden");
+  
+  const cover=p.cover_file_id
+    ? `<img class="detailcover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" onerror="this.style.display='none'">`
+    : "";
+  
+  const authorInfo=p.author ? `<div style="margin-top:6px;font-size:14px;color:var(--muted)"><b>Author/Artist:</b> ${esc(p.author)}</div>` : "";
+
+  const validTags = (Array.isArray(p.tags) ? p.tags : []).filter(t => t && isNaN(Number(t)));
+  const tags=validTags.length
+    ? `<div class="tags">${validTags.map(t=>`<button class="tag" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
+    : "";
     
-    for p in root.findall(".//w:p", ns):
-        align_style = ""
-        pPr = p.find(".//w:pPr", ns)
-        if pPr is not None:
-            jc = pPr.find(".//w:jc", ns)
-            if jc is not None:
-                val = jc.get(f"{{{ns['w']}}}val")
-                if val == "both":
-                    align_style = ' style="text-align: justify;"'
-                elif val in ["center", "right"]:
-                    align_style = f' style="text-align: {val};"'
+  $("detailContent").innerHTML=`
+    ${cover}
+    <h1 style="margin-top:16px">${esc(p.title)}</h1>
+    ${authorInfo}
+    ${tags}
+    <p class="muted" style="margin-top:12px;white-space:pre-line">${esc(p.description)}</p>
+    <h2 style="margin-top:24px">Chapters</h2>
+    <div class="chapters">${(p.chapters||[]).map((c,i)=>`
+      <div class="chapter"><span>Chapter ${esc(c.chapter)} ${decBadge(c.decensored)}</span>
+      <button class="btn" onclick="openReader('${esc(p.id)}','${esc(c.chapter)}',${c.decensored})">Baca</button></div>`).join("")}</div>`;
+}
 
-        runs = []
-        for r in p.findall(".//w:r", ns):
-            t_nodes = r.findall(".//w:t", ns)
-            if not t_nodes:
-                continue
-            text = "".join(t.text or "" for t in t_nodes)
-            if not text:
-                continue
-            text = esc_html(text)
-            rPr = r.find(".//w:rPr", ns)
-            if rPr is not None:
-                if rPr.find(".//w:b", ns) is not None:
-                    text = f"<strong>{text}</strong>"
-                if rPr.find(".//w:i", ns) is not None:
-                    text = f"<em>{text}</em>"
-            runs.append(text)
+function getTelegramIdentity(){
+  const u=tg?.initDataUnsafe?.user;
+  if(!u) return {id:"", username:""};
+  return {
+    id:String(u.id||""),
+    username:u.username ? `@${u.username}` : ""
+  };
+}
 
-        para_html = "".join(runs).strip()
-        if para_html:
-            parts.append(f"<p{align_style}>{para_html}</p>")
-    return "".join(parts)
+function showReaderWatermark(){
+  const u=getTelegramIdentity();
+  $("readerWatermarkUser").textContent=[u.id,u.username].filter(Boolean).join(" | ");
+  $("readerWatermark").classList.remove("hidden");
+}
 
-def esc_html(value):
-    return (str(value or "")
-            .replace("&","&amp;")
-            .replace("<","&lt;")
-            .replace(">","&gt;")
-            .replace('"',"&quot;")
-            .replace("'","&#39;"))
+function hideReaderWatermark(){
+  $("readerWatermark").classList.add("hidden");
+}
 
-async def sync_catalog():
-    if not LIBRARY_SYNC_URL or not LIBRARY_SYNC_SECRET:
-        log.warning("Library sync is not configured.")
-        return
-    projects=[]
-    for row in db.execute("SELECT project_id,title,project_type,description,cover_file_id,comment_link,tags,author FROM projects ORDER BY title COLLATE NOCASE"):
-        pid,title,ptype,desc,cover,comment,tags,author=row
-        chapter_rows = db.execute("""
-            SELECT chapter, decensored, file_id, updated_at, content_type
-            FROM chapters WHERE project_id=? ORDER BY id
-        """, (pid,)).fetchall()
-        grouped = {}
-        for ch, dec, fid, updated_at, content_type in chapter_rows:
-            key = (ch, int(dec))
-            grouped.setdefault(key, []).append((fid, updated_at, content_type))
-        chapters = [
-            {
-                "chapter": ch,
-                "decensored": dec,
-                "pages": len(items),
-                "file_ids": [fid for fid, _, _ in items],
-                "updated_at": max([ts for _, ts, _ in items] or [0]),
-                "content_type": items[0][2] if items else "image",
-            }
-            for (ch, dec), items in grouped.items()
-        ]
-        projects.append({"id":pid,"title":title,"type":ptype,"description":desc,
-                         "cover_file_id":cover,"comment_link":comment,
-                         "tags":[t.strip() for t in (tags or "").split(",") if t.strip()],
-                         "author":author, "chapters":chapters})
-    try:
-        async with aiohttp.ClientSession() as s:
-            async with s.put(LIBRARY_SYNC_URL+"/api/admin/catalog",
-                headers={"X-Library-Secret":LIBRARY_SYNC_SECRET},
-                json=projects,timeout=20) as r:
-                if r.status >= 300:
-                    log.error("Library sync failed: %s %s",r.status,await r.text())
-                else:
-                    log.info("Library catalog synced: %s projects",len(projects))
-    except Exception:
-        log.exception("Library catalog sync error")
+function chapterIndex(projectId, chapterName, decensored){
+  const p=catalog.find(x=>x.id===projectId);
+  if(!p) return -1;
+  return (p.chapters||[]).findIndex(c=>String(c.chapter)===String(chapterName) && Number(c.decensored)===Number(decensored));
+}
 
+async function openChapter(projectId, index){
+  if(!(await requireAccess())) return;
+  const p=catalog.find(x=>x.id===projectId);
+  if(!p || !p.chapters?.[index]) return;
+  const c=p.chapters[index];
+  openReader(projectId, c.chapter, Number(c.decensored));
+}
 
-async def index_core(update,context):
-    msg=update.channel_post
-    if not msg or msg.chat.id != MVP_CORE_ID:return
-    cap=msg.caption or ""
-    body=msg.text or cap
+function chapterCommentLink(p){
+  return p?.comment_link || "";
+}
+
+async function openNovelReader(projectId, idx){
+  const p=catalog.find(x=>x.id===projectId);
+  const c=p?.chapters?.[idx];
+  if(!c) return;
+
+  saveHistory(projectId, c.chapter, Number(c.decensored));
+
+  $("home").classList.add("hidden");
+  $("detail").classList.add("hidden");
+  $("reader").classList.remove("hidden");
+  showReaderWatermark();
+
+  $("readerContent").innerHTML=`
+    <div class="readerhead">
+      <div class="reader-topbar">
+        <button class="reader-info" onclick="readerInfo('${esc(p.id)}')">INFO »</button>
+
+        <div class="reader-chapter-wrap">
+          <button id="readerChapterButton" class="reader-chapter-btn" onclick="toggleChapterMenu(event)">
+            Ch.${esc(c.chapter)}${decBadge(c.decensored)}
+          </button>
+          <div id="readerChapterMenu" class="reader-chapter-menu hidden">
+            ${(p.chapters||[]).map((ch,i)=>`
+              <button class="reader-chapter-option ${i===idx?"current":""}"
+                onclick="selectReaderChapter('${esc(p.id)}',${i})">
+                Ch.${esc(ch.chapter)}${decBadge(ch.decensored)}
+              </button>`).join("")}
+          </div>
+        </div>
+
+        <button class="reader-arrow ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
+          onclick="openChapter('${esc(p.id)}',${idx-1})">←</button>
+        <button class="reader-arrow ${idx>=(p.chapters||[]).length-1?"disabled":""}" ${idx>=(p.chapters||[]).length-1?"disabled":""}
+          onclick="openChapter('${esc(p.id)}',${idx+1})">→</button>
+      </div>
+    </div>
+
+    <div id="readerPages" class="readerpages"></div>
+    <div id="readerNav" class="reader-nav"></div>`;
+
+  $("readerPages").innerHTML=`<div class="novel-loading">Memuat chapter…</div>`;
+
+  try{
+    const r=await fetch(
+      `/api/novel?project_id=${encodeURIComponent(projectId)}&chapter=${encodeURIComponent(c.chapter)}&decensored=${c.decensored}`,
+      {cache:"no-store",headers:accessHeaders()}
+    );
+    if(!r.ok) throw new Error("novel");
+
+    const data=await r.json();
+    $("readerPages").innerHTML=`
+      <article class="novel-reader">
+        ${data.html || "<p class='muted'>Chapter kosong.</p>"}
+      </article>`;
+  }catch(e){
+    $("readerPages").innerHTML=
+      `<div class="readererror">Gagal memuat chapter novel.</div>`;
+  }
+
+  const commentUrl=chapterCommentLink(p);
+  $("readerNav").innerHTML=`
+    <div class="reader-nav-row">
+      <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
+        onclick="openChapter('${esc(p.id)}',${idx-1})">« Prev</button>
+      <button class="navbtn upbtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Up</button>
+      <button class="navbtn ${idx>=(p.chapters||[]).length-1?"disabled":""}" ${idx>=(p.chapters||[]).length-1?"disabled":""}
+        onclick="openChapter('${esc(p.id)}',${idx+1})">Next »</button>
+    </div>
+    <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
+      ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
+      Tulis Komentar
+    </button>`;
+}
+
+async function openReader(projectId, chapterName, decensored){
+  if(!(await requireAccess())) return;
+  
+  const p=catalog.find(x=>x.id===projectId);
+  if(!p) return;
+  const idx=chapterIndex(projectId, chapterName, decensored);
+  const c=p.chapters[idx];
+  if(!c) return;
+
+  const platform = String(tg?.platform || "").toLowerCase();
+  if (Number(c.decensored) === 1 && !["android", "android_x"].includes(platform)) {
+      alert("Akses Ditolak!\n\nChapter [Decensored] ini eksklusif hanya dapat dibuka melalui aplikasi Telegram di Android.");
+      return;
+  }
+
+  if(c?.content_type==="docx"){
+    await openNovelReader(projectId, idx);
+    return;
+  }
+
+  if(!Array.isArray(c.file_ids) || !c.file_ids.length){
+    alert("Halaman chapter belum tersedia.");
+    return;
+  }
+
+  saveHistory(projectId, c.chapter, Number(c.decensored));
+
+  $("home").classList.add("hidden");
+  $("detail").classList.add("hidden");
+  $("reader").classList.remove("hidden");
+  showReaderWatermark();
+
+  $("readerContent").innerHTML=`
+    <div class="readerhead">
+      <div class="reader-topbar">
+        <button class="reader-info" onclick="readerInfo('${esc(p.id)}')">INFO »</button>
+        <div class="reader-chapter-wrap">
+          <button id="readerChapterButton" class="reader-chapter-btn" onclick="toggleChapterMenu(event)">
+            Ch.${esc(c.chapter)}${decBadge(c.decensored)}
+          </button>
+          <div id="readerChapterMenu" class="reader-chapter-menu hidden">
+            ${(p.chapters||[]).map((ch,i)=>`
+              <button class="reader-chapter-option ${i===idx?"current":""}" onclick="selectReaderChapter('${esc(p.id)}',${i})">
+                Ch.${esc(ch.chapter)}${decBadge(ch.decensored)}
+              </button>`).join("")}
+          </div>
+        </div>
+        <button class="reader-arrow ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""} onclick="openChapter('${esc(p.id)}',${idx-1})">←</button>
+        <button class="reader-arrow ${idx>=(p.chapters||[]).length-1?"disabled":""}" ${idx>=(p.chapters||[]).length-1?"disabled":""} onclick="openChapter('${esc(p.id)}',${idx+1})">→</button>
+      </div>
+    </div>
+    <div id="readerPages" class="readerpages"></div>
+    <div id="readerNav" class="reader-nav"></div>`;
+
+  const pages=$("readerPages");
+  const commentUrl=chapterCommentLink(p);
+
+  $("readerNav").innerHTML=`
+    <div class="reader-nav-row">
+      <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
+        onclick="openChapter('${esc(p.id)}',${idx-1})">« Prev</button>
+      <button class="navbtn upbtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Up</button>
+      <button class="navbtn ${idx>=(p.chapters||[]).length-1?"disabled":""}" ${idx>=(p.chapters||[]).length-1?"disabled":""}
+        onclick="openChapter('${esc(p.id)}',${idx+1})">Next »</button>
+    </div>
+    <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
+      ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
+      Tulis Komentar
+    </button>
+  `;
+
+  c.file_ids.forEach((fid,i)=>{
+    const img=document.createElement("img");
+    img.className="readerpage";
+    img.alt=`${p.title} Chapter ${chapterName} Page ${i+1}`;
+    img.loading=i<2?"eager":"lazy";
+    img.src=fileUrl(fid);
+    img.onerror=()=>{
+      const err=document.createElement("div");
+      err.className="readererror";
+      err.textContent=`Gagal memuat halaman ${i+1}.`;
+      img.replaceWith(err);
+    };
+    pages.appendChild(img);
+  });
+}
+
+function toggleChapterMenu(e){
+  e?.stopPropagation();
+  const menu=$("readerChapterMenu");
+  if(menu) menu.classList.toggle("hidden");
+}
+
+function selectReaderChapter(projectId,index){
+  const p=catalog.find(x=>x.id===projectId);
+  if(!p || !p.chapters?.[index])return;
+  $("readerChapterMenu")?.classList.add("hidden");
+  const c=p.chapters[index];
+  openReader(projectId,c.chapter,Number(c.decensored));
+}
+
+document.addEventListener("click",e=>{
+  const menu=$("readerChapterMenu");
+  const wrap=menu?.parentElement;
+  if(menu && wrap && !wrap.contains(e.target)) menu.classList.add("hidden");
+});
+
+function readerInfo(projectId){
+  hideReaderWatermark();
+  $("reader").classList.add("hidden");
+  openProject(projectId);
+}
+function closeReader(){
+  hideReaderWatermark();
+  $("reader").classList.add("hidden");
+  $("detail").classList.remove("hidden");
+}
+
+function applyTheme(theme){
+  const light=theme==="light";
+  document.body.classList.toggle("light",light);
+  const btn=$("themeToggle");
+  if(btn) btn.textContent=light?"🌙":"☀️";
+  try{localStorage.setItem("mvp_theme",light?"light":"dark")}catch(e){}
+}
+
+function toggleTheme(){
+  applyTheme(document.body.classList.contains("light")?"dark":"light");
+}
+
+(function initTheme(){
+  let theme="dark";
+  try{theme=localStorage.getItem("mvp_theme")||"dark"}catch(e){}
+  applyTheme(theme);
+})(); 
+
+// FUNGSI INIT GLOBAL: Langsung blokir PC/Web di awal
+(async()=>{
+  if(!tg){showDenied();return;}
+  tg.ready();tg.expand();
+  
+  const platform=String(tg.platform||"").toLowerCase();
+  if(!tg.initData || !["android","android_x","ios"].includes(platform)){
+    showDenied();
+    return;
+  }
+  
+  try{
+    if(!(await requireAccess())) return;
+    const r=await fetch("/api/catalog",{cache:"no-store",headers:accessHeaders()});
+    if(r.status===403 || r.status===401){showDenied();return;}
+    if(!r.ok)throw new Error("catalog");
+    catalog=await r.json();
+    $("home").classList.remove("hidden"); 
     
-    m_del_pj = re.match(r"^DELETE_PJ:\s*([A-Za-z0-9_.-]+)$", body.strip(), re.I)
-    if m_del_pj:
-        pid = m_del_pj.group(1).lower()
-        db.execute("DELETE FROM projects WHERE project_id=?", (pid,))
-        db.execute("DELETE FROM chapters WHERE project_id=?", (pid,))
-        db.commit()
-        log.info(f"Project dihapus: {pid}")
-        await sync_catalog()
-        return
+    renderHome();
 
-    m_del_ch = re.match(r"^DELETE_CH:\s*([A-Za-z0-9_.-]+)\s*\|\s*([^\s|]+)$", body.strip(), re.I)
-    if m_del_ch:
-        pid = m_del_ch.group(1).lower()
-        ch = m_del_ch.group(2)
-        db.execute("DELETE FROM chapters WHERE project_id=? AND chapter=?", (pid, ch))
-        db.commit()
-        log.info(f"Chapter dihapus: {pid} | {ch}")
-        await sync_catalog()
-        return
-    
-    p=parse_project(body)
-    if p:
-        db.execute("""INSERT INTO projects VALUES(?,?,?,?,?,?,?,?,?)
-        ON CONFLICT(project_id) DO UPDATE SET title=excluded.title,
-        project_type=excluded.project_type,description=excluded.description,
-        comment_link=excluded.comment_link,tags=excluded.tags,author=excluded.author,updated_at=excluded.updated_at""",
-        (p["ID"].lower(),p["TITLE"],p.get("TYPE","comic"),p.get("DESCRIPTION",""),
-         None,p.get("COMMENT",""),p.get("TAGS",""),p.get("AUTHOR",""),int(time.time())))
-        db.commit();await sync_catalog();return
-        
-    m=re.match(r"^COVER:\s*([A-Za-z0-9_.-]+)$",cap,re.I)
-    if m and msg.photo:
-        db.execute("UPDATE projects SET cover_file_id=?,updated_at=? WHERE project_id=?",
-                   (msg.photo[-1].file_id,int(time.time()),m.group(1).lower()))
-        db.commit();await sync_catalog();return
-    
-    m=re.search(r"PJ:\s*([A-Za-z0-9_.-]+).*?CHAPTER:\s*([^\s|]+).*?(DECENSORED|UNCENSORED):\s*([01])",cap,re.I|re.S)
-    if m:
-        pid = m.group(1).lower()
-        ch = m.group(2)
-        c_type_meta = m.group(3).upper()
-        val = int(m.group(4))
-        
-        dec = 0
-        if val == 1:
-            dec = 1 if c_type_meta == "DECENSORED" else 2
+    // TAMBAHAN FITUR DEEP LINK UNTUK BC CHANNEL
+    const startParam = tg?.initDataUnsafe?.start_param;
+    if (startParam) {
+      const p = catalog.find(x => x.id === startParam);
+      if (p) {
+        openProject(startParam); // Otomatis lompat ke halaman Info Project!
+      }
+    }
 
-        fid=None
-        content_type="image"
-        
-        if msg.photo:
-            fid=msg.photo[-1].file_id
-            content_type="image"
-        elif msg.document:
-            mime=(msg.document.mime_type or "").lower()
-            name=(msg.document.file_name or "").lower()
-            if mime=="application/vnd.openxmlformats-officedocument.wordprocessingml.document" or name.endswith(".docx"):
-                fid=msg.document.file_id
-                content_type="docx"
-
-        if fid:
-            if content_type == "docx":
-                log.info(f"Mengonversi novel {pid} chapter {ch}...")
-                try:
-                    file = await context.bot.get_file(fid)
-                    byte_array = await file.download_as_bytearray()
-                    html_content = docx_to_html(io.BytesIO(byte_array))
-                    async with aiohttp.ClientSession() as s:
-                        async with s.put(
-                            LIBRARY_SYNC_URL + "/api/admin/novel",
-                            headers={"X-Library-Secret": LIBRARY_SYNC_SECRET},
-                            json={"project_id": pid, "chapter": ch, "decensored": dec, "html": html_content},
-                            timeout=30
-                        ) as r:
-                            if r.status >= 300:
-                                log.error("Novel push failed: %s", await r.text())
-                                return
-                except Exception:
-                    log.exception("Gagal konversi dan push novel ke server")
-                    return
-
-            db.execute("""INSERT OR IGNORE INTO chapters(
-                project_id,chapter,decensored,file_id,message_id,updated_at,content_type
-            ) VALUES(?,?,?,?,?,?,?)""",(
-                pid, ch, dec, fid, msg.message_id,
-                int(msg.date.timestamp()) if msg.date else int(time.time()),
-                content_type
-            ))
-            db.commit()
-            await sync_catalog()
-            return
-
-logging.basicConfig(
-    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-    level=logging.INFO,
-)
-log = logging.getLogger("MVP_Zhenya")
-
-async def is_mvp_member(bot, user_id: int) -> bool:
-    valid = {ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER}
-    try:
-        channel = await bot.get_chat_member(CHANNEL_ID, user_id)
-        lounge = await bot.get_chat_member(DISCUSSION_ID, user_id)
-        return (channel.status in valid and lounge.status in valid)
-    except Exception:
-        log.exception("Membership check failed for user %s", user_id)
-        return False
-
-async def set_menu(context: ContextTypes.DEFAULT_TYPE, chat_id: int, member: bool):
-    commands = ([BotCommand("start", "Buka Library")] if member else [BotCommand("start", "Mulai")])
-    await context.bot.set_my_commands(commands, scope=BotCommandScopeChat(chat_id=chat_id))
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.effective_user or not update.effective_chat:
-        return
-    user = update.effective_user
-    chat_id = update.effective_chat.id
-    log.info("/start from user=%s chat=%s", user.id, chat_id)
-    if update.effective_chat.type != "private":
-        return
-        
-    member = await is_mvp_member(context.bot, user.id)
-    await set_menu(context, chat_id, member)
-    
-    # REVISI: Pesan Penolakan jika User bukan member Channel/Grup Diskusi
-    if not member:
-        await update.effective_message.reply_text("🔒 Akses Ditolak.\nAnda belum bergabung dengan Channel dan Grup Diskusi MVP.")
-        return
-        
-    # REVISI: Mengubah sambutan Bot Zhenya
-    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Buka Miniweb", web_app=WebAppInfo(url=LIBRARY_URL))]])
-    await update.effective_message.reply_text("👑 MVP Miniweb\n\nTap tombol di bawah ini untuk membuka pusat bacaan MVP.", reply_markup=keyboard, protect_content=True)
-
-async def post_init(application: Application):
-    await application.bot.set_my_commands([BotCommand("start", "Mulai")])
-
-def main():
-    if not TOKEN: raise RuntimeError("Zhenya_BOT_TOKEN tidak ditemukan di .env")
-    log.info("MVP_Zhenya starting...")
-    app = Application.builder().token(TOKEN).post_init(post_init).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST, index_core))
-    log.info("MVP_Zhenya polling...")
-    app.run_polling()
-
-if __name__ == "__main__":
-    main()
+  }catch(e){
+    if(accessDenied) return;
+    $("home").classList.remove("hidden");
+    $("grid").innerHTML="<p class='muted'>Library belum tersambung ke katalog.</p>";
+  }
+})();
+</script>
+</body>
+</html>
