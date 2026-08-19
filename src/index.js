@@ -13,7 +13,6 @@ function cors(headers = {}) {
   };
 }
 
-
 async function verifyTelegramInitData(initData, botToken) {
   if (!initData || !botToken) return null;
 
@@ -30,9 +29,6 @@ async function verifyTelegramInitData(initData, botToken) {
     .map(([k, v]) => `${k}=${v}`)
     .join("\n");
 
-  // Telegram Web App validation:
-  // secret_key = HMAC_SHA256(key="WebAppData", message=bot_token)
-  // hash       = HMAC_SHA256(key=secret_key, message=data_check_string)
   const webAppKey = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode("WebAppData"),
@@ -82,16 +78,13 @@ async function checkAccess(request, env) {
   const user = await verifyTelegramInitData(initData, env.TELEGRAM_BOT_TOKEN);
   if (!user?.id) return {ok: false, code: 401};
 
-  // 1. Tulis langsung ID Grup dan Channel di sini sebagai fallback
   const CHANNEL_ID = env.MVP_CHANNEL_ID || "-1004459399775";
   const DISCUSSION_ID = env.MVP_DISCUSSION_ID || "-1003923062839";
 
-  // 2. Ganti env.MVP_CHANNEL_ID dengan variabel baru di atas
   if (!CHANNEL_ID || !DISCUSSION_ID) {
     return {ok: false, code: 503};
   }
 
-  // 3. Gunakan CHANNEL_ID dan DISCUSSION_ID untuk mengecek status
   const [mvp, discussion] = await Promise.all([
     telegramMemberStatus(env, CHANNEL_ID, user.id),
     telegramMemberStatus(env, DISCUSSION_ID, user.id)
@@ -131,8 +124,6 @@ export default {
       });
     }
 
-    // Protect catalog access so an old Mini App tab cannot keep loading
-    // library data after membership is lost.
     if (url.pathname === "/api/catalog" && request.method === "GET") {
       const access = await checkAccess(request, env);
       if (!access.ok) {
@@ -160,8 +151,40 @@ export default {
       return json({ok: true, count: body.length});
     }
 
-    // Proxies Telegram-hosted images through the Worker.
-    // The bot token stays in Cloudflare Secret and is never sent to the browser.
+    // TAMBAHAN: Endpoint Menerima Text HTML Novel dari Bot
+    if (url.pathname === "/api/admin/novel" && request.method === "PUT") {
+      const secret = request.headers.get("x-library-secret");
+      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
+        return json({error: "unauthorized"}, 401);
+      }
+
+      const body = await request.json();
+      const key = `novel_${body.project_id}_${body.chapter}_${body.decensored}`;
+      await env.LIBRARY.put(key, JSON.stringify({html: body.html}));
+      return json({ok: true});
+    }
+
+    // TAMBAHAN: Endpoint Mengirim Text HTML Novel ke Mini Web Reader
+    if (url.pathname === "/api/novel" && request.method === "GET") {
+      const access = await checkAccess(request, env);
+      if (!access.ok) {
+        return json({ok: false, code: access.code}, access.code);
+      }
+
+      const pid = url.searchParams.get("project_id");
+      const ch = url.searchParams.get("chapter");
+      const dec = url.searchParams.get("decensored");
+      
+      const key = `novel_${pid}_${ch}_${dec}`;
+      const data = await env.LIBRARY.get(key, "json");
+      
+      if (!data) return json({error: "not found"}, 404);
+
+      return new Response(JSON.stringify(data), {
+        headers: cors({"content-type": "application/json; charset=utf-8"})
+      });
+    }
+
     if (url.pathname === "/api/file" && request.method === "GET") {
       const access = await checkAccess(request, env);
       if (!access.ok) {
