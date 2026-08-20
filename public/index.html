@@ -13,20 +13,20 @@
 :root{
   --bg:#0f0f12; --text:#f4f4f5; --muted:#a6a6b0; 
   --panel:#19191f; --panel2:#24242a; --border:#2b2b31; --border2:#3a3a43; --input:#19191f;
-  --btn-bg: #30303a; --btn-text: #ffffff; /* Warna Tombol Mode Gelap */
-  --overlay-bg: rgba(25, 25, 31, 0.65); /* Kaca Transparan Mode Gelap */
+  --btn-bg: #30303a; --btn-text: #ffffff; 
+  --overlay-bg: rgba(25, 25, 31, 0.65); 
 }
 
 body.light{
   --bg:#f5f5f7; --text:#17171b; --muted:#666670; 
   --panel:#fff; --panel2:#e9e9ee; --border:#d7d7de; --border2:#c5c5ce; --input:#fff;
-  --btn-bg: #d1d1d6; --btn-text: #17171b; /* Warna Tombol Mode Terang */
-  --overlay-bg: rgba(255, 255, 255, 0.70); /* Kaca Transparan Mode Terang */
+  --btn-bg: #d1d1d6; --btn-text: #17171b; 
+  --overlay-bg: rgba(255, 255, 255, 0.70); 
 }
 
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden;transition:background .2s,color .2s}
 
-/* ANTI-COPY CSS (Sudah dilonggarkan agar Pinch-to-Zoom berfungsi) */
+/* ANTI-COPY CSS */
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
 img{-webkit-user-drag:none;-webkit-touch-callout:none;pointer-events:auto;} 
 
@@ -41,7 +41,6 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .card:active{transform:scale(0.97)}
 .cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--panel2)}.cardbody{padding:12px}.title{font-weight:700;line-height:1.2;font-size:15px}
 
-/* TOMBOL DINAMIS */
 .btn{display:inline-block;border:0;border-radius:10px;padding:9px 12px;background:var(--btn-bg);color:var(--btn-text);text-decoration:none;pointer-events:auto;font-weight:600;}
 .back{border:0;background:var(--btn-bg);color:var(--btn-text);padding:9px 12px;border-radius:10px;pointer-events:auto;font-weight:bold;}
 .tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
@@ -89,15 +88,13 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
   .popular-card .cardbody{padding:7px}
 }
 
-/* =========================================
-   UI BARU: OVERLAY KECIL & TRANSPARAN
-   ========================================= */
+/* OVERLAY KECIL & TRANSPARAN */
 .ui-hidden .readerhead { transform: translateY(-120%); }
 .ui-hidden .reader-nav { transform: translateY(120%); }
 
 .readerhead{
   position:fixed; top:0; left:0; width:100%; z-index:50;
-  padding:4px 6px; /* Diperkecil lagi */
+  padding:4px 6px; 
   background:var(--overlay-bg); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
   border-bottom:1px solid var(--border);
   transition: transform 0.3s ease-in-out;
@@ -115,7 +112,7 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .reader-nav{
   position:fixed; bottom:0; left:0; width:100%; z-index:50;
   display:flex; flex-direction:column; align-items:stretch; gap:4px;
-  padding:6px 6px calc(6px + env(safe-area-inset-bottom)); /* Diperkecil lagi */
+  padding:6px 6px calc(6px + env(safe-area-inset-bottom)); 
   background:var(--overlay-bg); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
   border-top:1px solid var(--border);
   transition: transform 0.3s ease-in-out;
@@ -132,7 +129,6 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
   padding-top:40px; padding-bottom:90px; min-height:100vh;
   width:100vw;max-width:100vw;overflow-x:hidden;
 }
-/* PAKSA ZOOM KOMIK AGAR BERFUNGSI */
 .readerpage{display:block;width:100vw;max-width:100vw;height:auto;margin:0;padding:0;background:#000;object-fit:contain; touch-action: pan-x pan-y pinch-zoom;}
 
 .readererror{padding:18px;text-align:center;border:1px solid #55333a;border-radius:12px;background:#24181b;margin-top:12px}
@@ -146,7 +142,6 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .novel-reader blockquote{margin:1em 0;padding-left:16px;border-left:3px solid var(--border2);color:var(--muted)}
 .novel-loading{padding:40px 18px;text-align:center;color:var(--muted)}
 
-/* PROGRESS BAR */
 #progressContainer{position:fixed;top:0;left:0;width:100vw;height:4px;background:rgba(0,0,0,0.3);z-index:9999;display:none;pointer-events:none;}
 #progressBar{height:100%;background:#f39c12;width:0%;transition:width 0.1s ease-out;}
 </style>
@@ -156,7 +151,6 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 <div id="progressContainer"><div id="progressBar"></div></div>
 
 <script>
-  // Mencegah klik kanan khusus di gambar dan teks (tapi input search tetap bisa)
   document.addEventListener('contextmenu', e => {
     if(e.target.tagName === 'INPUT') return;
     e.preventDefault();
@@ -246,10 +240,7 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 </div>
 
 <div id="detail" class="wrap hidden">
-<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-<button class="btn" onclick="showHome()">Beranda</button>
-</div>
-<div id="detailContent"></div>
+  <div id="detailContent"></div>
 </div>
 
 <div id="reader" class="wrap hidden">
@@ -266,8 +257,6 @@ let catalog=[];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const API_BASE=location.origin;
-
-// Fungsi URL tanpa ?. agar aman di HP lawas
 const fileUrl=fileId=>`${API_BASE}/api/file?file_id=${encodeURIComponent(fileId)}&init_data=${encodeURIComponent((tg && tg.initData) || "")}`;
 
 let accessUser=null;
@@ -310,9 +299,6 @@ async function requireAccess(){
   return true;
 }
 
-function deny(){ $("gate").classList.remove("hidden"); }
-
-// SISTEM BOOKMARK AMAN DARI ERROR
 function isBookmark(id) {
   try {
     let bm = JSON.parse(localStorage.getItem('mvp_bookmarks') || '[]');
@@ -332,7 +318,7 @@ function toggleBookmark(id) {
   else { bm.push(id); }
   
   localStorage.setItem('mvp_bookmarks', JSON.stringify(bm));
-  openProject(id); // Refresh Detail UI
+  openProject(id); 
 }
 
 function getStatusBadge(p) {
@@ -428,7 +414,7 @@ function renderHistory() {
     target.innerHTML = validRecent.map(({p, hist}) => `
       <article class="update-card" style="border:1px solid #4a90e2;position:relative" onclick="openReader('${esc(p.id)}','${esc(hist.chapter)}',${hist.decensored})">
         ${getStatusBadge(p)}
-        ${p.cover_file_id ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="cover"></div>`}
+        ${p.cover_file_id ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="cover"></div>`}
         <div class="cardbody">
           <div class="title">${esc(p.title)}</div>
           <div class="chapter-label" style="color:#4a90e2;font-weight:bold;margin-top:6px">Lanjut Ch. ${esc(hist.chapter)}${decBadge(hist.decensored)}</div>
@@ -454,7 +440,7 @@ function renderLatest(type,targetId){
       ${newBadge}
       ${getStatusBadge(p)}
       ${p.cover_file_id
-        ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">`
+        ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" loading="lazy" onerror="this.style.display='none'">`
         : `<div class="cover"></div>`}
       <div class="cardbody">
         <div class="title">${esc(p.title)}</div>
@@ -504,7 +490,7 @@ if($("search")) {
       } else {
         let title = "Katalog Comic";
         if (currentType === "novel") title = "Katalog Novel";
-        if (currentType === "bookmark") title = "🔖 Bookmark Saya";
+        if (currentType === "bookmark") title = "Bookmark Saya";
         $("catalogTitle").textContent = title;
       }
       $("popularSection").style.display = currentType === 'bookmark' ? 'none' : 'block';
@@ -522,7 +508,6 @@ function renderCards(list, targetId, popular=false){
     list.forEach(p=>{
       const letter=(String((p && p.title)||"").trim().charAt(0)||"#").toUpperCase();
       const key=/[A-Z]/.test(letter)?letter:"#";
-      // PERBAIKAN FATAL JAVASCRIPT UNTUK HP LAMA
       if(!groups[key]) groups[key] = [];
       groups[key].push(p);
     });
@@ -555,7 +540,7 @@ function renderCards(list, targetId, popular=false){
     <article class="popular-card" style="border:1px solid #f39c12;position:relative" onclick="openProject('${esc(p.id)}')">
       ${getStatusBadge(p)}
       ${p.cover_file_id
-        ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">`
+        ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" loading="lazy" onerror="this.style.display='none'">`
         : `<div class="cover"></div>`}
       <div class="cardbody"><div class="title">${esc(p.title)}</div></div>
     </article>`).join("")
@@ -578,7 +563,7 @@ function openCatalog(type){
   
   let title = "Katalog Comic";
   if (type === "novel") title = "Katalog Novel";
-  if (type === "bookmark") title = "🔖 Bookmark Saya";
+  if (type === "bookmark") title = "Bookmark Saya";
   $("catalogTitle").textContent = title;
   
   $("popularSection").style.display = type === 'bookmark' ? 'none' : 'block';
@@ -613,6 +598,51 @@ function renderCatalog(withPopular = true){
   }
 }
 
+// ----------------------------------------------------
+// FUNGSI PROFIL TRANSLATOR (PORTFOLIO MINI)
+// ----------------------------------------------------
+function openTranslatorProfile(name) {
+  const list = catalog.filter(p => {
+    const t = (p.translator && p.translator.trim() !== "") ? p.translator : "MVP";
+    return t.toLowerCase() === name.toLowerCase();
+  });
+  if (!list.length) return;
+  
+  const tTrakteer = (list.find(p => p.trakteer) || {}).trakteer || "";
+  const trakteerBtn = tTrakteer ? `<a href="${esc(tTrakteer)}" target="_blank" class="btn" style="margin-top:12px;background:#e74c3c;color:#fff;pointer-events:auto;">☕ Traktir Kopi</a>` : "";
+  
+  $("home").classList.add("hidden"); 
+  $("reader").classList.add("hidden");
+  $("detail").classList.remove("hidden");
+  
+  const roleLabel = name.toLowerCase() === "mvp" ? "MVP Core" : "Fan Translator";
+  
+  $("detailContent").innerHTML = `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+      <button class="btn" onclick="showHome()">Beranda</button>
+    </div>
+    <div style="text-align:center; padding:24px; background:var(--panel2); border-radius:16px; border:1px solid var(--border); margin-bottom:24px;">
+      <div style="font-size:48px; margin-bottom:8px;">👤</div>
+      <h2 style="margin:0;">${esc(name)}</h2>
+      <div style="color:var(--muted); font-size:13px; margin-top:4px;">${roleLabel}</div>
+      ${trakteerBtn}
+      <div style="margin-top:16px;">
+        <span style="font-weight:bold; background:var(--panel); padding:6px 12px; border-radius:8px; border:1px solid var(--border); font-size:14px;">📚 ${list.length} Project</span>
+      </div>
+    </div>
+    <h3 style="margin-bottom:14px; display:flex; align-items:center; gap:6px;">Karya</h3>
+    <div class="grid" id="translatorProjectGrid"></div>
+  `;
+
+  $("translatorProjectGrid").innerHTML = list.map(p => `
+    <article class="card" style="pointer-events:auto; position:relative;" onclick="openProject('${esc(p.id)}')">
+      ${getStatusBadge(p)}
+      ${p.cover_file_id ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" loading="lazy">` : `<div class="cover"></div>`}
+      <div class="cardbody"><div class="title">${esc(p.title)}</div></div>
+    </article>
+  `).join('');
+}
+
 async function openProject(id){
   if(!(await requireAccess())) return; 
   const p=catalog.find(x=>x.id===id); if(!p)return;
@@ -623,7 +653,14 @@ async function openProject(id){
     : "";
   
   const authorInfo=p.author ? `<div style="margin-top:6px;font-size:14px;color:var(--muted)"><b>Author/Artist:</b> ${esc(p.author)}</div>` : "";
-  const transInfo=p.translator ? `<div style="margin-top:2px;font-size:14px;color:#f39c12"><b>Translator:</b> ${esc(p.translator)}</div>` : "";
+  
+  // LOGIKA "BROUGHT TO YOU BY" OTOMATIS MVP JIKA KOSONG (TIDAK BISA DIKLIK JIKA MVP)
+  const transName = (p.translator && p.translator.trim() !== "") ? p.translator : "MVP";
+  const transClickable = transName.toLowerCase() === "mvp" ? 
+        `<span style="font-weight:bold;">${esc(transName)}</span>` : 
+        `<span style="cursor:pointer;pointer-events:auto;font-weight:bold;" onclick="openTranslatorProfile('${esc(transName)}')">${esc(transName)}</span>`;
+  const transInfo = `<div style="margin-top:4px;font-size:14px;color:#f39c12"><b>Brought to you by:</b> ${transClickable}</div>`;
+  
   const trakteerDetail = p.trakteer ? `<br><a href="${esc(p.trakteer)}" target="_blank" class="btn" style="margin-top:12px;margin-bottom:8px;background:#e74c3c;color:#fff;">☕ Traktir Kopi</a>` : "";
 
   const tagsArr = Array.isArray(p && p.tags) ? p.tags : [];
@@ -642,6 +679,9 @@ async function openProject(id){
   const chaptersArr = Array.isArray(p && p.chapters) ? p.chapters : [];
 
   $("detailContent").innerHTML=`
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+      <button class="btn" onclick="showHome()">Beranda</button>
+    </div>
     ${cover}
     <h1 style="margin-top:16px;display:flex;align-items:center;">${esc(p.title)} ${statusBadgeDetail}</h1>
     <div style="margin-top:12px;margin-bottom:8px;">${favBtn}</div>
@@ -656,7 +696,6 @@ async function openProject(id){
       <button class="btn" style="pointer-events:auto;" onclick="openReader('${esc(p.id)}','${esc(c.chapter)}',${c.decensored})">Baca</button></div>`).join("")}</div>`;
 }
 
-// LOGIKA SCROLL PROGRESS BAR
 window.addEventListener('scroll', () => {
   if (!$("reader").classList.contains("hidden")) {
     const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
@@ -708,13 +747,11 @@ function chapterCommentLink(p){
   return (p && p.comment_link) || "";
 }
 
-// FUNGSI TOGGLE OVERLAY MENU
 function toggleReaderUI(e) {
   if(e.target.closest('button') || e.target.closest('a') || e.target.closest('.readerhead') || e.target.closest('.reader-nav')) return;
   $("reader").classList.toggle("ui-hidden");
 }
 
-// KONTROL FONT NOVEL
 function changeFontSize(dir, e) {
   if (e) e.stopPropagation(); 
   let currentFontSize = Number(localStorage.getItem('mvp_fontsize')) || 17;
