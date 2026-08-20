@@ -175,7 +175,6 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 <div id="reader" class="wrap hidden">
   <div id="readerContent" style="margin-top:18px"></div>
   <div id="readerWatermark" class="reader-watermark hidden">
-    <!-- REVISI: Mengembalikan Crown pada Watermark -->
     <div class="wm-title">👑 MVP</div>
     <div id="readerWatermarkUser" class="wm-user"></div>
   </div>
@@ -302,7 +301,7 @@ function renderHistory() {
   if(validRecent.length > 0) {
     $("historySection").style.display = "block";
     target.innerHTML = validRecent.map(({p, hist}) => `
-      <article class="update-card" style="border:1px solid #4a90e2" onclick="openReader('${esc(p.id)}','${esc(hist.chapter)}',${hist.decensored})">
+      <article class="update-card" style="border:1px solid #4a90e2;position:relative" onclick="openReader('${esc(p.id)}','${esc(hist.chapter)}',${hist.decensored})">
         ${p.cover_file_id ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="cover"></div>`}
         <div class="cardbody">
           <div class="title">${esc(p.title)}</div>
@@ -314,11 +313,19 @@ function renderHistory() {
   }
 }
 
+// LOGIKA BARU: Tambah Badge "NEW" jika update di bawah 24 jam (86.400.000 milidetik)
 function renderLatest(type,targetId){
   const target=$(targetId);
   const updates=latestUpdates(type);
-  target.innerHTML=updates.length ? updates.map(({p,latest})=>`
-    <article class="update-card" onclick="openReader('${esc(p.id)}','${esc(latest.chapter.chapter)}',${latest.chapter.decensored})">
+  const now = Date.now(); 
+  
+  target.innerHTML=updates.length ? updates.map(({p,latest})=>{
+    const isNew = (now - (latest.ts * 1000)) <= 86400000;
+    const newBadge = isNew ? `<div style="position:absolute;top:6px;left:6px;background:#e74c3c;color:#fff;font-size:10px;font-weight:800;padding:3px 6px;border-radius:6px;z-index:2;box-shadow:0 2px 4px rgba(0,0,0,0.5)">NEW</div>` : "";
+    
+    return `
+    <article class="update-card" style="position:relative" onclick="openReader('${esc(p.id)}','${esc(latest.chapter.chapter)}',${latest.chapter.decensored})">
+      ${newBadge}
       ${p.cover_file_id
         ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">`
         : `<div class="cover"></div>`}
@@ -326,7 +333,8 @@ function renderLatest(type,targetId){
         <div class="title">${esc(p.title)}</div>
         <div class="chapter-label">Chapter ${esc(latest.chapter.chapter)}${decBadge(latest.chapter.decensored)}</div>
       </div>
-    </article>`).join("")
+    </article>`;
+  }).join("")
     : "<p class='muted'>Belum ada update.</p>";
 }
 
@@ -405,8 +413,9 @@ function renderCards(list, targetId, popular=false){
     return;
   }
 
+  // LOGIKA BARU: Tambah border warna emas (#f39c12) untuk kolom Populer
   target.innerHTML=list.length?list.map(p=>`
-    <article class="popular-card" onclick="openProject('${esc(p.id)}')">
+    <article class="popular-card" style="border:1px solid #f39c12" onclick="openProject('${esc(p.id)}')">
       ${p.cover_file_id
         ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">`
         : `<div class="cover"></div>`}
@@ -750,12 +759,11 @@ function toggleTheme(){
     
     renderHome();
 
-    // TAMBAHAN FITUR DEEP LINK UNTUK BC CHANNEL
     const startParam = tg?.initDataUnsafe?.start_param;
     if (startParam) {
       const p = catalog.find(x => x.id === startParam);
       if (p) {
-        openProject(startParam); // Otomatis lompat ke halaman Info Project!
+        openProject(startParam); 
       }
     }
 
