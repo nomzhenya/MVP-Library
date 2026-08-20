@@ -1,1 +1,970 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5.0,user-scalable=yes,viewport-fit=cover">
+<meta name="theme-color" content="#0f0f12">
+<title>MVP Miniweb</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box}
 
+/* CSS VARIABEL UNTUK TEMA DINAMIS */
+:root{
+  --bg:#0f0f12; --text:#f4f4f5; --muted:#a6a6b0; 
+  --panel:#19191f; --panel2:#24242a; --border:#2b2b31; --border2:#3a3a43; --input:#19191f;
+  --btn-bg: #30303a; --btn-text: #ffffff; /* Warna Tombol Mode Gelap */
+  --overlay-bg: rgba(25, 25, 31, 0.75); /* Kaca Transparan Mode Gelap */
+}
+
+body.light{
+  --bg:#f5f5f7; --text:#17171b; --muted:#666670; 
+  --panel:#fff; --panel2:#e9e9ee; --border:#d7d7de; --border2:#c5c5ce; --input:#fff;
+  --btn-bg: #e2e2e7; --btn-text: #17171b; /* Warna Tombol Mode Terang */
+  --overlay-bg: rgba(255, 255, 255, 0.80); /* Kaca Transparan Mode Terang */
+}
+
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden;transition:background .2s,color .2s}
+
+/* ANTI-COPY CSS (Dilonggarkan khusus agar Pinch-to-Zoom berfungsi) */
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
+img{-webkit-user-drag:none;-webkit-touch-callout:none;} 
+
+.wrap{max-width:900px;margin:auto;padding:20px}
+#reader.wrap{width:100vw;max-width:none;margin:0;padding:0;overflow-x:hidden}
+#readerContent{width:100vw;max-width:none;margin:0!important;padding:0}
+@media(max-width:900px){ #reader.wrap{width:100vw} }
+header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{width:100%;padding:13px 15px;border:1px solid var(--border2);border-radius:14px;background:var(--input);color:var(--text);font-size:16px;margin:12px 0 18px; transition: border 0.2s; pointer-events:auto;}
+.search:focus{outline:none;border-color:#4a90e2}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px}
+.card{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s; position:relative;}
+.card:active{transform:scale(0.97)}
+.cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--panel2)}.cardbody{padding:12px}.title{font-weight:700;line-height:1.2;font-size:15px}
+
+/* TOMBOL DINAMIS */
+.btn{display:inline-block;border:0;border-radius:10px;padding:9px 12px;background:var(--btn-bg);color:var(--btn-text);text-decoration:none;pointer-events:auto;font-weight:600;}
+.back{border:0;background:var(--btn-bg);color:var(--btn-text);padding:9px 12px;border-radius:10px;pointer-events:auto;font-weight:bold;}
+.tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.tag{border:1px solid var(--border2);background:var(--panel2);color:var(--text);border-radius:999px;padding:6px 10px;font-size:13px;cursor:pointer;pointer-events:auto;}
+.detailcover{width:min(260px,75%);aspect-ratio:2/3;object-fit:cover;border-radius:16px;margin-top:16px}
+.chapters{display:flex;flex-direction:column;gap:9px;margin-top:14px}.chapter{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:var(--input);border:1px solid var(--border);border-radius:12px}
+.notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}.theme-toggle{border:1px solid var(--border2);border-radius:10px;padding:9px 11px;background:var(--panel2);color:var(--text);font-size:14px;font-weight:700;cursor:pointer; pointer-events:auto;}
+.home-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
+.home-filters{display:flex;gap:8px;margin:8px 0 16px}
+.type-btn{flex:1;border:1px solid var(--border2);border-radius:12px;padding:10px 6px;background:var(--panel2);color:var(--muted);font-weight:800;font-size:14px;transition:all 0.2s; pointer-events:auto; text-align:center;}
+.type-btn.active{background:var(--btn-bg);color:var(--btn-text);border-color:var(--border)}
+
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:22px 0 12px}
+.section-title{font-size:18px;font-weight:800;display:flex;align-items:center;gap:6px}
+.section-sub{font-size:12px;color:var(--muted)}
+.popular-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.popular-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer; pointer-events:auto; position:relative;}
+.popular-card .cover{aspect-ratio:2/3}
+.popular-card .cardbody{padding:9px}
+.popular-card .title{font-size:13px}
+.all-title{margin-top:24px}
+.tag-filter{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px}
+.tag-filter .tag.active{background:var(--btn-bg);color:var(--btn-text);}
+
+.home-layer{display:none}
+.home-layer.active{display:block}
+.catalog-layer{display:none}
+.catalog-layer.active{display:block}
+.catalog-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.catalog-back{border:0;background:var(--btn-bg);color:var(--btn-text);padding:9px 12px;border-radius:10px;font-weight:bold; pointer-events:auto;}
+
+.update-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.update-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s; pointer-events:auto; position:relative;}
+.update-card:active{transform:scale(0.97)}
+.update-card .cover{aspect-ratio:2/3}
+.update-card .cardbody{padding:9px}
+.update-card .title{font-size:13px;line-height:1.2;margin-bottom:4px}
+.update-card .chapter-label{font-size:12px;color:var(--muted)}
+
+@media(max-width:420px){
+  .update-strip{gap:7px}
+  .update-card .cardbody{padding:7px}
+  .popular-grid{gap:7px}
+  .popular-card .cardbody{padding:7px}
+}
+
+/* =========================================
+   UI BARU: OVERLAY KECIL & TRANSPARAN
+   ========================================= */
+.ui-hidden .readerhead { transform: translateY(-120%); }
+.ui-hidden .reader-nav { transform: translateY(120%); }
+
+.readerhead{
+  position:fixed; top:0; left:0; width:100%; z-index:50;
+  padding:6px 8px; /* Lebih kecil */
+  background:var(--overlay-bg); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  transition: transform 0.3s ease-in-out;
+}
+.reader-topbar{display:flex;align-items:center;gap:7px;width:100%;position:relative}
+.reader-info{flex:0 0 auto;border:0;border-radius:8px;padding:8px 10px;background:var(--btn-bg);color:var(--btn-text);font-weight:700; font-size:13px; pointer-events:auto;}
+.reader-chapter-wrap{flex:1;min-width:0;position:relative}
+.reader-chapter-btn{width:100%;border:1px solid var(--border2);border-radius:8px;padding:8px 10px;background:var(--panel2);color:var(--text);font-size:14px;font-weight:700;text-align:left; pointer-events:auto;}
+.reader-chapter-menu{position:absolute;left:0;top:calc(100% + 3px);width:min(310px,78vw);max-height:65vh;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:5px;box-shadow:0 8px 20px rgba(0,0,0,.45);z-index:40}
+.reader-chapter-option{display:block;width:100%;border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--text);text-align:left;padding:12px 16px;font-size:15px; pointer-events:auto;}
+.reader-chapter-option:active,.reader-chapter-option.current{background:var(--btn-bg);color:var(--btn-text);}
+.reader-arrow{flex:0 0 38px;border:0;border-radius:8px;padding:8px 4px;background:var(--btn-bg);color:var(--btn-text);font-size:16px;font-weight:700; pointer-events:auto;}
+.reader-arrow.disabled{opacity:.35;pointer-events:none}
+
+.reader-nav{
+  position:fixed; bottom:0; left:0; width:100%; z-index:50;
+  display:flex; flex-direction:column; align-items:stretch; gap:6px;
+  padding:8px 8px calc(8px + env(safe-area-inset-bottom)); /* Lebih kecil */
+  background:var(--overlay-bg); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  border-top:1px solid var(--border);
+  transition: transform 0.3s ease-in-out;
+}
+.reader-nav .navbtn{flex:1;min-width:0;text-align:center;border:0;border-radius:8px;padding:9px 6px;background:var(--btn-bg);color:var(--btn-text);font-weight:700; font-size:14px; pointer-events:auto;}
+.reader-nav-row{display:flex;align-items:center;gap:6px;width:100%}
+.reader-nav-row .navbtn{flex:1;min-width:0}
+.reader-nav-row .upbtn{flex:.72}
+.reader-nav .commentbtn{width:100%;margin-top:2px}
+.reader-nav .disabled{opacity:.35;pointer-events:none}
+
+.readerpages{
+  display:flex;flex-direction:column;align-items:center;gap:0;margin:0;
+  padding-top:55px; padding-bottom:110px; min-height:100vh;
+  width:100vw;max-width:100vw;overflow-x:hidden;
+}
+/* PAKSA ZOOM KOMIK AGAR BERFUNGSI */
+.readerpage{display:block;width:100vw;max-width:100vw;height:auto;margin:0;padding:0;background:#000;object-fit:contain; touch-action: pan-x pan-y pinch-zoom;}
+
+.readererror{padding:18px;text-align:center;border:1px solid #55333a;border-radius:12px;background:#24181b;margin-top:12px}
+
+.reader-watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;pointer-events:none;text-align:center;line-height:1.15;opacity:.34;color:var(--text);text-shadow:0 1px 3px rgba(0,0,0,.75);white-space:nowrap;font-weight:700}
+.reader-watermark .wm-title{font-size:18px}
+.reader-watermark .wm-user{font-size:12px;font-weight:600;margin-top:3px}
+.novel-reader{width:min(820px,100%);margin:0 auto;padding:10px 22px 20px;background:transparent;color:var(--text);line-height:1.8;font-size:17px;user-select:none;-webkit-user-select:none;} 
+.novel-reader p{margin:0 0 1.1em}
+.novel-reader h1,.novel-reader h2,.novel-reader h3{line-height:1.35;margin:1.5em 0 .75em}
+.novel-reader blockquote{margin:1em 0;padding-left:16px;border-left:3px solid var(--border2);color:var(--muted)}
+.novel-loading{padding:40px 18px;text-align:center;color:var(--muted)}
+
+/* PROGRESS BAR */
+#progressContainer{position:fixed;top:0;left:0;width:100vw;height:4px;background:rgba(0,0,0,0.3);z-index:9999;display:none;pointer-events:none;}
+#progressBar{height:100%;background:#f39c12;width:0%;transition:width 0.1s ease-out;}
+</style>
+</head>
+<body oncontextmenu="return false">
+
+<div id="progressContainer"><div id="progressBar"></div></div>
+
+<script>
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('dragstart', e => e.preventDefault());
+  document.addEventListener('selectstart', e => {
+    if(e.target.tagName !== 'INPUT') e.preventDefault(); 
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'F12' || 
+       (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
+       (e.ctrlKey && e.key === 'U')) {
+      e.preventDefault();
+      return false;
+    }
+  });
+  setInterval(function() {
+    const start = performance.now();
+    debugger; 
+    const end = performance.now();
+    if (end - start > 100) {
+      document.body.innerHTML = "<div style='display:flex;height:100vh;align-items:center;justify-content:center;background:#000;color:#f00;font-size:20px;text-align:center;padding:20px;'>Akses Ilegal Terdeteksi!<br>Sistem Dimatikan.</div>";
+    }
+  }, 1000);
+</script>
+
+<div id="gate" class="notice hidden"><div><h2>Akses Ditolak</h2><p class="muted" style="margin-top:8px">MVP Miniweb eksklusif hanya dapat dibuka melalui aplikasi Telegram di HP (Android & iOS).</p></div></div>
+
+<div id="home" class="wrap hidden">
+<header>
+  <div class="home-top">
+    <div>
+      <h1>MVP Miniweb</h1>
+      <p class="muted" style="margin-top:4px">Pusat bacaan komik dan novel MVP.</p>
+    </div>
+    <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema">☀️</button>
+  </div>
+</header>
+
+<input id="search" class="search" placeholder="🔍 Cari Judul atau Author...">
+
+<div id="homeLayer" class="home-layer active">
+  <div id="historySection" style="display:none;margin-bottom:12px">
+    <div class="section-head" style="margin-top:10px">
+      <div class="section-title">Terakhir Dibaca</div>
+    </div>
+    <div id="historyStrip" class="update-strip"></div>
+  </div>
+
+  <div class="home-filters" id="homeFilters">
+    <button class="type-btn active" onclick="openCatalog('comic')">COMIC</button>
+    <button class="type-btn" onclick="openCatalog('novel')">NOVEL</button>
+    <button class="type-btn" onclick="openCatalog('bookmark')">BOOKMARK</button>
+  </div>
+
+  <div class="section-head">
+    <div class="section-title">Latest Updates · Comic</div>
+  </div>
+  <div id="latestComic" class="update-strip"></div>
+
+  <div class="section-head">
+    <div class="section-title">Latest Updates · Novel</div>
+  </div>
+  <div id="latestNovel" class="update-strip"></div>
+</div>
+
+<div id="catalogLayer" class="catalog-layer">
+  <div class="catalog-head">
+    <button class="catalog-back" onclick="showHome()">← Beranda</button>
+    <h2 id="catalogTitle">Katalog</h2>
+  </div>
+
+  <div id="tagFilter" class="tag-filter"></div>
+
+  <div id="popularSection">
+    <div class="section-head" style="margin-top:10px">
+      <div class="section-title">Populer</div>
+    </div>
+    <div id="popularGrid" class="popular-grid"></div>
+  </div>
+
+  <div class="section-head all-title">
+    <div class="section-title">Semua Project</div>
+  </div>
+  <div id="grid" class="grid"></div>
+</div>
+</div>
+
+<div id="detail" class="wrap hidden">
+<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+<button class="btn" onclick="showHome()">Beranda</button>
+</div>
+<div id="detailContent"></div>
+</div>
+
+<div id="reader" class="wrap hidden">
+  <div id="readerContent" style="margin-top:0px"></div>
+  <div id="readerWatermark" class="reader-watermark hidden">
+    <div class="wm-title">👑 MVP</div>
+    <div id="readerWatermarkUser" class="wm-user"></div>
+  </div>
+</div>
+
+<script>
+const tg=window.Telegram?.WebApp;
+let catalog=[];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const API_BASE=location.origin;
+const fileUrl=fileId=>`${API_BASE}/api/file?file_id=${encodeURIComponent(fileId)}&init_data=${encodeURIComponent(tg?.initData||"")}`;
+
+let accessUser=null;
+let accessDenied=false;
+let currentType="comic";
+let currentTag="";
+
+const decBadge = d => Number(d) === 1 ? " [Decensored]" : Number(d) === 2 ? " [Uncensored]" : "";
+
+function accessHeaders(){
+  return {"X-Telegram-Init-Data":tg?.initData||""};
+}
+
+function showDenied(){
+  accessDenied=true;
+  $("home").classList.add("hidden");
+  $("detail").classList.add("hidden");
+  $("reader").classList.add("hidden");
+  $("gate").innerHTML=`<div><h2>Akses Ditolak</h2><p class="muted" style="margin-top:8px">MVP Miniweb eksklusif hanya dapat dibuka melalui aplikasi Telegram di HP (Android & iOS).</p></div>`;
+  $("gate").classList.remove("hidden");
+}
+
+async function requireAccess(){
+  if(accessDenied) return false;
+  const r=await fetch("/api/access",{cache:"no-store",headers:accessHeaders()});
+  const data=await r.json().catch(()=>({}));
+  if(r.status===403 || r.status===401){
+    accessDenied=true;
+    $("home").classList.add("hidden");
+    $("detail").classList.add("hidden");
+    $("reader").classList.add("hidden");
+    $("gate").innerHTML=`<div><h2>Akses Ditolak</h2><p class="muted" style="margin-top:8px">Anda bukan bagian dari MVP</p><button class="btn" style="margin-top:16px" onclick="tg?.close()">Kembali ke Telegram</button></div>`;
+    $("gate").classList.remove("hidden");
+    return false;
+  }
+  if(!r.ok){
+    throw new Error(data.reason || "access");
+  }
+  accessUser=data.user||null;
+  return true;
+}
+
+function deny(){ $("gate").classList.remove("hidden"); }
+
+// SISTEM BOOKMARK AMAN DARI ERROR
+function isBookmark(id) {
+  try {
+    let bm = JSON.parse(localStorage.getItem('mvp_bookmarks') || '[]');
+    if (!Array.isArray(bm)) return false;
+    return bm.includes(id);
+  } catch(e) { return false; }
+}
+
+function toggleBookmark(id) {
+  let bm = [];
+  try {
+    bm = JSON.parse(localStorage.getItem('mvp_bookmarks') || '[]');
+    if (!Array.isArray(bm)) bm = [];
+  } catch(e) { bm = []; }
+  
+  if (bm.includes(id)) { bm = bm.filter(x => x !== id); } 
+  else { bm.push(id); }
+  
+  localStorage.setItem('mvp_bookmarks', JSON.stringify(bm));
+  openProject(id); // Refresh Detail UI
+}
+
+function getStatusBadge(p) {
+  const stat = p.status || "Ongoing";
+  if (stat.toLowerCase() === "tamat" || stat.toLowerCase() === "completed") {
+    return `<div style="position:absolute;top:6px;right:6px;background:#2ecc71;color:#fff;font-size:10px;font-weight:800;padding:3px 6px;border-radius:6px;z-index:2;box-shadow:0 2px 4px rgba(0,0,0,0.5)">TAMAT</div>`;
+  }
+  return "";
+}
+
+function showHome(){
+  $("progressContainer").style.display="none";
+  $("detail").classList.add("hidden");
+  $("reader").classList.add("hidden");
+  $("home").classList.remove("hidden");
+  $("homeLayer").classList.add("active");
+  $("catalogLayer").classList.remove("active");
+  $("search").value="";
+  currentTag="";
+  
+  document.querySelectorAll('#homeFilters .type-btn').forEach(b => {
+    b.classList.remove('active');
+    if (b.textContent.trim() === 'COMIC') b.classList.add('active');
+  });
+  currentType = "comic";
+  
+  renderHome();
+}
+
+function normalizeType(p){
+  return String(p?.type||"comic").toLowerCase()==="novel" ? "novel" : "comic";
+}
+
+function allTypeProjects(type){
+  if(type === 'bookmark') {
+    return catalog.filter(p => isBookmark(p.id));
+  }
+  return catalog.filter(p=>normalizeType(p)===type);
+}
+
+function projectLatestChapter(p){
+  const chapters=Array.isArray(p?.chapters)?p.chapters:[];
+  let best=null;
+  chapters.forEach((c,i)=>{
+    const ts=Number(c.updated_at||0);
+    if(!best || ts>best.ts || (ts===best.ts && i>best.i)) best={chapter:c,i,ts};
+  });
+  return best;
+}
+
+function latestUpdates(type){
+  return catalog.filter(p=>normalizeType(p)===type)
+    .map(p=>{
+      const latest=projectLatestChapter(p);
+      if(!latest || latest.chapter == null || String(latest.chapter.chapter||"").trim()==="") return null;
+      return {p,latest};
+    })
+    .filter(Boolean)
+    .sort((a,b)=>{
+      const ta=Number(a.latest.ts||0), tb=Number(b.latest.ts||0);
+      if(tb!==ta) return tb-ta;
+      return String(a.p.title||"").localeCompare(String(b.p.title||""),undefined,{sensitivity:"base"});
+    })
+    .slice(0,3);
+}
+
+function saveHistory(projectId, chapterName, decensored) {
+  try {
+    let hist = JSON.parse(localStorage.getItem("mvp_history") || "{}");
+    hist[projectId] = { chapter: chapterName, decensored: Number(decensored), ts: Date.now() };
+    localStorage.setItem("mvp_history", JSON.stringify(hist));
+  } catch(e) {}
+}
+
+function renderHistory() {
+  const target = $("historyStrip");
+  if(!target) return;
+  let hist = {};
+  try { hist = JSON.parse(localStorage.getItem("mvp_history") || "{}"); } catch(e){}
+
+  const recent = Object.keys(hist).map(pid => ({
+    pid, ...hist[pid]
+  })).sort((a,b) => b.ts - a.ts).slice(0, 3);
+
+  const validRecent = recent.map(h => {
+    const p = catalog.find(x => x.id === h.pid);
+    return p ? { p, hist: h } : null;
+  }).filter(Boolean);
+
+  if(validRecent.length > 0) {
+    $("historySection").style.display = "block";
+    target.innerHTML = validRecent.map(({p, hist}) => `
+      <article class="update-card" style="border:1px solid #4a90e2;position:relative" onclick="openReader('${esc(p.id)}','${esc(hist.chapter)}',${hist.decensored})">
+        ${getStatusBadge(p)}
+        ${p.cover_file_id ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="cover"></div>`}
+        <div class="cardbody">
+          <div class="title">${esc(p.title)}</div>
+          <div class="chapter-label" style="color:#4a90e2;font-weight:bold;margin-top:6px">Lanjut Ch. ${esc(hist.chapter)}${decBadge(hist.decensored)}</div>
+        </div>
+      </article>`).join("");
+  } else {
+    $("historySection").style.display = "none";
+  }
+}
+
+function renderLatest(type,targetId){
+  const target=$(targetId);
+  const updates=latestUpdates(type);
+  const now = Date.now(); 
+  
+  target.innerHTML=updates.length ? updates.map(({p,latest})=>{
+    const isNew = (now - (latest.ts * 1000)) <= 86400000;
+    const newBadge = isNew ? `<div style="position:absolute;top:6px;left:6px;background:#e74c3c;color:#fff;font-size:10px;font-weight:800;padding:3px 6px;border-radius:6px;z-index:2;box-shadow:0 2px 4px rgba(0,0,0,0.5)">NEW</div>` : "";
+    
+    return `
+    <article class="update-card" style="position:relative" onclick="openReader('${esc(p.id)}','${esc(latest.chapter.chapter)}',${latest.chapter.decensored})">
+      ${newBadge}
+      ${getStatusBadge(p)}
+      ${p.cover_file_id
+        ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">`
+        : `<div class="cover"></div>`}
+      <div class="cardbody">
+        <div class="title">${esc(p.title)}</div>
+        <div class="chapter-label">Chapter ${esc(latest.chapter.chapter)}${decBadge(latest.chapter.decensored)}</div>
+      </div>
+    </article>`;
+  }).join("")
+    : "<p class='muted'>Belum ada update.</p>";
+}
+
+function renderHome(){
+  renderHistory();
+  renderLatest("comic","latestComic");
+  renderLatest("novel","latestNovel");
+}
+
+function getFilteredProjects(){
+  const q = String($("search")?.value||"").trim().toLowerCase();
+  const baseList = q ? catalog : allTypeProjects(currentType);
+
+  return baseList.filter(p=>{
+    if(currentTag && !(Array.isArray(p.tags)?p.tags:[]).some(t=>String(t).toLowerCase()===currentTag)) return false;
+    if(q) {
+      const t = String(p.title||"").toLowerCase();
+      const a = String(p.author||"").toLowerCase();
+      if(!t.includes(q) && !a.includes(q)) return false;
+    }
+    return true;
+  }).sort((a,b)=>String(a.title||"").localeCompare(String(b.title||""),undefined,{sensitivity:"base"}));
+}
+
+$("search").oninput = () => {
+  const val = $("search").value.trim();
+  if(val !== "") {
+    $("homeLayer").classList.remove("active");
+    $("catalogLayer").classList.add("active");
+    $("catalogTitle").textContent = "Hasil Pencarian";
+    $("popularSection").style.display = "none"; 
+    renderCatalog(false);
+  } else {
+    if(!currentTag) {
+      $("catalogLayer").classList.remove("active");
+      $("homeLayer").classList.add("active");
+    } else {
+      let title = "Katalog Comic";
+      if (currentType === "novel") title = "Katalog Novel";
+      if (currentType === "bookmark") title = "Bookmark Saya";
+      $("catalogTitle").textContent = title;
+    }
+    $("popularSection").style.display = currentType === 'bookmark' ? 'none' : 'block';
+    renderCatalog();
+  }
+};
+
+function renderCards(list, targetId, popular=false){
+  const target=$(targetId);
+  if(!target)return;
+
+  if(!popular){
+    const groups={};
+    list.forEach(p=>{
+      const letter=(String(p.title||"").trim().charAt(0)||"#").toUpperCase();
+      const key=/[A-Z]/.test(letter)?letter:"#";
+      (groups[key] ||= []).push(p);
+    });
+
+    const letters=Object.keys(groups).sort((a,b)=>{
+      if(a==="#") return 1;
+      if(b==="#") return -1;
+      return a.localeCompare(b);
+    });
+
+    target.innerHTML=letters.length
+      ? letters.map(letter=>`
+          <section style="margin-bottom:18px">
+            <div style="font-size:14px;font-weight:800;color:var(--muted);margin-bottom:7px">${esc(letter)}</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              ${groups[letter].map(p=>`
+                <div style="position:relative;">
+                  <button onclick="openProject('${esc(p.id)}')"
+                    style="width:100%;text-align:left;border:1px solid var(--border);border-radius:10px;padding:11px 13px;background:var(--panel);color:var(--text);font-size:15px;font-weight:650;pointer-events:auto;">
+                    ${esc(p.title)}
+                  </button>
+                </div>`).join("")}
+            </div>
+          </section>`).join("")
+      : "<p class='muted'>Tidak ditemukan.</p>";
+    return;
+  }
+
+  target.innerHTML=list.length?list.map(p=>`
+    <article class="popular-card" style="border:1px solid #f39c12;position:relative" onclick="openProject('${esc(p.id)}')">
+      ${getStatusBadge(p)}
+      ${p.cover_file_id
+        ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">`
+        : `<div class="cover"></div>`}
+      <div class="cardbody"><div class="title">${esc(p.title)}</div></div>
+    </article>`).join("")
+    : "<p class='muted'>Belum ada PJ.</p>";
+}
+
+function renderTagFilter(list){
+  const tags=[...new Set(list.flatMap(p=>Array.isArray(p.tags)?p.tags:[]).map(t=>String(t).trim()).filter(t => t && isNaN(Number(t))))]
+    .sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:"base"}));
+  $("tagFilter").innerHTML=tags.length
+    ? tags.map(t=>`<button class="tag ${currentTag===t.toLowerCase()?"active":""}" style="pointer-events:auto;" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")
+    : "";
+}
+
+function openCatalog(type){
+  currentType = type;
+  currentTag = "";
+  $("homeLayer").classList.remove("active");
+  $("catalogLayer").classList.add("active");
+  
+  let title = "Katalog Comic";
+  if (type === "novel") title = "Katalog Novel";
+  if (type === "bookmark") title = "Bookmark Saya";
+  $("catalogTitle").textContent = title;
+  
+  $("popularSection").style.display = type === 'bookmark' ? 'none' : 'block';
+  $("search").value="";
+
+  document.querySelectorAll('#homeFilters .type-btn').forEach(b => {
+    b.classList.remove('active');
+    if (b.textContent.trim().toLowerCase() === type.toLowerCase()) b.classList.add('active');
+  });
+
+  renderCatalog(type !== 'bookmark');
+}
+
+function filterByTag(tag){
+  const q=String(tag||"").toLowerCase();
+  currentTag=currentTag===q?"":q;
+  $("homeLayer").classList.remove("active");
+  $("catalogLayer").classList.add("active");
+  renderCatalog(currentType !== 'bookmark');
+}
+
+async function openProject(id){
+  if(!(await requireAccess())) return; 
+  const p=catalog.find(x=>x.id===id); if(!p)return;
+  $("home").classList.add("hidden"); $("detail").classList.remove("hidden");
+  
+  const cover=p.cover_file_id
+    ? `<img class="detailcover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" onerror="this.style.display='none'">`
+    : "";
+  
+  const authorInfo=p.author ? `<div style="margin-top:6px;font-size:14px;color:var(--muted)"><b>Author/Artist:</b> ${esc(p.author)}</div>` : "";
+  const transInfo=p.translator ? `<div style="margin-top:2px;font-size:14px;color:#f39c12"><b>Translator:</b> ${esc(p.translator)}</div>` : "";
+  const trakteerDetail = p.trakteer ? `<br><a href="${esc(p.trakteer)}" target="_blank" class="btn" style="margin-top:12px;margin-bottom:8px;background:#e74c3c;color:#fff;">☕ Traktir Kopi</a>` : "";
+
+  const validTags = (Array.isArray(p.tags) ? p.tags : []).filter(t => t && isNaN(Number(t)));
+  const tags=validTags.length
+    ? `<div class="tags">${validTags.map(t=>`<button class="tag" style="pointer-events:auto;" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
+    : "";
+
+  const isBm = isBookmark(p.id);
+  const favBtn = `<button class="btn" style="pointer-events:auto; font-weight:bold;" onclick="toggleBookmark('${esc(p.id)}')">${isBm ? 'Disimpan' : 'Bookmark'}</button>`;
+  
+  const statusText = (p.status || "Ongoing").toUpperCase();
+  const statusColor = (statusText === "TAMAT" || statusText === "COMPLETED") ? "#2ecc71" : "#f39c12";
+  const statusBadgeDetail = `<span style="background:${statusColor};color:#fff;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:900;margin-left:8px;vertical-align:middle;">${statusText}</span>`;
+
+  $("detailContent").innerHTML=`
+    ${cover}
+    <h1 style="margin-top:16px;display:flex;align-items:center;">${esc(p.title)} ${statusBadgeDetail}</h1>
+    <div style="margin-top:12px;margin-bottom:8px;">${favBtn}</div>
+    ${authorInfo}
+    ${transInfo}
+    ${trakteerDetail}
+    ${tags}
+    <p class="muted" style="margin-top:12px;white-space:pre-line">${esc(p.description)}</p>
+    <h2 style="margin-top:24px">Chapters</h2>
+    <div class="chapters">${(p.chapters||[]).map((c,i)=>`
+      <div class="chapter"><span>Chapter ${esc(c.chapter)} ${decBadge(c.decensored)}</span>
+      <button class="btn" style="pointer-events:auto;" onclick="openReader('${esc(p.id)}','${esc(c.chapter)}',${c.decensored})">Baca</button></div>`).join("")}</div>`;
+}
+
+// LOGIKA SCROLL PROGRESS BAR
+window.addEventListener('scroll', () => {
+  if (!$("reader").classList.contains("hidden")) {
+    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    if (height > 0) {
+      const scrolled = (winScroll / height) * 100;
+      $("progressBar").style.width = scrolled + "%";
+    }
+  }
+});
+
+function getTelegramIdentity(){
+  const u=tg?.initDataUnsafe?.user;
+  if(!u) return {id:"", username:""};
+  return {
+    id:String(u.id||""),
+    username:u.username ? `@${u.username}` : ""
+  };
+}
+
+function showReaderWatermark(){
+  const u=getTelegramIdentity();
+  $("readerWatermarkUser").textContent=[u.id,u.username].filter(Boolean).join(" | ");
+  $("readerWatermark").classList.remove("hidden");
+}
+
+function hideReaderWatermark(){
+  $("readerWatermark").classList.add("hidden");
+}
+
+function chapterIndex(projectId, chapterName, decensored){
+  const p=catalog.find(x=>x.id===projectId);
+  if(!p) return -1;
+  return (p.chapters||[]).findIndex(c=>String(c.chapter)===String(chapterName) && Number(c.decensored)===Number(decensored));
+}
+
+async function openChapter(projectId, index){
+  if(!(await requireAccess())) return;
+  const p=catalog.find(x=>x.id===projectId);
+  if(!p || !p.chapters?.[index]) return;
+  const c=p.chapters[index];
+  openReader(projectId, c.chapter, Number(c.decensored));
+}
+
+function chapterCommentLink(p){
+  return p?.comment_link || "";
+}
+
+// FUNGSI TOGGLE OVERLAY MENU
+function toggleReaderUI(e) {
+  // Jangan toggle jika yang di-tap adalah tombol atau menu
+  if(e.target.closest('button') || e.target.closest('a') || e.target.closest('.readerhead') || e.target.closest('.reader-nav')) return;
+  $("reader").classList.toggle("ui-hidden");
+}
+
+// KONTROL FONT NOVEL
+function changeFontSize(dir, e) {
+  if (e) e.stopPropagation(); 
+  let currentFontSize = Number(localStorage.getItem('mvp_fontsize')) || 17;
+  currentFontSize += (dir * 2);
+  if (currentFontSize < 12) currentFontSize = 12;
+  if (currentFontSize > 32) currentFontSize = 32;
+  localStorage.setItem('mvp_fontsize', currentFontSize);
+  const reader = document.querySelector('.novel-reader');
+  if (reader) reader.style.fontSize = currentFontSize + 'px';
+}
+
+async function openNovelReader(projectId, idx){
+  const p=catalog.find(x=>x.id===projectId);
+  const c=p?.chapters?.[idx];
+  if(!c) return;
+
+  saveHistory(projectId, c.chapter, Number(c.decensored));
+
+  $("progressContainer").style.display="block";
+  $("progressBar").style.width="0%";
+
+  $("home").classList.add("hidden");
+  $("detail").classList.add("hidden");
+  $("reader").classList.remove("hidden");
+  $("reader").classList.remove("ui-hidden"); // Pastikan overlay terbuka di awal
+  showReaderWatermark();
+
+  $("readerContent").innerHTML=`
+    <div class="readerhead">
+      <div class="reader-topbar">
+        <button class="reader-info" onclick="readerInfo('${esc(p.id)}')">INFO »</button>
+
+        <div class="reader-chapter-wrap">
+          <button id="readerChapterButton" class="reader-chapter-btn" onclick="toggleChapterMenu(event)">
+            Ch.${esc(c.chapter)}${decBadge(c.decensored)}
+          </button>
+          <div id="readerChapterMenu" class="reader-chapter-menu hidden">
+            ${(p.chapters||[]).map((ch,i)=>`
+              <button class="reader-chapter-option ${i===idx?"current":""}"
+                onclick="selectReaderChapter('${esc(p.id)}',${i})">
+                Ch.${esc(ch.chapter)}${decBadge(ch.decensored)}
+              </button>`).join("")}
+          </div>
+        </div>
+
+        <button class="reader-arrow ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
+          onclick="openChapter('${esc(p.id)}',${idx-1})">←</button>
+        <button class="reader-arrow ${idx>=(p.chapters||[]).length-1?"disabled":""}" ${idx>=(p.chapters||[]).length-1?"disabled":""}
+          onclick="openChapter('${esc(p.id)}',${idx+1})">→</button>
+      </div>
+    </div>
+
+    <div id="readerPages" class="readerpages" onclick="toggleReaderUI(event)"></div>
+    <div id="readerNav" class="reader-nav"></div>`;
+
+  $("readerPages").innerHTML=`<div class="novel-loading">Memuat chapter…</div>`;
+
+  try{
+    const r=await fetch(
+      `/api/novel?project_id=${encodeURIComponent(projectId)}&chapter=${encodeURIComponent(c.chapter)}&decensored=${c.decensored}`,
+      {cache:"no-store",headers:accessHeaders()}
+    );
+    if(!r.ok) throw new Error("novel");
+
+    const data=await r.json();
+    const savedFont = Number(localStorage.getItem('mvp_fontsize')) || 17;
+    $("readerPages").innerHTML=`
+      <article class="novel-reader" style="font-size:${savedFont}px">
+        ${data.html || "<p class='muted'>Chapter kosong.</p>"}
+      </article>`;
+  }catch(e){
+    $("readerPages").innerHTML=
+      `<div class="readererror">Gagal memuat chapter novel.</div>`;
+  }
+
+  const commentUrl=chapterCommentLink(p);
+  const trakteerNav = p.trakteer ? `<button class="navbtn" style="background:#e74c3c;color:#fff;pointer-events:auto;" onclick="window.open('${esc(p.trakteer)}', '_blank')">☕ Traktir Kopi</button>` : "";
+  const fontControls = `
+    <div class="reader-nav-row" style="margin-top:4px;margin-bottom:8px;">
+      <button class="navbtn" style="pointer-events:auto;background:var(--panel2);color:var(--text);border:1px solid var(--border2);" onclick="changeFontSize(-1, event)">A- Kecilkan</button>
+      <button class="navbtn" style="pointer-events:auto;background:var(--panel2);color:var(--text);border:1px solid var(--border2);" onclick="changeFontSize(1, event)">A+ Besarkan</button>
+    </div>
+  `;
+
+  $("readerNav").innerHTML=`
+    ${fontControls}
+    <div class="reader-nav-row">
+      <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
+        onclick="openChapter('${esc(p.id)}',${idx-1})">« Prev</button>
+      <button class="navbtn upbtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Up</button>
+      <button class="navbtn ${idx>=(p.chapters||[]).length-1?"disabled":""}" ${idx>=(p.chapters||[]).length-1?"disabled":""}
+        onclick="openChapter('${esc(p.id)}',${idx+1})">Next »</button>
+    </div>
+    <div class="reader-nav-row" style="margin-top:2px">
+      <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
+        ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
+        Tulis Komentar
+      </button>
+      ${trakteerNav}
+    </div>`;
+}
+
+async function openReader(projectId, chapterName, decensored){
+  if(!(await requireAccess())) return;
+  
+  const p=catalog.find(x=>x.id===projectId);
+  if(!p) return;
+  const idx=chapterIndex(projectId, chapterName, decensored);
+  const c=p.chapters[idx];
+  if(!c) return;
+
+  const platform = String(tg?.platform || "").toLowerCase();
+  if (Number(c.decensored) === 1 && !["android", "android_x"].includes(platform)) {
+      alert("Akses ditolak!\nChapter Decensored hanya tersedia di Android");
+      return;
+  }
+
+  if(c?.content_type==="docx"){
+    await openNovelReader(projectId, idx);
+    return;
+  }
+
+  if(!Array.isArray(c.file_ids) || !c.file_ids.length){
+    alert("Halaman chapter belum tersedia.");
+    return;
+  }
+
+  saveHistory(projectId, c.chapter, Number(c.decensored));
+  
+  $("progressContainer").style.display="block";
+  $("progressBar").style.width="0%";
+
+  $("home").classList.add("hidden");
+  $("detail").classList.add("hidden");
+  $("reader").classList.remove("hidden");
+  $("reader").classList.remove("ui-hidden"); // Pastikan overlay terbuka di awal
+  showReaderWatermark();
+
+  $("readerContent").innerHTML=`
+    <div class="readerhead">
+      <div class="reader-topbar">
+        <button class="reader-info" onclick="readerInfo('${esc(p.id)}')">INFO »</button>
+        <div class="reader-chapter-wrap">
+          <button id="readerChapterButton" class="reader-chapter-btn" onclick="toggleChapterMenu(event)">
+            Ch.${esc(c.chapter)}${decBadge(c.decensored)}
+          </button>
+          <div id="readerChapterMenu" class="reader-chapter-menu hidden">
+            ${(p.chapters||[]).map((ch,i)=>`
+              <button class="reader-chapter-option ${i===idx?"current":""}" onclick="selectReaderChapter('${esc(p.id)}',${i})">
+                Ch.${esc(ch.chapter)}${decBadge(ch.decensored)}
+              </button>`).join("")}
+          </div>
+        </div>
+        <button class="reader-arrow ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""} onclick="openChapter('${esc(p.id)}',${idx-1})">←</button>
+        <button class="reader-arrow ${idx>=(p.chapters||[]).length-1?"disabled":""}" ${idx>=(p.chapters||[]).length-1?"disabled":""} onclick="openChapter('${esc(p.id)}',${idx+1})">→</button>
+      </div>
+    </div>
+    <div id="readerPages" class="readerpages" onclick="toggleReaderUI(event)"></div>
+    <div id="readerNav" class="reader-nav"></div>`;
+
+  const pages=$("readerPages");
+  const commentUrl=chapterCommentLink(p);
+  const trakteerNav = p.trakteer ? `<button class="navbtn" style="background:#e74c3c;color:#fff;pointer-events:auto;" onclick="window.open('${esc(p.trakteer)}', '_blank')">☕ Traktir Kopi</button>` : "";
+
+  $("readerNav").innerHTML=`
+    <div class="reader-nav-row">
+      <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
+        onclick="openChapter('${esc(p.id)}',${idx-1})">« Prev</button>
+      <button class="navbtn upbtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Up</button>
+      <button class="navbtn ${idx>=(p.chapters||[]).length-1?"disabled":""}" ${idx>=(p.chapters||[]).length-1?"disabled":""}
+        onclick="openChapter('${esc(p.id)}',${idx+1})">Next »</button>
+    </div>
+    <div class="reader-nav-row" style="margin-top:6px">
+      <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
+        ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
+        Tulis Komentar
+      </button>
+      ${trakteerNav}
+    </div>
+  `;
+
+  c.file_ids.forEach((fid,i)=>{
+    const img=document.createElement("img");
+    img.className="readerpage";
+    img.alt=`${p.title} Chapter ${chapterName} Page ${i+1}`;
+    img.loading=i<2?"eager":"lazy";
+    img.src=fileUrl(fid);
+    img.onerror=()=>{
+      const err=document.createElement("div");
+      err.className="readererror";
+      err.textContent=`Gagal memuat halaman ${i+1}.`;
+      img.replaceWith(err);
+    };
+    pages.appendChild(img);
+  });
+}
+
+function toggleChapterMenu(e){
+  e?.stopPropagation();
+  const menu=$("readerChapterMenu");
+  if(menu) menu.classList.toggle("hidden");
+}
+
+function selectReaderChapter(projectId,index){
+  const p=catalog.find(x=>x.id===projectId);
+  if(!p || !p.chapters?.[index])return;
+  $("readerChapterMenu")?.classList.add("hidden");
+  const c=p.chapters[index];
+  openReader(projectId,c.chapter,Number(c.decensored));
+}
+
+document.addEventListener("click",e=>{
+  const menu=$("readerChapterMenu");
+  const wrap=menu?.parentElement;
+  if(menu && wrap && !wrap.contains(e.target)) menu.classList.add("hidden");
+});
+
+function readerInfo(projectId){
+  hideReaderWatermark();
+  $("reader").classList.add("hidden");
+  openProject(projectId);
+}
+function closeReader(){
+  $("progressContainer").style.display="none";
+  hideReaderWatermark();
+  $("reader").classList.add("hidden");
+  $("detail").classList.remove("hidden");
+}
+
+function applyTheme(theme){
+  const light=theme==="light";
+  document.body.classList.toggle("light",light);
+  const btn=$("themeToggle");
+  if(btn) btn.textContent=light?"🌙":"☀️";
+  try{localStorage.setItem("mvp_theme",light?"light":"dark")}catch(e){}
+}
+
+function toggleTheme(){
+  applyTheme(document.body.classList.contains("light")?"dark":"light");
+}
+
+(function initTheme(){
+  let theme="dark";
+  try{theme=localStorage.getItem("mvp_theme")||"dark"}catch(e){}
+  applyTheme(theme);
+})(); 
+
+// FUNGSI INIT GLOBAL
+(async()=>{
+  if(!tg){showDenied();return;}
+  tg.ready();tg.expand();
+  
+  const platform=String(tg.platform||\"\").toLowerCase();
+  if(!tg.initData || ![\"android\",\"android_x\",\"ios\"].includes(platform)){
+    showDenied();
+    return;
+  }
+  
+  try{
+    if(!(await requireAccess())) return;
+    const r=await fetch("/api/catalog",{cache:"no-store",headers:accessHeaders()});
+    if(r.status===403 || r.status===401){showDenied();return;}
+    if(!r.ok)throw new Error("catalog");
+    catalog=await r.json();
+    $("home").classList.remove("hidden"); 
+    
+    renderHome();
+
+    const startParam = tg?.initDataUnsafe?.start_param;
+    if (startParam) {
+      const p = catalog.find(x => x.id === startParam);
+      if (p) {
+        openProject(startParam); 
+      }
+    }
+
+  }catch(e){
+    if(accessDenied) return;
+    $("home").classList.remove("hidden");
+    $("grid").innerHTML="<p class='muted'>Library belum tersambung ke katalog.</p>";
+  }
+})();
+</script>
+</body>
+</html>
