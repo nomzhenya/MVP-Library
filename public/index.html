@@ -13,7 +13,7 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,
 
 /* ANTI-COPY CSS BRUTAL */
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
-img{pointer-events:none;-webkit-user-drag:none;} /* Cegah drag & klik tahan pada gambar */
+img{pointer-events:none;-webkit-user-drag:none;} 
 
 body.light{--bg:#f5f5f7;--text:#17171b;--muted:#666670;--panel:#fff;--panel2:#e9e9ee;--border:#d7d7de;--border2:#c5c5ce;--input:#fff}
 .wrap{max-width:900px;margin:auto;padding:20px}
@@ -28,17 +28,17 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .card:active{transform:scale(0.97)}
 .cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--panel2)}.cardbody{padding:12px}.title{font-weight:700;line-height:1.2;font-size:15px}
 
-.btn{display:inline-block;border:0;border-radius:10px;padding:9px 12px;background:#30303a;color:#fff;text-decoration:none}
-.back{border:0;background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:10px}
+.btn{display:inline-block;border:0;border-radius:10px;padding:9px 12px;background:#30303a;color:#fff;text-decoration:none;pointer-events:auto;}
+.back{border:0;background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:10px;pointer-events:auto;}
 .tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
-.tag{border:1px solid var(--border2);background:var(--panel2);color:var(--text);border-radius:999px;padding:6px 10px;font-size:13px;cursor:pointer}
+.tag{border:1px solid var(--border2);background:var(--panel2);color:var(--text);border-radius:999px;padding:6px 10px;font-size:13px;cursor:pointer;pointer-events:auto;}
 .detailcover{width:min(260px,75%);aspect-ratio:2/3;object-fit:cover;border-radius:16px;margin-top:16px}
 .chapters{display:flex;flex-direction:column;gap:9px;margin-top:14px}.chapter{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:var(--input);border:1px solid var(--border);border-radius:12px}
 .notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}.theme-toggle{border:1px solid var(--border2);border-radius:10px;padding:9px 11px;background:var(--panel2);color:var(--text);font-size:14px;font-weight:700;cursor:pointer; pointer-events:auto;}
 .home-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 
 .home-filters{display:flex;gap:8px;margin:8px 0 16px}
-.type-btn{flex:1;border:1px solid var(--border2);border-radius:12px;padding:12px 12px;background:var(--panel2);color:var(--muted);font-weight:800;font-size:15px;transition:all 0.2s}
+.type-btn{flex:1;border:1px solid var(--border2);border-radius:12px;padding:12px 12px;background:var(--panel2);color:var(--muted);font-weight:800;font-size:15px;transition:all 0.2s; pointer-events:auto;}
 .type-btn.active{background:#30303a;color:#fff;border-color:#4a4a58}
 
 .section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:22px 0 12px}
@@ -100,7 +100,7 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .reader-watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;pointer-events:none;text-align:center;line-height:1.15;opacity:.34;color:var(--text);text-shadow:0 1px 3px rgba(0,0,0,.75);white-space:nowrap;font-weight:700}
 .reader-watermark .wm-title{font-size:18px}
 .reader-watermark .wm-user{font-size:12px;font-weight:600;margin-top:3px}
-.novel-reader{width:min(820px,100%);margin:0 auto;padding:26px 22px 46px;background:var(--panel);color:var(--text);line-height:1.8;font-size:17px;user-select:none;-webkit-user-select:none;} /* Teks novel tidak bisa di copy lagi */
+.novel-reader{width:min(820px,100%);margin:0 auto;padding:26px 22px 46px;background:var(--panel);color:var(--text);line-height:1.8;font-size:17px;user-select:none;-webkit-user-select:none;} 
 .novel-reader p{margin:0 0 1.1em}
 .novel-reader h1,.novel-reader h2,.novel-reader h3{line-height:1.35;margin:1.5em 0 .75em}
 .novel-reader blockquote{margin:1em 0;padding-left:16px;border-left:3px solid var(--border2);color:var(--muted)}
@@ -110,14 +110,11 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 <body oncontextmenu="return false">
 
 <script>
-  // 1. Blokir Klik Kanan, Blok Teks, dan Drag
   document.addEventListener('contextmenu', e => e.preventDefault());
   document.addEventListener('dragstart', e => e.preventDefault());
   document.addEventListener('selectstart', e => {
-    if(e.target.tagName !== 'INPUT') e.preventDefault(); // Izinkan select hanya di search bar
+    if(e.target.tagName !== 'INPUT') e.preventDefault(); 
   });
-
-  // 2. Blokir Shortcut Keyboard Hacker (F12, Inspect, dll)
   document.addEventListener('keydown', function(e) {
     if (e.key === 'F12' || 
        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
@@ -126,11 +123,9 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
       return false;
     }
   });
-
-  // 3. Jebakan Debugger (Membuat Inspect Element Nge-Freeze)
   setInterval(function() {
     const start = performance.now();
-    debugger; // Script akan berhenti di sini jika DevTools terbuka
+    debugger; 
     const end = performance.now();
     if (end - start > 100) {
       document.body.innerHTML = "<div style='display:flex;height:100vh;align-items:center;justify-content:center;background:#000;color:#f00;font-size:20px;text-align:center;padding:20px;'>Akses Ilegal Terdeteksi!<br>Sistem Dimatikan.</div>";
@@ -505,6 +500,8 @@ async function openProject(id){
     : "";
   
   const authorInfo=p.author ? `<div style="margin-top:6px;font-size:14px;color:var(--muted)"><b>Author/Artist:</b> ${esc(p.author)}</div>` : "";
+  const transInfo=p.translator ? `<div style="margin-top:2px;font-size:14px;color:#f39c12"><b>Translator:</b> ${esc(p.translator)}</div>` : "";
+  const trakteerDetail = p.trakteer ? `<br><a href="${esc(p.trakteer)}" target="_blank" style="display:inline-block;margin-top:12px;margin-bottom:8px;background:#e74c3c;color:#fff;padding:8px 12px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:14px;">☕ Traktir Kopi</a>` : "";
 
   const validTags = (Array.isArray(p.tags) ? p.tags : []).filter(t => t && isNaN(Number(t)));
   const tags=validTags.length
@@ -515,6 +512,8 @@ async function openProject(id){
     ${cover}
     <h1 style="margin-top:16px">${esc(p.title)}</h1>
     ${authorInfo}
+    ${transInfo}
+    ${trakteerDetail}
     ${tags}
     <p class="muted" style="margin-top:12px;white-space:pre-line">${esc(p.description)}</p>
     <h2 style="margin-top:24px">Chapters</h2>
@@ -620,6 +619,8 @@ async function openNovelReader(projectId, idx){
   }
 
   const commentUrl=chapterCommentLink(p);
+  const trakteerNav = p.trakteer ? `<button class="navbtn" style="background:#e74c3c;color:#fff;" onclick="window.open('${esc(p.trakteer)}', '_blank')">☕ Traktir Kopi</button>` : "";
+  
   $("readerNav").innerHTML=`
     <div class="reader-nav-row">
       <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
@@ -628,10 +629,13 @@ async function openNovelReader(projectId, idx){
       <button class="navbtn ${idx>=(p.chapters||[]).length-1?"disabled":""}" ${idx>=(p.chapters||[]).length-1?"disabled":""}
         onclick="openChapter('${esc(p.id)}',${idx+1})">Next »</button>
     </div>
-    <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
-      ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
-      Tulis Komentar
-    </button>`;
+    <div class="reader-nav-row" style="margin-top:2px">
+      <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
+        ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
+        Tulis Komentar
+      </button>
+      ${trakteerNav}
+    </div>`;
 }
 
 async function openReader(projectId, chapterName, decensored){
@@ -690,6 +694,7 @@ async function openReader(projectId, chapterName, decensored){
 
   const pages=$("readerPages");
   const commentUrl=chapterCommentLink(p);
+  const trakteerNav = p.trakteer ? `<button class="navbtn" style="background:#e74c3c;color:#fff;" onclick="window.open('${esc(p.trakteer)}', '_blank')">☕ Traktir Kopi</button>` : "";
 
   $("readerNav").innerHTML=`
     <div class="reader-nav-row">
@@ -699,10 +704,13 @@ async function openReader(projectId, chapterName, decensored){
       <button class="navbtn ${idx>=(p.chapters||[]).length-1?"disabled":""}" ${idx>=(p.chapters||[]).length-1?"disabled":""}
         onclick="openChapter('${esc(p.id)}',${idx+1})">Next »</button>
     </div>
-    <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
-      ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
-      Tulis Komentar
-    </button>
+    <div class="reader-nav-row" style="margin-top:2px">
+      <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
+        ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
+        Tulis Komentar
+      </button>
+      ${trakteerNav}
+    </div>
   `;
 
   c.file_ids.forEach((fid,i)=>{
