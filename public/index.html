@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f0f12">
 <title>MVP Miniweb</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -11,20 +11,19 @@
 :root{--bg:#0f0f12;--text:#f4f4f5;--muted:#a6a6b0;--panel:#19191f;--panel2:#24242a;--border:#2b2b31;--border2:#3a3a43;--input:#19191f}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden;transition:background .2s,color .2s}
 
-/* ANTI-COPY CSS BRUTAL */
+/* ANTI-COPY CSS BRUTAL TETAP JALAN! */
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
-img{pointer-events:none;-webkit-user-drag:none;} 
+img{-webkit-user-drag:none;} 
 
 body.light{--bg:#f5f5f7;--text:#17171b;--muted:#666670;--panel:#fff;--panel2:#e9e9ee;--border:#d7d7de;--border2:#c5c5ce;--input:#fff}
 .wrap{max-width:900px;margin:auto;padding:20px}
 #reader.wrap{width:100vw;max-width:none;margin:0;padding:0;overflow-x:hidden}
 #readerContent{width:100vw;max-width:none;margin:0!important;padding:0}
-@media(max-width:900px){
-  #reader.wrap{width:100vw}
-}
+@media(max-width:900px){ #reader.wrap{width:100vw} }
 header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{width:100%;padding:13px 15px;border:1px solid var(--border2);border-radius:14px;background:var(--input);color:var(--text);font-size:16px;margin:12px 0 18px; transition: border 0.2s; pointer-events:auto;}
 .search:focus{outline:none;border-color:#4a90e2}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px}.card{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px}
+.card{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s; position:relative;}
 .card:active{transform:scale(0.97)}
 .cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--panel2)}.cardbody{padding:12px}.title{font-weight:700;line-height:1.2;font-size:15px}
 
@@ -38,14 +37,14 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .home-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 
 .home-filters{display:flex;gap:8px;margin:8px 0 16px}
-.type-btn{flex:1;border:1px solid var(--border2);border-radius:12px;padding:12px 12px;background:var(--panel2);color:var(--muted);font-weight:800;font-size:15px;transition:all 0.2s; pointer-events:auto;}
+.type-btn{flex:1;border:1px solid var(--border2);border-radius:12px;padding:12px 6px;background:var(--panel2);color:var(--muted);font-weight:800;font-size:14px;transition:all 0.2s; pointer-events:auto; text-align:center;}
 .type-btn.active{background:#30303a;color:#fff;border-color:#4a4a58}
 
 .section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:22px 0 12px}
 .section-title{font-size:18px;font-weight:800;display:flex;align-items:center;gap:6px}
 .section-sub{font-size:12px;color:var(--muted)}
 .popular-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.popular-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer; pointer-events:auto;}
+.popular-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer; pointer-events:auto; position:relative;}
 .popular-card .cover{aspect-ratio:2/3}
 .popular-card .cardbody{padding:9px}
 .popular-card .title{font-size:13px}
@@ -61,7 +60,7 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .catalog-back{border:0;background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:10px;font-weight:bold; pointer-events:auto;}
 
 .update-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.update-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s; pointer-events:auto;}
+.update-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s; pointer-events:auto; position:relative;}
 .update-card:active{transform:scale(0.97)}
 .update-card .cover{aspect-ratio:2/3}
 .update-card .cardbody{padding:9px}
@@ -105,9 +104,15 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .novel-reader h1,.novel-reader h2,.novel-reader h3{line-height:1.35;margin:1.5em 0 .75em}
 .novel-reader blockquote{margin:1em 0;padding-left:16px;border-left:3px solid var(--border2);color:var(--muted)}
 .novel-loading{padding:40px 18px;text-align:center;color:var(--muted)}
+
+/* PROGRESS BAR CSS */
+#progressContainer{position:fixed;top:0;left:0;width:100vw;height:4px;background:rgba(0,0,0,0.3);z-index:9999;display:none;pointer-events:none;}
+#progressBar{height:100%;background:#f39c12;width:0%;transition:width 0.1s ease-out;}
 </style>
 </head>
 <body oncontextmenu="return false">
+
+<div id="progressContainer"><div id="progressBar"></div></div>
 
 <script>
   document.addEventListener('contextmenu', e => e.preventDefault());
@@ -156,9 +161,10 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
     <div id="historyStrip" class="update-strip"></div>
   </div>
 
-  <div class="home-filters">
+  <div class="home-filters" id="homeFilters">
     <button class="type-btn active" onclick="openCatalog('comic')">COMIC</button>
     <button class="type-btn" onclick="openCatalog('novel')">NOVEL</button>
+    <button class="type-btn" style="color:#e74c3c" onclick="openCatalog('favorite')">❤️ FAVORIT</button>
   </div>
 
   <div class="section-head">
@@ -259,7 +265,29 @@ async function requireAccess(){
 
 function deny(){ $("gate").classList.remove("hidden"); }
 
+// SISTEM FAVORIT & STATUS
+function isFavorite(id) {
+  let favs = JSON.parse(localStorage.getItem('mvp_favs') || '[]');
+  return favs.includes(id);
+}
+function toggleFavorite(id) {
+  let favs = JSON.parse(localStorage.getItem('mvp_favs') || '[]');
+  if (favs.includes(id)) { favs = favs.filter(x => x !== id); } 
+  else { favs.push(id); }
+  localStorage.setItem('mvp_favs', JSON.stringify(favs));
+  openProject(id); // refresh
+}
+
+function getStatusBadge(p) {
+  const stat = p.status || "Ongoing";
+  if (stat.toLowerCase() === "tamat" || stat.toLowerCase() === "completed") {
+    return `<div style="position:absolute;top:6px;right:6px;background:#2ecc71;color:#fff;font-size:10px;font-weight:800;padding:3px 6px;border-radius:6px;z-index:2;box-shadow:0 2px 4px rgba(0,0,0,0.5)">TAMAT</div>`;
+  }
+  return "";
+}
+
 function showHome(){
+  $("progressContainer").style.display="none";
   $("detail").classList.add("hidden");
   $("reader").classList.add("hidden");
   $("home").classList.remove("hidden");
@@ -275,6 +303,9 @@ function normalizeType(p){
 }
 
 function allTypeProjects(type){
+  if(type === 'favorite') {
+    return catalog.filter(p => isFavorite(p.id));
+  }
   return catalog.filter(p=>normalizeType(p)===type);
 }
 
@@ -289,7 +320,7 @@ function projectLatestChapter(p){
 }
 
 function latestUpdates(type){
-  return allTypeProjects(type)
+  return catalog.filter(p=>normalizeType(p)===type)
     .map(p=>{
       const latest=projectLatestChapter(p);
       if(!latest || latest.chapter == null || String(latest.chapter.chapter||"").trim()==="") return null;
@@ -331,6 +362,7 @@ function renderHistory() {
     $("historySection").style.display = "block";
     target.innerHTML = validRecent.map(({p, hist}) => `
       <article class="update-card" style="border:1px solid #4a90e2;position:relative" onclick="openReader('${esc(p.id)}','${esc(hist.chapter)}',${hist.decensored})">
+        ${getStatusBadge(p)}
         ${p.cover_file_id ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="cover"></div>`}
         <div class="cardbody">
           <div class="title">${esc(p.title)}</div>
@@ -354,6 +386,7 @@ function renderLatest(type,targetId){
     return `
     <article class="update-card" style="position:relative" onclick="openReader('${esc(p.id)}','${esc(latest.chapter.chapter)}',${latest.chapter.decensored})">
       ${newBadge}
+      ${getStatusBadge(p)}
       ${p.cover_file_id
         ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">`
         : `<div class="cover"></div>`}
@@ -400,9 +433,12 @@ $("search").oninput = () => {
       $("catalogLayer").classList.remove("active");
       $("homeLayer").classList.add("active");
     } else {
-      $("catalogTitle").textContent = currentType === "novel" ? "Novel" : "Comic";
+      let title = "Katalog Comic";
+      if (currentType === "novel") title = "Katalog Novel";
+      if (currentType === "favorite") title = "Favorit Saya";
+      $("catalogTitle").textContent = title;
     }
-    $("popularSection").style.display = "block";
+    $("popularSection").style.display = currentType === 'favorite' ? 'none' : 'block';
     renderCatalog();
   }
 };
@@ -431,10 +467,12 @@ function renderCards(list, targetId, popular=false){
             <div style="font-size:14px;font-weight:800;color:var(--muted);margin-bottom:7px">${esc(letter)}</div>
             <div style="display:flex;flex-direction:column;gap:6px">
               ${groups[letter].map(p=>`
-                <button onclick="openProject('${esc(p.id)}')"
-                  style="width:100%;text-align:left;border:1px solid var(--border);border-radius:10px;padding:11px 13px;background:var(--panel);color:var(--text);font-size:15px;font-weight:650;pointer-events:auto;">
-                  ${esc(p.title)}
-                </button>`).join("")}
+                <div style="position:relative;">
+                  <button onclick="openProject('${esc(p.id)}')"
+                    style="width:100%;text-align:left;border:1px solid var(--border);border-radius:10px;padding:11px 13px;background:var(--panel);color:var(--text);font-size:15px;font-weight:650;pointer-events:auto;">
+                    ${esc(p.title)}
+                  </button>
+                </div>`).join("")}
             </div>
           </section>`).join("")
       : "<p class='muted'>Tidak ditemukan.</p>";
@@ -442,7 +480,8 @@ function renderCards(list, targetId, popular=false){
   }
 
   target.innerHTML=list.length?list.map(p=>`
-    <article class="popular-card" style="border:1px solid #f39c12" onclick="openProject('${esc(p.id)}')">
+    <article class="popular-card" style="border:1px solid #f39c12;position:relative" onclick="openProject('${esc(p.id)}')">
+      ${getStatusBadge(p)}
       ${p.cover_file_id
         ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none'">`
         : `<div class="cover"></div>`}
@@ -460,26 +499,25 @@ function renderTagFilter(list){
 }
 
 function openCatalog(type){
-  currentType=type==="novel"?"novel":"comic";
-  currentTag="";
+  currentType = type;
+  currentTag = "";
   $("homeLayer").classList.remove("active");
   $("catalogLayer").classList.add("active");
-  $("catalogTitle").textContent=currentType==="novel"?"Katalog Novel":"Katalog Comic";
-  $("popularSection").style.display = "block";
-  $("search").value="";
-  renderCatalog();
-}
-
-function renderCatalog(withPopular = true){
-  const list=getFilteredProjects();
-  if(withPopular) renderCards(list.slice(0,3),"popularGrid",true);
-  renderCards(list,"grid",false);
   
-  if($("search").value.trim() !== "") {
-    $("tagFilter").innerHTML = "";
-  } else {
-    renderTagFilter(allTypeProjects(currentType));
-  }
+  let title = "Katalog Comic";
+  if (type === "novel") title = "Katalog Novel";
+  if (type === "favorite") title = "❤️ Favorit Saya";
+  $("catalogTitle").textContent = title;
+  
+  $("popularSection").style.display = type === 'favorite' ? 'none' : 'block';
+  $("search").value="";
+
+  document.querySelectorAll('#homeFilters .type-btn').forEach(b => {
+    b.classList.remove('active');
+    if (b.textContent.toLowerCase().includes(type.toLowerCase())) b.classList.add('active');
+  });
+
+  renderCatalog(type !== 'favorite');
 }
 
 function filterByTag(tag){
@@ -487,7 +525,7 @@ function filterByTag(tag){
   currentTag=currentTag===q?"":q;
   $("homeLayer").classList.remove("active");
   $("catalogLayer").classList.add("active");
-  renderCatalog();
+  renderCatalog(currentType !== 'favorite');
 }
 
 async function openProject(id){
@@ -501,16 +539,24 @@ async function openProject(id){
   
   const authorInfo=p.author ? `<div style="margin-top:6px;font-size:14px;color:var(--muted)"><b>Author/Artist:</b> ${esc(p.author)}</div>` : "";
   const transInfo=p.translator ? `<div style="margin-top:2px;font-size:14px;color:#f39c12"><b>Translator:</b> ${esc(p.translator)}</div>` : "";
-  const trakteerDetail = p.trakteer ? `<br><a href="${esc(p.trakteer)}" target="_blank" style="display:inline-block;margin-top:12px;margin-bottom:8px;background:#e74c3c;color:#fff;padding:8px 12px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:14px;">☕ Traktir Kopi</a>` : "";
+  const trakteerDetail = p.trakteer ? `<br><a href="${esc(p.trakteer)}" target="_blank" style="display:inline-block;margin-top:12px;margin-bottom:8px;background:#e74c3c;color:#fff;padding:8px 12px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:14px;pointer-events:auto;">☕ Traktir Kopi</a>` : "";
 
   const validTags = (Array.isArray(p.tags) ? p.tags : []).filter(t => t && isNaN(Number(t)));
   const tags=validTags.length
     ? `<div class="tags">${validTags.map(t=>`<button class="tag" style="pointer-events:auto;" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
     : "";
-    
+
+  const isFav = isFavorite(p.id);
+  const favBtn = `<button class="btn" style="background:${isFav ? '#e74c3c' : 'var(--panel2)'}; color:#fff; pointer-events:auto; font-weight:bold;" onclick="toggleFavorite('${esc(p.id)}')">${isFav ? '❤️ Disimpan' : '🤍 Favorit'}</button>`;
+  
+  const statusText = (p.status || "Ongoing").toUpperCase();
+  const statusColor = (statusText === "TAMAT" || statusText === "COMPLETED") ? "#2ecc71" : "#f39c12";
+  const statusBadgeDetail = `<span style="background:${statusColor};color:#fff;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:900;margin-left:8px;vertical-align:middle;">${statusText}</span>`;
+
   $("detailContent").innerHTML=`
     ${cover}
-    <h1 style="margin-top:16px">${esc(p.title)}</h1>
+    <h1 style="margin-top:16px;display:flex;align-items:center;">${esc(p.title)} ${statusBadgeDetail}</h1>
+    <div style="margin-top:12px;margin-bottom:8px;">${favBtn}</div>
     ${authorInfo}
     ${transInfo}
     ${trakteerDetail}
@@ -521,6 +567,18 @@ async function openProject(id){
       <div class="chapter"><span>Chapter ${esc(c.chapter)} ${decBadge(c.decensored)}</span>
       <button class="btn" style="pointer-events:auto;" onclick="openReader('${esc(p.id)}','${esc(c.chapter)}',${c.decensored})">Baca</button></div>`).join("")}</div>`;
 }
+
+// LOGIKA SCROLL PROGRESS BAR
+window.addEventListener('scroll', () => {
+  if (!$("reader").classList.contains("hidden")) {
+    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    if (height > 0) {
+      const scrolled = (winScroll / height) * 100;
+      $("progressBar").style.width = scrolled + "%";
+    }
+  }
+});
 
 function getTelegramIdentity(){
   const u=tg?.initDataUnsafe?.user;
@@ -559,12 +617,26 @@ function chapterCommentLink(p){
   return p?.comment_link || "";
 }
 
+// KONTROL FONT NOVEL
+function changeFontSize(dir) {
+  let currentFontSize = Number(localStorage.getItem('mvp_fontsize')) || 17;
+  currentFontSize += (dir * 2);
+  if (currentFontSize < 12) currentFontSize = 12;
+  if (currentFontSize > 32) currentFontSize = 32;
+  localStorage.setItem('mvp_fontsize', currentFontSize);
+  const reader = document.querySelector('.novel-reader');
+  if (reader) reader.style.fontSize = currentFontSize + 'px';
+}
+
 async function openNovelReader(projectId, idx){
   const p=catalog.find(x=>x.id===projectId);
   const c=p?.chapters?.[idx];
   if(!c) return;
 
   saveHistory(projectId, c.chapter, Number(c.decensored));
+
+  $("progressContainer").style.display="block";
+  $("progressBar").style.width="0%";
 
   $("home").classList.add("hidden");
   $("detail").classList.add("hidden");
@@ -609,8 +681,9 @@ async function openNovelReader(projectId, idx){
     if(!r.ok) throw new Error("novel");
 
     const data=await r.json();
+    const savedFont = Number(localStorage.getItem('mvp_fontsize')) || 17;
     $("readerPages").innerHTML=`
-      <article class="novel-reader">
+      <article class="novel-reader" style="font-size:${savedFont}px">
         ${data.html || "<p class='muted'>Chapter kosong.</p>"}
       </article>`;
   }catch(e){
@@ -619,9 +692,16 @@ async function openNovelReader(projectId, idx){
   }
 
   const commentUrl=chapterCommentLink(p);
-  const trakteerNav = p.trakteer ? `<button class="navbtn" style="background:#e74c3c;color:#fff;" onclick="window.open('${esc(p.trakteer)}', '_blank')">☕ Traktir Kopi</button>` : "";
-  
+  const trakteerNav = p.trakteer ? `<button class="navbtn" style="background:#e74c3c;color:#fff;pointer-events:auto;" onclick="window.open('${esc(p.trakteer)}', '_blank')">☕ Traktir Kopi</button>` : "";
+  const fontControls = `
+    <div class="reader-nav-row" style="margin-top:4px;margin-bottom:8px;">
+      <button class="navbtn" style="pointer-events:auto;background:#30303a;" onclick="changeFontSize(-1)">A- Kecilkan</button>
+      <button class="navbtn" style="pointer-events:auto;background:#30303a;" onclick="changeFontSize(1)">A+ Besarkan</button>
+    </div>
+  `;
+
   $("readerNav").innerHTML=`
+    ${fontControls}
     <div class="reader-nav-row">
       <button class="navbtn ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
         onclick="openChapter('${esc(p.id)}',${idx-1})">« Prev</button>
@@ -664,6 +744,9 @@ async function openReader(projectId, chapterName, decensored){
   }
 
   saveHistory(projectId, c.chapter, Number(c.decensored));
+  
+  $("progressContainer").style.display="block";
+  $("progressBar").style.width="0%";
 
   $("home").classList.add("hidden");
   $("detail").classList.add("hidden");
@@ -694,7 +777,7 @@ async function openReader(projectId, chapterName, decensored){
 
   const pages=$("readerPages");
   const commentUrl=chapterCommentLink(p);
-  const trakteerNav = p.trakteer ? `<button class="navbtn" style="background:#e74c3c;color:#fff;" onclick="window.open('${esc(p.trakteer)}', '_blank')">☕ Traktir Kopi</button>` : "";
+  const trakteerNav = p.trakteer ? `<button class="navbtn" style="background:#e74c3c;color:#fff;pointer-events:auto;" onclick="window.open('${esc(p.trakteer)}', '_blank')">☕ Traktir Kopi</button>` : "";
 
   $("readerNav").innerHTML=`
     <div class="reader-nav-row">
@@ -755,6 +838,7 @@ function readerInfo(projectId){
   openProject(projectId);
 }
 function closeReader(){
+  $("progressContainer").style.display="none";
   hideReaderWatermark();
   $("reader").classList.add("hidden");
   $("detail").classList.remove("hidden");
@@ -792,8 +876,7 @@ function toggleTheme(){
   try{
     if(!(await requireAccess())) return;
     const r=await fetch("/api/catalog",{cache:"no-store",headers:accessHeaders()});
-    if(r.status===403 || r.status===401){showDenied();return;}
-    if(!r.ok)throw new Error("catalog");
+    if(r.status===403 || r.status===401){showDenied();return;}\n    if(!r.ok)throw new Error("catalog");
     catalog=await r.json();
     $("home").classList.remove("hidden"); 
     
