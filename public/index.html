@@ -113,7 +113,7 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
       <h1>MVP Miniweb</h1>
       <p class="muted" style="margin-top:4px">Pusat bacaan komik dan novel MVP.</p>
     </div>
-    <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema">Terang</button>
+    <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema">☀️</button>
   </div>
 </header>
 
@@ -313,7 +313,6 @@ function renderHistory() {
   }
 }
 
-// LOGIKA BARU: Tambah Badge "NEW" jika update di bawah 24 jam (86.400.000 milidetik)
 function renderLatest(type,targetId){
   const target=$(targetId);
   const updates=latestUpdates(type);
@@ -413,7 +412,6 @@ function renderCards(list, targetId, popular=false){
     return;
   }
 
-  // LOGIKA BARU: Tambah border warna emas (#f39c12) untuk kolom Populer
   target.innerHTML=list.length?list.map(p=>`
     <article class="popular-card" style="border:1px solid #f39c12" onclick="openProject('${esc(p.id)}')">
       ${p.cover_file_id
@@ -613,7 +611,7 @@ async function openReader(projectId, chapterName, decensored){
 
   const platform = String(tg?.platform || "").toLowerCase();
   if (Number(c.decensored) === 1 && !["android", "android_x"].includes(platform)) {
-      alert("Akses Ditolak!\n\nChapter [Decensored] ini eksklusif hanya dapat dibuka melalui aplikasi Telegram di Android.");
+      alert("Akses ditolak!\nChapter Decensored hanya tersedia di Android");
       return;
   }
 
