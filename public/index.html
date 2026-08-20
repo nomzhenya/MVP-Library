@@ -876,7 +876,8 @@ function toggleTheme(){
   try{
     if(!(await requireAccess())) return;
     const r=await fetch("/api/catalog",{cache:"no-store",headers:accessHeaders()});
-    if(r.status===403 || r.status===401){showDenied();return;}\n    if(!r.ok)throw new Error("catalog");
+    if(r.status===403 || r.status===401){showDenied();return;}
+    if(!r.ok)throw new Error("catalog");
     catalog=await r.json();
     $("home").classList.remove("hidden"); 
     
