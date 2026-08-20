@@ -8,14 +8,28 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{box-sizing:border-box}
-:root{--bg:#0f0f12;--text:#f4f4f5;--muted:#a6a6b0;--panel:#19191f;--panel2:#24242a;--border:#2b2b31;--border2:#3a3a43;--input:#19191f}
+
+/* CSS VARIABEL UNTUK TEMA DINAMIS */
+:root{
+  --bg:#0f0f12; --text:#f4f4f5; --muted:#a6a6b0; 
+  --panel:#19191f; --panel2:#24242a; --border:#2b2b31; --border2:#3a3a43; --input:#19191f;
+  --btn-bg: #30303a; --btn-text: #ffffff; /* Warna Tombol Dark Mode */
+  --overlay-bg: rgba(25, 25, 31, 0.80); /* Overlay Mengambang Dark Mode (Lebih Transparan) */
+}
+
+body.light{
+  --bg:#f5f5f7; --text:#17171b; --muted:#666670; 
+  --panel:#fff; --panel2:#e9e9ee; --border:#d7d7de; --border2:#c5c5ce; --input:#fff;
+  --btn-bg: #e2e2e7; --btn-text: #17171b; /* Warna Tombol Light Mode */
+  --overlay-bg: rgba(255, 255, 255, 0.85); /* Overlay Mengambang Light Mode */
+}
+
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden;transition:background .2s,color .2s}
 
-/* ANTI-COPY CSS BRUTAL (Disesuaikan agar Zoom tetap jalan) */
+/* ANTI-COPY CSS (Sudah dilonggarkan agar Zoom berfungsi) */
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
 img{-webkit-user-drag:none;-webkit-touch-callout:none;} 
 
-body.light{--bg:#f5f5f7;--text:#17171b;--muted:#666670;--panel:#fff;--panel2:#e9e9ee;--border:#d7d7de;--border2:#c5c5ce;--input:#fff}
 .wrap{max-width:900px;margin:auto;padding:20px}
 #reader.wrap{width:100vw;max-width:none;margin:0;padding:0;overflow-x:hidden}
 #readerContent{width:100vw;max-width:none;margin:0!important;padding:0}
@@ -27,8 +41,9 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .card:active{transform:scale(0.97)}
 .cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--panel2)}.cardbody{padding:12px}.title{font-weight:700;line-height:1.2;font-size:15px}
 
-.btn{display:inline-block;border:0;border-radius:10px;padding:9px 12px;background:#30303a;color:var(--text);text-decoration:none;pointer-events:auto;}
-.back{border:0;background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:10px;pointer-events:auto;}
+/* TOMBOL DINAMIS MENGIKUTI TEMA */
+.btn{display:inline-block;border:0;border-radius:10px;padding:9px 12px;background:var(--btn-bg);color:var(--btn-text);text-decoration:none;pointer-events:auto;font-weight:600;}
+.back{border:0;background:var(--btn-bg);color:var(--btn-text);padding:9px 12px;border-radius:10px;pointer-events:auto;font-weight:bold;}
 .tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
 .tag{border:1px solid var(--border2);background:var(--panel2);color:var(--text);border-radius:999px;padding:6px 10px;font-size:13px;cursor:pointer;pointer-events:auto;}
 .detailcover{width:min(260px,75%);aspect-ratio:2/3;object-fit:cover;border-radius:16px;margin-top:16px}
@@ -37,8 +52,8 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .home-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 
 .home-filters{display:flex;gap:8px;margin:8px 0 16px}
-.type-btn{flex:1;border:1px solid var(--border2);border-radius:12px;padding:12px 6px;background:var(--panel2);color:var(--muted);font-weight:800;font-size:14px;transition:all 0.2s; pointer-events:auto; text-align:center;}
-.type-btn.active{background:#30303a;color:#fff;border-color:#4a4a58}
+.type-btn{flex:1;border:1px solid var(--border2);border-radius:12px;padding:10px 6px;background:var(--panel2);color:var(--muted);font-weight:800;font-size:14px;transition:all 0.2s; pointer-events:auto; text-align:center;}
+.type-btn.active{background:var(--btn-bg);color:var(--btn-text);border-color:#4a4a58}
 
 .section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:22px 0 12px}
 .section-title{font-size:18px;font-weight:800;display:flex;align-items:center;gap:6px}
@@ -50,14 +65,14 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 .popular-card .title{font-size:13px}
 .all-title{margin-top:24px}
 .tag-filter{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px}
-.tag-filter .tag.active{background:#30303a;color:#fff}
+.tag-filter .tag.active{background:var(--btn-bg);color:var(--btn-text);}
 
 .home-layer{display:none}
 .home-layer.active{display:block}
 .catalog-layer{display:none}
 .catalog-layer.active{display:block}
 .catalog-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.catalog-back{border:0;background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:10px;font-weight:bold; pointer-events:auto;}
+.catalog-back{border:0;background:var(--btn-bg);color:var(--btn-text);padding:9px 12px;border-radius:10px;font-weight:bold; pointer-events:auto;}
 
 .update-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .update-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s; pointer-events:auto; position:relative;}
@@ -75,46 +90,46 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 }
 
 /* =========================================
-   UI BARU: OVERLAY MENGAMBANG ALA WEBTOON
+   UI BARU: OVERLAY MENGAMBANG DIPERKECIL
    ========================================= */
 .ui-hidden .readerhead { transform: translateY(-120%); }
 .ui-hidden .reader-nav { transform: translateY(120%); }
 
 .readerhead{
   position:fixed; top:0; left:0; width:100%; z-index:50;
-  padding:8px 12px; background:rgba(25, 25, 31, 0.95); backdrop-filter:blur(10px);
+  padding:6px 8px; /* Dikecilkan */
+  background:var(--overlay-bg); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
   border-bottom:1px solid var(--border);
   transition: transform 0.3s ease-in-out;
 }
 .reader-topbar{display:flex;align-items:center;gap:7px;width:100%;position:relative}
-.reader-info{flex:0 0 auto;border:0;border-radius:9px;padding:10px 11px;background:var(--panel2);color:var(--text);font-weight:700; pointer-events:auto;}
+.reader-info{flex:0 0 auto;border:0;border-radius:8px;padding:8px 10px;background:var(--btn-bg);color:var(--btn-text);font-weight:700; font-size:13px; pointer-events:auto;}
 .reader-chapter-wrap{flex:1;min-width:0;position:relative}
-.reader-chapter-btn{width:100%;border:2px solid #f4f4f5;border-radius:9px;padding:9px 12px;background:var(--panel2);color:var(--text);font-size:16px;font-weight:700;text-align:left; pointer-events:auto;}
-.reader-chapter-menu{position:absolute;left:0;top:calc(100% + 3px);width:min(310px,78vw);max-height:65vh;overflow-y:auto;background:#333338;border-radius:0 0 5px 5px;box-shadow:0 8px 20px rgba(0,0,0,.45);z-index:40}
-.reader-chapter-option{display:block;width:100%;border:0;background:transparent;color:#fff;text-align:left;padding:13px 20px;font-size:16px; pointer-events:auto;}
-.reader-chapter-option:active,.reader-chapter-option.current{background:#44444a}
-.reader-arrow{flex:0 0 42px;border:0;border-radius:9px;padding:10px 4px;background:var(--panel2);color:var(--text);font-size:18px;font-weight:700; pointer-events:auto;}
+.reader-chapter-btn{width:100%;border:1px solid var(--border2);border-radius:8px;padding:8px 10px;background:var(--panel2);color:var(--text);font-size:14px;font-weight:700;text-align:left; pointer-events:auto;}
+.reader-chapter-menu{position:absolute;left:0;top:calc(100% + 3px);width:min(310px,78vw);max-height:65vh;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:5px;box-shadow:0 8px 20px rgba(0,0,0,.45);z-index:40}
+.reader-chapter-option{display:block;width:100%;border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--text);text-align:left;padding:12px 16px;font-size:15px; pointer-events:auto;}
+.reader-chapter-option:active,.reader-chapter-option.current{background:var(--btn-bg);color:var(--btn-text);}
+.reader-arrow{flex:0 0 38px;border:0;border-radius:8px;padding:8px 4px;background:var(--btn-bg);color:var(--btn-text);font-size:16px;font-weight:700; pointer-events:auto;}
 .reader-arrow.disabled{opacity:.35;pointer-events:none}
 
 .reader-nav{
   position:fixed; bottom:0; left:0; width:100%; z-index:50;
-  display:flex; flex-direction:column; align-items:stretch; gap:8px;
-  padding:14px 10px calc(14px + env(safe-area-inset-bottom));
-  background:rgba(25, 25, 31, 0.95); backdrop-filter:blur(10px);
+  display:flex; flex-direction:column; align-items:stretch; gap:6px;
+  padding:8px 8px calc(8px + env(safe-area-inset-bottom)); /* Dikecilkan */
+  background:var(--overlay-bg); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
   border-top:1px solid var(--border);
   transition: transform 0.3s ease-in-out;
 }
-.reader-nav .navbtn{flex:1;min-width:0;text-align:center;border:0;border-radius:10px;padding:11px 8px;background:var(--panel2);color:var(--text);font-weight:700; pointer-events:auto;}
-.reader-nav-row{display:flex;align-items:center;gap:8px;width:100%}
+.reader-nav .navbtn{flex:1;min-width:0;text-align:center;border:0;border-radius:8px;padding:9px 6px;background:var(--btn-bg);color:var(--btn-text);font-weight:700; font-size:14px; pointer-events:auto;}
+.reader-nav-row{display:flex;align-items:center;gap:6px;width:100%}
 .reader-nav-row .navbtn{flex:1;min-width:0}
 .reader-nav-row .upbtn{flex:.72}
 .reader-nav .commentbtn{width:100%;margin-top:2px}
 .reader-nav .disabled{opacity:.35;pointer-events:none}
 
-/* Area Bacaan Diberi Padding Agar Tidak Tertutup Navigasi */
 .readerpages{
   display:flex;flex-direction:column;align-items:center;gap:0;margin:0;
-  padding-top:70px; padding-bottom:140px; min-height:100vh;
+  padding-top:60px; padding-bottom:120px; min-height:100vh; /* Ruang untuk Overlay */
   width:100vw;max-width:100vw;overflow-x:hidden;
 }
 .readerpage{display:block;width:100vw;max-width:100vw;height:auto;margin:0;padding:0;background:#000;object-fit:contain}
@@ -188,7 +203,7 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
   <div class="home-filters" id="homeFilters">
     <button class="type-btn active" onclick="openCatalog('comic')">COMIC</button>
     <button class="type-btn" onclick="openCatalog('novel')">NOVEL</button>
-    <button class="type-btn" style="color:#e74c3c" onclick="openCatalog('favorite')">❤️ FAVORIT</button>
+    <button class="type-btn" style="color:#e74c3c" onclick="openCatalog('bookmark')">🔖 BOOKMARK</button>
   </div>
 
   <div class="section-head">
@@ -289,17 +304,17 @@ async function requireAccess(){
 
 function deny(){ $("gate").classList.remove("hidden"); }
 
-// SISTEM FAVORIT & STATUS
-function isFavorite(id) {
-  let favs = JSON.parse(localStorage.getItem('mvp_favs') || '[]');
-  return favs.includes(id);
+// SISTEM BOOKMARK & STATUS
+function isBookmark(id) {
+  let bm = JSON.parse(localStorage.getItem('mvp_bookmarks') || '[]');
+  return bm.includes(id);
 }
-function toggleFavorite(id) {
-  let favs = JSON.parse(localStorage.getItem('mvp_favs') || '[]');
-  if (favs.includes(id)) { favs = favs.filter(x => x !== id); } 
-  else { favs.push(id); }
-  localStorage.setItem('mvp_favs', JSON.stringify(favs));
-  openProject(id); // refresh
+function toggleBookmark(id) {
+  let bm = JSON.parse(localStorage.getItem('mvp_bookmarks') || '[]');
+  if (bm.includes(id)) { bm = bm.filter(x => x !== id); } 
+  else { bm.push(id); }
+  localStorage.setItem('mvp_bookmarks', JSON.stringify(bm));
+  openProject(id); // refresh ui detail
 }
 
 function getStatusBadge(p) {
@@ -327,8 +342,8 @@ function normalizeType(p){
 }
 
 function allTypeProjects(type){
-  if(type === 'favorite') {
-    return catalog.filter(p => isFavorite(p.id));
+  if(type === 'bookmark') {
+    return catalog.filter(p => isBookmark(p.id));
   }
   return catalog.filter(p=>normalizeType(p)===type);
 }
@@ -459,10 +474,10 @@ $("search").oninput = () => {
     } else {
       let title = "Katalog Comic";
       if (currentType === "novel") title = "Katalog Novel";
-      if (currentType === "favorite") title = "Favorit Saya";
+      if (currentType === "bookmark") title = "🔖 Bookmark Saya";
       $("catalogTitle").textContent = title;
     }
-    $("popularSection").style.display = currentType === 'favorite' ? 'none' : 'block';
+    $("popularSection").style.display = currentType === 'bookmark' ? 'none' : 'block';
     renderCatalog();
   }
 };
@@ -530,10 +545,10 @@ function openCatalog(type){
   
   let title = "Katalog Comic";
   if (type === "novel") title = "Katalog Novel";
-  if (type === "favorite") title = "❤️ Favorit Saya";
+  if (type === "bookmark") title = "🔖 Bookmark Saya";
   $("catalogTitle").textContent = title;
   
-  $("popularSection").style.display = type === 'favorite' ? 'none' : 'block';
+  $("popularSection").style.display = type === 'bookmark' ? 'none' : 'block';
   $("search").value="";
 
   document.querySelectorAll('#homeFilters .type-btn').forEach(b => {
@@ -541,7 +556,7 @@ function openCatalog(type){
     if (b.textContent.toLowerCase().includes(type.toLowerCase())) b.classList.add('active');
   });
 
-  renderCatalog(type !== 'favorite');
+  renderCatalog(type !== 'bookmark');
 }
 
 function filterByTag(tag){
@@ -549,7 +564,7 @@ function filterByTag(tag){
   currentTag=currentTag===q?"":q;
   $("homeLayer").classList.remove("active");
   $("catalogLayer").classList.add("active");
-  renderCatalog(currentType !== 'favorite');
+  renderCatalog(currentType !== 'bookmark');
 }
 
 async function openProject(id){
@@ -563,15 +578,15 @@ async function openProject(id){
   
   const authorInfo=p.author ? `<div style="margin-top:6px;font-size:14px;color:var(--muted)"><b>Author/Artist:</b> ${esc(p.author)}</div>` : "";
   const transInfo=p.translator ? `<div style="margin-top:2px;font-size:14px;color:#f39c12"><b>Translator:</b> ${esc(p.translator)}</div>` : "";
-  const trakteerDetail = p.trakteer ? `<br><a href="${esc(p.trakteer)}" target="_blank" style="display:inline-block;margin-top:12px;margin-bottom:8px;background:#e74c3c;color:#fff;padding:8px 12px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:14px;pointer-events:auto;">☕ Traktir Kopi</a>` : "";
+  const trakteerDetail = p.trakteer ? `<br><a href="${esc(p.trakteer)}" target="_blank" class="btn" style="margin-top:12px;margin-bottom:8px;background:#e74c3c;color:#fff;">☕ Traktir Kopi</a>` : "";
 
   const validTags = (Array.isArray(p.tags) ? p.tags : []).filter(t => t && isNaN(Number(t)));
   const tags=validTags.length
     ? `<div class="tags">${validTags.map(t=>`<button class="tag" style="pointer-events:auto;" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
     : "";
 
-  const isFav = isFavorite(p.id);
-  const favBtn = `<button class="btn" style="background:${isFav ? '#e74c3c' : 'var(--panel2)'}; color:#fff; pointer-events:auto; font-weight:bold;" onclick="toggleFavorite('${esc(p.id)}')">${isFav ? '❤️ Disimpan' : '🤍 Favorit'}</button>`;
+  const isBm = isBookmark(p.id);
+  const favBtn = `<button class="btn" style="background:${isBm ? '#e74c3c' : 'var(--btn-bg)'}; color:${isBm ? '#fff' : 'var(--btn-text)'}; pointer-events:auto; font-weight:bold;" onclick="toggleBookmark('${esc(p.id)}')">${isBm ? '🔖 Disimpan' : '📑 Bookmark'}</button>`;
   
   const statusText = (p.status || "Ongoing").toUpperCase();
   const statusColor = (statusText === "TAMAT" || statusText === "COMPLETED") ? "#2ecc71" : "#f39c12";
@@ -650,7 +665,7 @@ function toggleReaderUI(e) {
 
 // KONTROL FONT NOVEL
 function changeFontSize(dir, e) {
-  if (e) e.stopPropagation(); // Mencegah layar nge-toggle saat klik tombol
+  if (e) e.stopPropagation(); 
   let currentFontSize = Number(localStorage.getItem('mvp_fontsize')) || 17;
   currentFontSize += (dir * 2);
   if (currentFontSize < 12) currentFontSize = 12;
@@ -725,11 +740,11 @@ async function openNovelReader(projectId, idx){
   }
 
   const commentUrl=chapterCommentLink(p);
-  const trakteerNav = p.trakteer ? `<button class="navbtn" style="background:#e74c3c;color:#fff;pointer-events:auto;" onclick="window.open('${esc(p.trakteer)}', '_blank')">☕ Traktir Kopi</button>` : "";
+  const trakteerNav = p.trakteer ? `<button class="navbtn" style="background:#e74c3c;color:#fff;" onclick="window.open('${esc(p.trakteer)}', '_blank')">☕ Traktir Kopi</button>` : "";
   const fontControls = `
     <div class="reader-nav-row" style="margin-top:4px;margin-bottom:8px;">
-      <button class="navbtn" style="pointer-events:auto;background:var(--panel2);color:var(--text);border:1px solid var(--border2);" onclick="changeFontSize(-1, event)">A- Kecilkan</button>
-      <button class="navbtn" style="pointer-events:auto;background:var(--panel2);color:var(--text);border:1px solid var(--border2);" onclick="changeFontSize(1, event)">A+ Besarkan</button>
+      <button class="navbtn" onclick="changeFontSize(-1, event)">A- Kecilkan</button>
+      <button class="navbtn" onclick="changeFontSize(1, event)">A+ Besarkan</button>
     </div>
   `;
 
@@ -742,7 +757,7 @@ async function openNovelReader(projectId, idx){
       <button class="navbtn ${idx>=(p.chapters||[]).length-1?"disabled":""}" ${idx>=(p.chapters||[]).length-1?"disabled":""}
         onclick="openChapter('${esc(p.id)}',${idx+1})">Next »</button>
     </div>
-    <div class="reader-nav-row" style="margin-top:2px">
+    <div class="reader-nav-row" style="margin-top:6px">
       <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
         ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
         Tulis Komentar
@@ -811,7 +826,7 @@ async function openReader(projectId, chapterName, decensored){
 
   const pages=$("readerPages");
   const commentUrl=chapterCommentLink(p);
-  const trakteerNav = p.trakteer ? `<button class="navbtn" style="background:#e74c3c;color:#fff;pointer-events:auto;" onclick="window.open('${esc(p.trakteer)}', '_blank')">☕ Traktir Kopi</button>` : "";
+  const trakteerNav = p.trakteer ? `<button class="navbtn" style="background:#e74c3c;color:#fff;" onclick="window.open('${esc(p.trakteer)}', '_blank')">☕ Traktir Kopi</button>` : "";
 
   $("readerNav").innerHTML=`
     <div class="reader-nav-row">
@@ -821,7 +836,7 @@ async function openReader(projectId, chapterName, decensored){
       <button class="navbtn ${idx>=(p.chapters||[]).length-1?"disabled":""}" ${idx>=(p.chapters||[]).length-1?"disabled":""}
         onclick="openChapter('${esc(p.id)}',${idx+1})">Next »</button>
     </div>
-    <div class="reader-nav-row" style="margin-top:2px">
+    <div class="reader-nav-row" style="margin-top:6px">
       <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
         ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
         Tulis Komentar
