@@ -605,7 +605,7 @@ async function openProject(id){
     : "";
 
   const isBm = isBookmark(p.id);
-  const favBtn = `<button class="btn" style="pointer-events:auto; font-weight:bold;" onclick="toggleBookmark('${esc(p.id)}')">${isBm ? 'Disimpan' : 'Bookmark'}</button>`;
+  const favBtn = `<button class="btn" style="pointer-events:auto; font-weight:bold;" onclick="toggleBookmark('${esc(p.id)}')">${isBm ? 'Hapus Bookmark' : 'Simpan ke Bookmark'}</button>`;
   
   const statusText = (p.status || "Ongoing").toUpperCase();
   const statusColor = (statusText === "TAMAT" || statusText === "COMPLETED") ? "#2ecc71" : "#f39c12";
@@ -762,8 +762,8 @@ async function openNovelReader(projectId, idx){
   const trakteerNav = p.trakteer ? `<button class="navbtn" style="background:#e74c3c;color:#fff;pointer-events:auto;" onclick="window.open('${esc(p.trakteer)}', '_blank')">☕ Traktir Kopi</button>` : "";
   const fontControls = `
     <div class="reader-nav-row" style="margin-top:4px;margin-bottom:8px;">
-      <button class="navbtn" style="pointer-events:auto;background:var(--panel2);color:var(--text);border:1px solid var(--border2);" onclick="changeFontSize(-1, event)">A- Kecilkan</button>
-      <button class="navbtn" style="pointer-events:auto;background:var(--panel2);color:var(--text);border:1px solid var(--border2);" onclick="changeFontSize(1, event)">A+ Besarkan</button>
+      <button class="navbtn" onclick="changeFontSize(-1, event)">A- Kecilkan</button>
+      <button class="navbtn" onclick="changeFontSize(1, event)">A+ Besarkan</button>
     </div>
   `;
 
@@ -935,18 +935,18 @@ function toggleTheme(){
   if(!tg){showDenied();return;}
   tg.ready();tg.expand();
   
-  const platform=String(tg.platform||\"\").toLowerCase();
-  if(!tg.initData || ![\"android\",\"android_x\",\"ios\"].includes(platform)){
+  const platform = String(tg.platform || "").toLowerCase();
+  if(!tg.initData || !["android", "android_x", "ios"].includes(platform)){
     showDenied();
     return;
   }
   
   try{
     if(!(await requireAccess())) return;
-    const r=await fetch("/api/catalog",{cache:"no-store",headers:accessHeaders()});
-    if(r.status===403 || r.status===401){showDenied();return;}
-    if(!r.ok)throw new Error("catalog");
-    catalog=await r.json();
+    const r = await fetch("/api/catalog", {cache: "no-store", headers: accessHeaders()});
+    if(r.status === 403 || r.status === 401){showDenied();return;}
+    if(!r.ok) throw new Error("catalog");
+    catalog = await r.json();
     $("home").classList.remove("hidden"); 
     
     renderHome();
