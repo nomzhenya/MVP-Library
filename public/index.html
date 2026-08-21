@@ -14,7 +14,7 @@
   --bg:#121215; --text:#e0e0e0; --muted:#8a8a99; 
   --panel:#1c1c21; --panel2:#26262e; --border:#32323a; --border2:#42424b; --input:#1c1c21;
   --btn-bg: #3d3d4a; --btn-text: #ffffff; 
-  --overlay-bg: rgba(18, 18, 21, 0.85); 
+  --overlay-bg: rgba(18, 18, 21, 0.75); /* Transparansi untuk efek kaca */
   --accent: #5e81ff; 
   --accent-hover: #7593ff;
 }
@@ -23,7 +23,7 @@ body.light{
   --bg:#f4f4f5; --text:#202020; --muted:#71717a; 
   --panel:#ffffff; --panel2:#e4e4e7; --border:#d4d4d8; --border2:#a1a1aa; --input:#ffffff;
   --btn-bg: #e4e4e7; --btn-text: #202020; 
-  --overlay-bg: rgba(244, 244, 245, 0.85); 
+  --overlay-bg: rgba(255, 255, 255, 0.80); /* Transparansi Mode Terang */
   --accent: #3b82f6; 
   --accent-hover: #2563eb;
 }
@@ -43,15 +43,20 @@ header{padding:8px 0 24px}
 h1,h2,h3,p{margin:0}
 .muted{color:var(--muted)}
 
-/* SEARCH BAR DROPDOWN BARU */
+/* SEARCH BAR DROPDOWN (TRANSPARAN & EFEK KACA) */
 .search-container { position:relative; width:100%; margin:12px 0 24px; pointer-events:auto; }
 .search { width:100%; padding:14px 18px; border:1px solid var(--border); border-radius:24px; background:var(--input); color:var(--text); font-size:16px; transition:border 0.3s, box-shadow 0.3s; }
 .search:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(94, 129, 255, 0.2); }
-.search-dropdown { position:absolute; top:calc(100% + 8px); left:0; width:100%; background:var(--panel); border:1px solid var(--border); border-radius:16px; max-height:45vh; overflow-y:auto; z-index:100; box-shadow:0 8px 32px rgba(0,0,0,0.5); display:none; }
+.search-dropdown { 
+  position:absolute; top:calc(100% + 8px); left:0; width:100%; 
+  background:var(--overlay-bg); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--border); border-radius:16px; 
+  max-height:45vh; overflow-y:auto; z-index:100; box-shadow:0 8px 32px rgba(0,0,0,0.4); display:none; 
+}
 .search-dropdown.active { display:block; }
 .search-item { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.2s; }
 .search-item:last-child { border-bottom:none; }
-.search-item:active { background:var(--panel2); }
+.search-item:active { background:rgba(150,150,150,0.2); } /* Feedback klik aman utk terang/gelap */
 .search-item img { width:45px; height:65px; object-fit:cover; border-radius:8px; background:var(--panel2); flex:0 0 auto; }
 .search-item .info { flex:1; min-width:0; }
 .search-item .title { font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -66,7 +71,6 @@ h1,h2,h3,p{margin:0}
 .btn{display:inline-flex; align-items:center; justify-content:center; gap:6px; border:0;border-radius:12px;padding:10px 16px;background:var(--btn-bg);color:var(--btn-text);text-decoration:none;pointer-events:auto;font-weight:600; cursor:pointer; transition: background 0.2s, opacity 0.2s;}
 .btn:active{opacity: 0.8;}
 .btn.primary { background: var(--accent); color: #fff; }
-.btn.danger { background: #ef4444; color: #fff; }
 .back{border:0;background:transparent;color:var(--text);padding:8px;border-radius:50%;pointer-events:auto;font-weight:bold; cursor:pointer;}
 
 .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
@@ -101,6 +105,7 @@ h1,h2,h3,p{margin:0}
 .catalog-layer.active{display:block}
 .catalog-head{display:flex;align-items:center;gap:12px;margin-bottom:20px}
 
+/* KARTU UPDATE BOM (COVER) */
 .update-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .update-card{border:none;border-radius:12px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s; pointer-events:auto; position:relative; box-shadow: 0 2px 8px rgba(0,0,0,0.2);}
 .update-card:active{transform:scale(0.96)}
@@ -157,7 +162,6 @@ h1,h2,h3,p{margin:0}
 
 .readererror{padding:18px;text-align:center;border:1px solid #ef4444;border-radius:12px;background:#24181b;margin-top:12px}
 
-/* WATERMARK LEBIH TEGAS NAMUN TIDAK MENGGANGGU */
 .reader-watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;pointer-events:none;text-align:center;line-height:1.2;opacity:0.45;color:var(--text);text-shadow:0 2px 6px rgba(0,0,0,0.8);white-space:nowrap;}
 body.light .reader-watermark{opacity:0.35;text-shadow:0 1px 3px rgba(255,255,255,0.9);}
 .reader-watermark .wm-title{font-size:36px;font-weight:900;letter-spacing:3px;}
@@ -261,12 +265,12 @@ body.light .reader-watermark{opacity:0.35;text-shadow:0 1px 3px rgba(255,255,255
   <div class="section-head">
     <div class="section-title">Update Komik</div>
   </div>
-  <div id="latestComic" class="update-strip"></div>
+  <div id="latestComic"></div>
 
   <div class="section-head">
     <div class="section-title">Update Novel</div>
   </div>
-  <div id="latestNovel" class="update-strip"></div>
+  <div id="latestNovel"></div>
 </div>
 
 <div id="catalogLayer" class="catalog-layer">
@@ -306,7 +310,6 @@ body.light .reader-watermark{opacity:0.35;text-shadow:0 1px 3px rgba(255,255,255
 </div>
 
 <script>
-// PENGHAPUSAN SYNTAX MODERN ES6 AGAR HP LAMA TIDAK ERROR
 var tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 var catalog = [];
 var $ = function(id) { return document.getElementById(id); };
@@ -429,6 +432,7 @@ function projectLatestChapter(p){
   return best;
 }
 
+// FUNGSI UPDATE BOM DIPERBESAR (Ambil maksimal 10)
 function latestUpdates(type){
   return catalog.filter(function(p) { return normalizeType(p) === type; })
     .map(function(p){
@@ -443,7 +447,7 @@ function latestUpdates(type){
       if(tb !== ta) return tb - ta;
       return String((a.p && a.p.title) || "").localeCompare(String((b.p && b.p.title) || ""), undefined, {sensitivity:"base"});
     })
-    .slice(0, 3);
+    .slice(0, 10); 
 }
 
 function saveHistory(projectId, chapterName, decensored) {
@@ -472,7 +476,7 @@ function renderHistory() {
 
   if(validRecent.length > 0) {
     $("historySection").style.display = "block";
-    target.innerHTML = validRecent.map(function(item) {
+    target.innerHTML = "<div class='update-strip'>" + validRecent.map(function(item) {
       var p = item.p;
       var hist = item.hist;
       return "<article class='update-card' onclick=\"openReader('"+esc(p.id)+"','"+esc(hist.chapter)+"',"+hist.decensored+")\">" +
@@ -483,19 +487,29 @@ function renderHistory() {
           "<div class='chapter-label' style='margin-top:4px;'>Ch. "+esc(hist.chapter)+decBadge(hist.decensored)+"</div>" +
         "</div>" +
       "</article>";
-    }).join("");
+    }).join("") + "</div>";
   } else {
     $("historySection").style.display = "none";
   }
 }
 
+// LOGIKA RENDER BOM UPDATE: 3 Kartu + Sisanya List (UI Ala Mangago/Webtoon)
 function renderLatest(type, targetId){
   var target = $(targetId);
   if(!target) return;
   var updates = latestUpdates(type);
   var now = Date.now(); 
   
-  target.innerHTML = updates.length ? updates.map(function(item) {
+  if(updates.length === 0) {
+    target.innerHTML = "<p class='muted'>Belum ada update.</p>";
+    return;
+  }
+
+  var topUpdates = updates.slice(0, 3); // 3 judul teratas (pakai Card/Cover)
+  var listUpdates = updates.slice(3);   // Sisanya (pakai List Text)
+
+  var html = "<div class='update-strip'>";
+  html += topUpdates.map(function(item) {
     var p = item.p;
     var latest = item.latest;
     var isNew = (now - (latest.ts * 1000)) <= 86400000;
@@ -510,7 +524,24 @@ function renderLatest(type, targetId){
         "<div class='chapter-label'>Ch. "+esc(latest.chapter.chapter)+decBadge(latest.chapter.decensored)+"</div>" +
       "</div>" +
     "</article>";
-  }).join("") : "<p class='muted'>Belum ada update.</p>";
+  }).join("");
+  html += "</div>";
+
+  // List Text untuk judul ke-4 sampai ke-10 (Bila Ada)
+  if (listUpdates.length > 0) {
+    html += "<div style='margin-top:16px; display:flex; flex-direction:column; gap:10px;'>";
+    html += listUpdates.map(function(item) {
+      var p = item.p;
+      var latest = item.latest;
+      return "<div onclick=\"openReader('"+esc(p.id)+"','"+esc(latest.chapter.chapter)+"',"+latest.chapter.decensored+")\" style='display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:var(--panel); border:1px solid var(--border); border-radius:14px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15); transition:background 0.2s;' onactive=\"this.style.background='var(--panel2)'\">" +
+        "<div style='font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; margin-right:12px; color:var(--text);'>"+esc(p.title)+"</div>" +
+        "<div style='font-size:13px; font-weight:800; color:var(--accent); white-space:nowrap;'>Ch. "+esc(latest.chapter.chapter)+decBadge(latest.chapter.decensored)+"</div>" +
+      "</div>";
+    }).join("");
+    html += "</div>";
+  }
+
+  target.innerHTML = html;
 }
 
 function renderHome(){
@@ -567,7 +598,7 @@ if($("search")) {
       var t = String((p && p.title) || "").toLowerCase();
       var a = String((p && p.author) || "").toLowerCase();
       return t.includes(val) || a.includes(val);
-    }).slice(0, 8);
+    }).slice(0, 8); // Tampilkan 8 hasil maksimal di dropdown
 
     if(matches.length === 0) {
       dd.innerHTML = "<div style='padding:16px; text-align:center; color:var(--muted); font-size:14px;'>Tidak ada hasil untuk \"" + esc(val) + "\"</div>";
@@ -575,7 +606,7 @@ if($("search")) {
       dd.innerHTML = matches.map(function(p) {
         var imgHtml = p.cover_file_id ? "<img src='"+fileUrl(p.cover_file_id)+"' loading='lazy'>" : "<div style='width:45px;height:65px;background:var(--panel2);border-radius:8px;flex:0 0 auto;'></div>";
         var authorHtml = p.author ? "<div class='author'>"+esc(p.author)+"</div>" : "";
-        return "<div class='search-item' onclick=\"openProject('"+esc(p.id)+"'); document.getElementById('searchDropdown').classList.remove('active');\">" +
+        return "<div class='search-item' onclick=\"openProject('"+esc(p.id)+"'); document.getElementById('searchDropdown').classList.remove('active'); document.getElementById('search').value=''; \">" +
           imgHtml +
           "<div class='info'>" +
             "<div class='title'>"+esc(p.title)+"</div>" +
@@ -764,6 +795,17 @@ function openTranslatorProfile(name) {
     "<div class='grid'>" + cardsHtml + "</div>";
 }
 
+// FUNGSI SINKRONISASI KOLOM SEARCH DI HALAMAN INFO PROJECT
+function syncSearch(val) {
+  showHome();
+  var mainSearch = document.getElementById("search");
+  if(mainSearch) {
+    mainSearch.value = val;
+    mainSearch.focus();
+    mainSearch.dispatchEvent(new Event('input'));
+  }
+}
+
 async function openProject(id){
   if(!(await requireAccess())) return; 
   var p = catalog.find(function(x) { return x.id === id; }); 
@@ -804,7 +846,6 @@ async function openProject(id){
   var btnFavColor = isBm ? "var(--accent)" : "var(--panel)";
   var btnFavText = isBm ? "#fff" : "var(--text)";
   var favIconColor = isBm ? "#fff" : "none";
-  var favLabel = isBm ? "Tersimpan" : "Bookmark";
 
   var topBar = 
     "<div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:8px;'>" +
@@ -812,7 +853,7 @@ async function openProject(id){
         "<svg width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><line x1='19' y1='12' x2='5' y2='12'></line><polyline points='12 19 5 12 12 5'></polyline></svg>" +
       "</button>" +
       "<div style='flex:1; position:relative;'>" +
-        "<input type='text' class='search' style='margin:0; padding:10px 16px; width:100%; border-radius:24px; font-size:14px; background:var(--panel2); color:var(--text); border:1px solid var(--border);' placeholder='Cari judul...' onkeydown=\"if(event.key==='Enter') executeSearch(this.value)\">" +
+        "<input type='text' class='search' style='margin:0; padding:10px 16px; width:100%; border-radius:24px; font-size:14px; background:var(--panel2); color:var(--text); border:1px solid var(--border);' placeholder='Cari judul...' onkeydown=\"if(event.key==='Enter') executeSearch(this.value)\" oninput=\"syncSearch(this.value)\">" +
       "</div>" +
       "<div style='display:flex; gap:6px; flex:0 0 auto;'>" +
         "<button class='btn' onclick=\""+shareAction+"\" style='padding:10px; border-radius:50%; background:var(--panel);' aria-label='Share'>" +
