@@ -3,19 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5.0,user-scalable=yes,viewport-fit=cover">
-<meta name="theme-color" content="#121215"> <!-- Warna theme Bato.to (Dark) -->
+<meta name="theme-color" content="#121215">
 <title>MVP Miniweb</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{box-sizing:border-box}
 
-/* CSS VARIABEL UNTUK TEMA DINAMIS (Warna ala Bato.to) */
+/* CSS VARIABEL UNTUK TEMA DINAMIS */
 :root{
   --bg:#121215; --text:#e0e0e0; --muted:#8a8a99; 
   --panel:#1c1c21; --panel2:#26262e; --border:#32323a; --border2:#42424b; --input:#1c1c21;
   --btn-bg: #3d3d4a; --btn-text: #ffffff; 
-  --overlay-bg: rgba(18, 18, 21, 0.85); /* Semi-transparan untuk glassmorphism */
-  --accent: #5e81ff; /* Biru Bato.to */
+  --overlay-bg: rgba(18, 18, 21, 0.85); 
+  --accent: #5e81ff; 
   --accent-hover: #7593ff;
 }
 
@@ -30,7 +30,7 @@ body.light{
 
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden;transition:background .3s,color .3s}
 
-/* ANTI-COPY CSS (Zoom tetap jalan) */
+/* ANTI-COPY CSS */
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
 img{-webkit-user-drag:none;-webkit-touch-callout:none;pointer-events:auto;} 
 
@@ -43,23 +43,19 @@ header{padding:8px 0 24px}
 h1,h2,h3,p{margin:0}
 .muted{color:var(--muted)}
 
-/* Search Bar Bato.to Style */
 .search{width:100%;padding:14px 18px;border:1px solid var(--border);border-radius:24px;background:var(--input);color:var(--text);font-size:16px;margin:12px 0 24px; transition: border 0.3s, box-shadow 0.3s; pointer-events:auto;}
 .search:focus{outline:none;border-color:var(--accent);box-shadow: 0 0 0 3px rgba(94, 129, 255, 0.2);}
 
-/* Grid & Card (Lebih clean dan shadow halus) */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
 .card{border:none;border-radius:12px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform 0.2s, box-shadow 0.2s; position:relative; box-shadow: 0 2px 8px rgba(0,0,0,0.2);}
 .card:active{transform:scale(0.96)}
 .card:hover{box-shadow: 0 4px 16px rgba(0,0,0,0.4);}
 .cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--panel2)}.cardbody{padding:12px 10px}.title{font-weight:700;line-height:1.3;font-size:14px}
 
-/* Tombol (Bato.to rounded buttons) */
 .btn{display:inline-flex; align-items:center; justify-content:center; gap:6px; border:0;border-radius:12px;padding:10px 16px;background:var(--btn-bg);color:var(--btn-text);text-decoration:none;pointer-events:auto;font-weight:600; cursor:pointer; transition: background 0.2s, opacity 0.2s;}
 .btn:active{opacity: 0.8;}
 .btn.primary { background: var(--accent); color: #fff; }
 .btn.danger { background: #ef4444; color: #fff; }
-
 .back{border:0;background:transparent;color:var(--text);padding:8px;border-radius:50%;pointer-events:auto;font-weight:bold; cursor:pointer;}
 
 .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
@@ -68,13 +64,10 @@ h1,h2,h3,p{margin:0}
 
 .chapters{display:flex;flex-direction:column;gap:10px;margin-top:16px}
 .chapter{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--panel);border:1px solid var(--border);border-radius:12px; font-weight: 500;}
-
 .notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}
-
 .theme-toggle{border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:var(--panel2);color:var(--text);font-size:18px;cursor:pointer; pointer-events:auto;}
 .home-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 
-/* Filter Tipe */
 .home-filters{display:flex;gap:10px;margin:8px 0 20px}
 .type-btn{flex:1;border:0;border-radius:14px;padding:12px;background:var(--panel);color:var(--muted);font-weight:700;font-size:13px;transition:all 0.2s; pointer-events:auto; text-align:center;}
 .type-btn.active{background:var(--accent);color:#fff;}
@@ -97,7 +90,6 @@ h1,h2,h3,p{margin:0}
 .catalog-layer.active{display:block}
 .catalog-head{display:flex;align-items:center;gap:12px;margin-bottom:20px}
 
-/* History (Lanjut Baca) */
 .update-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .update-card{border:none;border-radius:12px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s; pointer-events:auto; position:relative; box-shadow: 0 2px 8px rgba(0,0,0,0.2);}
 .update-card:active{transform:scale(0.96)}
@@ -111,7 +103,6 @@ h1,h2,h3,p{margin:0}
   .update-card .cardbody, .popular-card .cardbody {padding:8px}
 }
 
-/* OVERLAY KECIL & TRANSPARAN (GLASSMORPHISM) */
 .ui-hidden .readerhead { transform: translateY(-120%); }
 .ui-hidden .reader-nav { transform: translateY(120%); }
 
@@ -159,7 +150,6 @@ h1,h2,h3,p{margin:0}
 .reader-watermark .wm-title{font-size:24px; font-weight:900; letter-spacing: 2px;}
 .reader-watermark .wm-user{font-size:12px;font-weight:600;margin-top:4px}
 
-/* Novel Reader */
 .novel-reader{width:min(820px,100%);margin:0 auto;padding:10px 24px 20px;background:transparent;color:var(--text);line-height:1.8;font-size:17px;user-select:none;-webkit-user-select:none;} 
 .novel-reader p{margin:0 0 1.2em}
 .novel-reader h1,.novel-reader h2,.novel-reader h3{line-height:1.4;margin:1.8em 0 .8em}
@@ -169,7 +159,6 @@ h1,h2,h3,p{margin:0}
 #progressContainer{position:fixed;top:0;left:0;width:100vw;height:3px;background:transparent;z-index:9999;display:none;pointer-events:none;}
 #progressBar{height:100%;background:var(--accent);width:0%;transition:width 0.1s ease-out;}
 
-/* Badge Status Absolute (Bato.to style) */
 .badge-status {
     position: absolute;
     top: 8px;
@@ -183,11 +172,10 @@ h1,h2,h3,p{margin:0}
     box-shadow: 0 2px 4px rgba(0,0,0,0.5);
     text-transform: uppercase;
 }
-.badge-tamat { background: #10b981; } /* Emerald */
-.badge-new { background: #ef4444; } /* Red */
-.badge-hot { background: #f59e0b; } /* Amber */
+.badge-tamat { background: #10b981; }
+.badge-new { background: #ef4444; }
+.badge-hot { background: #f59e0b; }
 
-/* Author & Info di Detail */
 .detail-meta { font-size: 13px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
 .detail-meta strong { color: var(--text); }
 </style>
@@ -229,8 +217,9 @@ h1,h2,h3,p{margin:0}
 <header>
   <div class="home-top">
     <div>
-      <h1 style="font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">MVP</h1>
-      <p class="muted" style="margin-top:2px; font-size:13px;">Bato.to clone by Zhenya</p>
+      <h1 style="font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">MVP Miniweb</h1>
+      <!-- TAGLINE BARU -->
+      <p class="muted" style="margin-top:2px; font-size:13px;">Baca sepuasnya, rebahan selamanya.</p>
     </div>
     <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
@@ -248,19 +237,20 @@ h1,h2,h3,p{margin:0}
   </div>
 
   <div id="historySection" style="display:none;margin-bottom:24px">
+    <!-- EMOJI DIHAPUS -->
     <div class="section-head" style="margin-top:10px">
-      <div class="section-title">🕒 Terakhir Dibaca</div>
+      <div class="section-title">Terakhir Dibaca</div>
     </div>
     <div id="historyStrip" class="update-strip"></div>
   </div>
 
   <div class="section-head">
-    <div class="section-title">✨ Update Komik</div>
+    <div class="section-title">Update Komik</div>
   </div>
   <div id="latestComic" class="update-strip"></div>
 
   <div class="section-head">
-    <div class="section-title">📖 Update Novel</div>
+    <div class="section-title">Update Novel</div>
   </div>
   <div id="latestNovel" class="update-strip"></div>
 </div>
@@ -277,13 +267,13 @@ h1,h2,h3,p{margin:0}
 
   <div id="popularSection">
     <div class="section-head" style="margin-top:10px">
-      <div class="section-title">🔥 Populer</div>
+      <div class="section-title">Populer</div>
     </div>
     <div id="popularGrid" class="popular-grid"></div>
   </div>
 
   <div class="section-head all-title">
-    <div class="section-title">📚 Semua Judul</div>
+    <div class="section-title">Semua Judul</div>
   </div>
   <div id="grid" class="grid"></div>
 </div>
@@ -296,7 +286,8 @@ h1,h2,h3,p{margin:0}
 <div id="reader" class="wrap hidden">
   <div id="readerContent" style="margin-top:0px"></div>
   <div id="readerWatermark" class="reader-watermark hidden">
-    <div class="wm-title">MVP</div>
+    <!-- MAHKOTA DIKEMBALIKAN -->
+    <div class="wm-title">👑 MVP</div>
     <div id="readerWatermarkUser" class="wm-user"></div>
   </div>
 </div>
@@ -621,7 +612,11 @@ function openCatalog(type){
 
   document.querySelectorAll('#homeFilters .type-btn').forEach(b => {
     b.classList.remove('active');
-    if (b.textContent.trim().toLowerCase() === type.toLowerCase()) b.classList.add('active');
+    const btnText = b.textContent.trim().toLowerCase();
+    const targetType = type.toLowerCase();
+    if ((targetType === 'comic' && btnText === 'komik') || targetType === btnText) {
+       b.classList.add('active');
+    }
   });
 
   renderCatalog(type !== 'bookmark');
@@ -677,6 +672,17 @@ function openTranslatorProfile(name) {
   `).join('');
 }
 
+// FUNGSI SINKRONISASI KOLOM SEARCH DI HALAMAN INFO PROJECT
+function syncSearch(val) {
+  showHome();
+  const mainSearch = document.getElementById("search");
+  if(mainSearch) {
+    mainSearch.value = val;
+    mainSearch.focus();
+    mainSearch.dispatchEvent(new Event('input'));
+  }
+}
+
 async function openProject(id){
   if(!(await requireAccess())) return; 
   const p=catalog.find(x=>x.id===id); if(!p)return;
@@ -712,19 +718,23 @@ async function openProject(id){
   const shareLink = `https://t.me/${botUsername}?start=${p.id}`;
   const shareAction = `tg.openTelegramLink('https://t.me/share/url?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent("Baca " + p.title + " di MVP Miniweb!")}')`;
 
-  // HEADER INFO PROJECT (KIRI KEMBALI, KANAN BOOKMARK & SHARE)
+  // HEADER INFO PROJECT (KIRI KEMBALI, TENGAH SEARCH, KANAN ICONS)
   const topBar = `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <button class="back" onclick="showHome()">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:8px;">
+      <button class="back" onclick="showHome()" style="padding:8px; flex:0 0 auto;">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
       </button>
       
-      <div style="display:flex; gap:8px;">
-        <button class="btn" onclick="${shareAction}" style="padding:8px 12px; background:var(--panel);">
+      <div style="flex:1;">
+        <input type="text" class="search" style="margin:0; padding:10px 16px; width:100%; border-radius:24px; font-size:14px; background:var(--panel2); color:var(--text); border:1px solid var(--border);" placeholder="Cari judul..." oninput="syncSearch(this.value)">
+      </div>
+      
+      <div style="display:flex; gap:6px; flex:0 0 auto;">
+        <button class="btn" onclick="${shareAction}" style="padding:10px; border-radius:50%; background:var(--panel);" aria-label="Share">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
         </button>
-        <button class="btn" style="padding:8px 12px; font-weight:bold; background:${isBm ? 'var(--accent)' : 'var(--panel)'}; color:${isBm ? '#fff' : 'var(--text)'};" onclick="toggleBookmark('${esc(p.id)}')">
-            ${isBm ? 'Tersimpan' : 'Bookmark'}
+        <button class="btn" style="padding:10px; border-radius:50%; background:${isBm ? 'var(--accent)' : 'var(--panel)'}; color:${isBm ? '#fff' : 'var(--text)'};" onclick="toggleBookmark('${esc(p.id)}')" aria-label="Bookmark">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="${isBm ? '#fff' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
         </button>
       </div>
     </div>
@@ -809,7 +819,7 @@ function chapterCommentLink(p){
 }
 
 function toggleReaderUI(e) {
-  if(e.target.closest('button') || e.target.closest('a') || e.target.closest('.readerhead') || e.target.closest('.reader-nav')) return;
+  if(e.target.closest('button') || e.target.closest('a') || e.target.closest('.readerhead') || e.target.closest('.reader-nav') || e.target.closest('input')) return;
   $("reader").classList.toggle("ui-hidden");
 }
 
