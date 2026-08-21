@@ -14,7 +14,7 @@
   --bg:#121215; --text:#e0e0e0; --muted:#8a8a99; 
   --panel:#1c1c21; --panel2:#26262e; --border:#32323a; --border2:#42424b; --input:#1c1c21;
   --btn-bg: #3d3d4a; --btn-text: #ffffff; 
-  --overlay-bg: rgba(18, 18, 21, 0.75); /* Transparansi untuk efek kaca */
+  --overlay-bg: rgba(18, 18, 21, 0.75); 
   --accent: #5e81ff; 
   --accent-hover: #7593ff;
 }
@@ -23,7 +23,7 @@ body.light{
   --bg:#f4f4f5; --text:#202020; --muted:#71717a; 
   --panel:#ffffff; --panel2:#e4e4e7; --border:#d4d4d8; --border2:#a1a1aa; --input:#ffffff;
   --btn-bg: #e4e4e7; --btn-text: #202020; 
-  --overlay-bg: rgba(255, 255, 255, 0.80); /* Transparansi Mode Terang */
+  --overlay-bg: rgba(255, 255, 255, 0.80); 
   --accent: #3b82f6; 
   --accent-hover: #2563eb;
 }
@@ -43,7 +43,7 @@ header{padding:8px 0 24px}
 h1,h2,h3,p{margin:0}
 .muted{color:var(--muted)}
 
-/* SEARCH BAR DROPDOWN (TRANSPARAN & EFEK KACA) */
+/* SEARCH BAR DROPDOWN */
 .search-container { position:relative; width:100%; margin:12px 0 24px; pointer-events:auto; }
 .search { width:100%; padding:14px 18px; border:1px solid var(--border); border-radius:24px; background:var(--input); color:var(--text); font-size:16px; transition:border 0.3s, box-shadow 0.3s; }
 .search:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(94, 129, 255, 0.2); }
@@ -56,7 +56,7 @@ h1,h2,h3,p{margin:0}
 .search-dropdown.active { display:block; }
 .search-item { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.2s; }
 .search-item:last-child { border-bottom:none; }
-.search-item:active { background:rgba(150,150,150,0.2); } /* Feedback klik aman utk terang/gelap */
+.search-item:active { background:rgba(150,150,150,0.2); } 
 .search-item img { width:45px; height:65px; object-fit:cover; border-radius:8px; background:var(--panel2); flex:0 0 auto; }
 .search-item .info { flex:1; min-width:0; }
 .search-item .title { font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -105,7 +105,6 @@ h1,h2,h3,p{margin:0}
 .catalog-layer.active{display:block}
 .catalog-head{display:flex;align-items:center;gap:12px;margin-bottom:20px}
 
-/* KARTU UPDATE BOM (COVER) */
 .update-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .update-card{border:none;border-radius:12px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s; pointer-events:auto; position:relative; box-shadow: 0 2px 8px rgba(0,0,0,0.2);}
 .update-card:active{transform:scale(0.96)}
@@ -432,7 +431,6 @@ function projectLatestChapter(p){
   return best;
 }
 
-// FUNGSI UPDATE BOM DIPERBESAR (Ambil maksimal 10)
 function latestUpdates(type){
   return catalog.filter(function(p) { return normalizeType(p) === type; })
     .map(function(p){
@@ -476,7 +474,7 @@ function renderHistory() {
 
   if(validRecent.length > 0) {
     $("historySection").style.display = "block";
-    target.innerHTML = "<div class='update-strip'>" + validRecent.map(function(item) {
+    target.innerHTML = validRecent.map(function(item) {
       var p = item.p;
       var hist = item.hist;
       return "<article class='update-card' onclick=\"openReader('"+esc(p.id)+"','"+esc(hist.chapter)+"',"+hist.decensored+")\">" +
@@ -487,13 +485,12 @@ function renderHistory() {
           "<div class='chapter-label' style='margin-top:4px;'>Ch. "+esc(hist.chapter)+decBadge(hist.decensored)+"</div>" +
         "</div>" +
       "</article>";
-    }).join("") + "</div>";
+    }).join("");
   } else {
     $("historySection").style.display = "none";
   }
 }
 
-// LOGIKA RENDER BOM UPDATE: 3 Kartu + Sisanya List (UI Ala Mangago/Webtoon)
 function renderLatest(type, targetId){
   var target = $(targetId);
   if(!target) return;
@@ -505,8 +502,8 @@ function renderLatest(type, targetId){
     return;
   }
 
-  var topUpdates = updates.slice(0, 3); // 3 judul teratas (pakai Card/Cover)
-  var listUpdates = updates.slice(3);   // Sisanya (pakai List Text)
+  var topUpdates = updates.slice(0, 3); 
+  var listUpdates = updates.slice(3);   
 
   var html = "<div class='update-strip'>";
   html += topUpdates.map(function(item) {
@@ -527,13 +524,12 @@ function renderLatest(type, targetId){
   }).join("");
   html += "</div>";
 
-  // List Text untuk judul ke-4 sampai ke-10 (Bila Ada)
   if (listUpdates.length > 0) {
     html += "<div style='margin-top:16px; display:flex; flex-direction:column; gap:10px;'>";
     html += listUpdates.map(function(item) {
       var p = item.p;
       var latest = item.latest;
-      return "<div onclick=\"openReader('"+esc(p.id)+"','"+esc(latest.chapter.chapter)+"',"+latest.chapter.decensored+")\" style='display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:var(--panel); border:1px solid var(--border); border-radius:14px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15); transition:background 0.2s;' onactive=\"this.style.background='var(--panel2)'\">" +
+      return "<div onclick=\"openReader('"+esc(p.id)+"','"+esc(latest.chapter.chapter)+"',"+latest.chapter.decensored+")\" style='display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:var(--panel); border:1px solid var(--border); border-radius:14px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15); transition:background 0.2s;'>" +
         "<div style='font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; margin-right:12px; color:var(--text);'>"+esc(p.title)+"</div>" +
         "<div style='font-size:13px; font-weight:800; color:var(--accent); white-space:nowrap;'>Ch. "+esc(latest.chapter.chapter)+decBadge(latest.chapter.decensored)+"</div>" +
       "</div>";
@@ -567,7 +563,6 @@ function getFilteredProjects(){
   }).sort(function(a, b) { return String((a && a.title) || "").localeCompare(String((b && b.title) || ""), undefined, {sensitivity:"base"}); });
 }
 
-// DROPDOWN SEARCH LOGIC
 function executeSearch(val) {
   if(!val || !val.trim()) return;
   showHome();
@@ -598,7 +593,7 @@ if($("search")) {
       var t = String((p && p.title) || "").toLowerCase();
       var a = String((p && p.author) || "").toLowerCase();
       return t.includes(val) || a.includes(val);
-    }).slice(0, 8); // Tampilkan 8 hasil maksimal di dropdown
+    }).slice(0, 8); 
 
     if(matches.length === 0) {
       dd.innerHTML = "<div style='padding:16px; text-align:center; color:var(--muted); font-size:14px;'>Tidak ada hasil untuk \"" + esc(val) + "\"</div>";
@@ -633,7 +628,57 @@ if($("search")) {
       var dd = $("searchDropdown");
       if (dd) dd.classList.remove("active");
     }
+    var detailContainer = $("detailSearchContainer");
+    if(detailContainer && !detailContainer.contains(e.target)) {
+      var ddd = $("detailSearchDropdown");
+      if (ddd) ddd.classList.remove("active");
+    }
   });
+}
+
+// LOGIKA SEARCH DROPDOWN UNTUK HALAMAN DETAIL PROJECT
+function handleDetailSearch(val) {
+  val = val.trim().toLowerCase();
+  var dd = $("detailSearchDropdown");
+  if(!dd) return;
+
+  if(val === "") {
+    dd.classList.remove("active");
+    return;
+  }
+
+  var matches = catalog.filter(function(p) {
+    var t = String((p && p.title) || "").toLowerCase();
+    var a = String((p && p.author) || "").toLowerCase();
+    return t.includes(val) || a.includes(val);
+  }).slice(0, 8);
+
+  if(matches.length === 0) {
+    dd.innerHTML = "<div style='padding:16px; text-align:center; color:var(--muted); font-size:14px;'>Tidak ada hasil untuk \"" + esc(val) + "\"</div>";
+  } else {
+    dd.innerHTML = matches.map(function(p) {
+      var imgHtml = p.cover_file_id ? "<img src='"+fileUrl(p.cover_file_id)+"' loading='lazy'>" : "<div style='width:45px;height:65px;background:var(--panel2);border-radius:8px;flex:0 0 auto;'></div>";
+      var authorHtml = p.author ? "<div class='author'>"+esc(p.author)+"</div>" : "";
+      return "<div class='search-item' onclick=\"openProject('"+esc(p.id)+"'); document.getElementById('detailSearchDropdown').classList.remove('active'); \">" +
+        imgHtml +
+        "<div class='info'>" +
+          "<div class='title'>"+esc(p.title)+"</div>" +
+          authorHtml +
+        "</div>" +
+      "</div>";
+    }).join("");
+  }
+  dd.classList.add("active");
+}
+
+function executeDetailSearch(val) {
+  if(!val || !val.trim()) return;
+  showHome(); 
+  var mainSearch = $("search");
+  if(mainSearch) {
+    mainSearch.value = val;
+    executeSearch(val);
+  }
 }
 
 function renderCards(list, targetId, popular){
@@ -657,17 +702,13 @@ function renderCards(list, targetId, popular){
 
     target.innerHTML = letters.length
       ? letters.map(function(letter){
-          var cardsHtml = groups[letter].map(function(p){
-            var imgHtml = p.cover_file_id ? "<img class='cover' src='"+fileUrl(p.cover_file_id)+"' loading='lazy'>" : "<div class='cover'></div>";
-            return "<article class='card' onclick=\"openProject('"+esc(p.id)+"')\">" +
-              getStatusBadge(p) + imgHtml +
-              "<div class='cardbody'><div class='title'>"+esc(p.title)+"</div></div>" +
-            "</article>";
+          var listHtml = groups[letter].map(function(p){
+            return "<button onclick=\"openProject('"+esc(p.id)+"')\" style='width:100%;text-align:left;border:1px solid var(--border);border-radius:10px;padding:12px 16px;background:var(--panel);color:var(--text);font-size:15px;font-weight:600;pointer-events:auto;transition:background 0.2s;'>"+esc(p.title)+"</button>";
           }).join("");
-          return "<section style='margin-bottom:20px'>" +
-            "<div style='font-size:14px;font-weight:800;color:var(--accent);margin-bottom:10px'>"+esc(letter)+"</div>" +
-            "<div style='display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;'>" +
-              cardsHtml +
+          return "<section style='margin-bottom:24px'>" +
+            "<div style='font-size:16px;font-weight:800;color:var(--accent);margin-bottom:10px;padding-left:4px;'>"+esc(letter)+"</div>" +
+            "<div style='display:flex;flex-direction:column;gap:8px;'>" +
+              listHtml +
             "</div>" +
           "</section>";
         }).join("")
@@ -795,17 +836,6 @@ function openTranslatorProfile(name) {
     "<div class='grid'>" + cardsHtml + "</div>";
 }
 
-// FUNGSI SINKRONISASI KOLOM SEARCH DI HALAMAN INFO PROJECT
-function syncSearch(val) {
-  showHome();
-  var mainSearch = document.getElementById("search");
-  if(mainSearch) {
-    mainSearch.value = val;
-    mainSearch.focus();
-    mainSearch.dispatchEvent(new Event('input'));
-  }
-}
-
 async function openProject(id){
   if(!(await requireAccess())) return; 
   var p = catalog.find(function(x) { return x.id === id; }); 
@@ -852,8 +882,9 @@ async function openProject(id){
       "<button class='back' onclick='showHome()' style='padding:8px; flex:0 0 auto;'>" +
         "<svg width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><line x1='19' y1='12' x2='5' y2='12'></line><polyline points='12 19 5 12 12 5'></polyline></svg>" +
       "</button>" +
-      "<div style='flex:1; position:relative;'>" +
-        "<input type='text' class='search' style='margin:0; padding:10px 16px; width:100%; border-radius:24px; font-size:14px; background:var(--panel2); color:var(--text); border:1px solid var(--border);' placeholder='Cari judul...' onkeydown=\"if(event.key==='Enter') executeSearch(this.value)\" oninput=\"syncSearch(this.value)\">" +
+      "<div id='detailSearchContainer' style='flex:1; position:relative;'>" +
+        "<input type='text' id='detailSearch' class='search' style='margin:0; padding:10px 16px; width:100%; border-radius:24px; font-size:14px; background:var(--panel2); color:var(--text); border:1px solid var(--border);' placeholder='Cari judul...' onkeydown=\"if(event.key==='Enter') executeDetailSearch(this.value)\" oninput=\"handleDetailSearch(this.value)\" autocomplete='off'>" +
+        "<div id='detailSearchDropdown' class='search-dropdown'></div>" +
       "</div>" +
       "<div style='display:flex; gap:6px; flex:0 0 auto;'>" +
         "<button class='btn' onclick=\""+shareAction+"\" style='padding:10px; border-radius:50%; background:var(--panel);' aria-label='Share'>" +
