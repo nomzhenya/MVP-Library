@@ -3,124 +3,146 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5.0,user-scalable=yes,viewport-fit=cover">
-<meta name="theme-color" content="#0f0f12">
+<meta name="theme-color" content="#121215"> <!-- Warna theme Bato.to (Dark) -->
 <title>MVP Miniweb</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{box-sizing:border-box}
 
-/* CSS VARIABEL UNTUK TEMA DINAMIS */
+/* CSS VARIABEL UNTUK TEMA DINAMIS (Warna ala Bato.to) */
 :root{
-  --bg:#0f0f12; --text:#f4f4f5; --muted:#a6a6b0; 
-  --panel:#19191f; --panel2:#24242a; --border:#2b2b31; --border2:#3a3a43; --input:#19191f;
-  --btn-bg: #30303a; --btn-text: #ffffff; 
-  --overlay-bg: rgba(25, 25, 31, 0.65); 
+  --bg:#121215; --text:#e0e0e0; --muted:#8a8a99; 
+  --panel:#1c1c21; --panel2:#26262e; --border:#32323a; --border2:#42424b; --input:#1c1c21;
+  --btn-bg: #3d3d4a; --btn-text: #ffffff; 
+  --overlay-bg: rgba(18, 18, 21, 0.85); /* Semi-transparan untuk glassmorphism */
+  --accent: #5e81ff; /* Biru Bato.to */
+  --accent-hover: #7593ff;
 }
 
 body.light{
-  --bg:#f5f5f7; --text:#17171b; --muted:#666670; 
-  --panel:#fff; --panel2:#e9e9ee; --border:#d7d7de; --border2:#c5c5ce; --input:#fff;
-  --btn-bg: #d1d1d6; --btn-text: #17171b; 
-  --overlay-bg: rgba(255, 255, 255, 0.70); 
+  --bg:#f4f4f5; --text:#202020; --muted:#71717a; 
+  --panel:#ffffff; --panel2:#e4e4e7; --border:#d4d4d8; --border2:#a1a1aa; --input:#ffffff;
+  --btn-bg: #e4e4e7; --btn-text: #202020; 
+  --overlay-bg: rgba(244, 244, 245, 0.85); 
+  --accent: #3b82f6; 
+  --accent-hover: #2563eb;
 }
 
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden;transition:background .2s,color .2s}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden;transition:background .3s,color .3s}
 
-/* ANTI-COPY CSS */
+/* ANTI-COPY CSS (Zoom tetap jalan) */
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
 img{-webkit-user-drag:none;-webkit-touch-callout:none;pointer-events:auto;} 
 
-.wrap{max-width:900px;margin:auto;padding:20px}
+.wrap{max-width:900px;margin:auto;padding:24px 20px}
 #reader.wrap{width:100vw;max-width:none;margin:0;padding:0;overflow-x:hidden}
 #readerContent{width:100vw;max-width:none;margin:0!important;padding:0}
 @media(max-width:900px){ #reader.wrap{width:100vw} }
-header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{width:100%;padding:13px 15px;border:1px solid var(--border2);border-radius:14px;background:var(--input);color:var(--text);font-size:16px;margin:12px 0 18px; transition: border 0.2s; pointer-events:auto;}
-.search:focus{outline:none;border-color:#4a90e2}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px}
-.card{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s; position:relative;}
-.card:active{transform:scale(0.97)}
-.cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--panel2)}.cardbody{padding:12px}.title{font-weight:700;line-height:1.2;font-size:15px}
 
-.btn{display:inline-block;border:0;border-radius:10px;padding:9px 12px;background:var(--btn-bg);color:var(--btn-text);text-decoration:none;pointer-events:auto;font-weight:600;}
-.back{border:0;background:var(--btn-bg);color:var(--btn-text);padding:9px 12px;border-radius:10px;pointer-events:auto;font-weight:bold;}
-.tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
-.tag{border:1px solid var(--border2);background:var(--panel2);color:var(--text);border-radius:999px;padding:6px 10px;font-size:13px;cursor:pointer;pointer-events:auto;}
-.detailcover{width:min(260px,75%);aspect-ratio:2/3;object-fit:cover;border-radius:16px;margin-top:16px}
-.chapters{display:flex;flex-direction:column;gap:9px;margin-top:14px}.chapter{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:var(--input);border:1px solid var(--border);border-radius:12px}
-.notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}.theme-toggle{border:1px solid var(--border2);border-radius:10px;padding:9px 11px;background:var(--panel2);color:var(--text);font-size:14px;font-weight:700;cursor:pointer; pointer-events:auto;}
+header{padding:8px 0 24px}
+h1,h2,h3,p{margin:0}
+.muted{color:var(--muted)}
+
+/* Search Bar Bato.to Style */
+.search{width:100%;padding:14px 18px;border:1px solid var(--border);border-radius:24px;background:var(--input);color:var(--text);font-size:16px;margin:12px 0 24px; transition: border 0.3s, box-shadow 0.3s; pointer-events:auto;}
+.search:focus{outline:none;border-color:var(--accent);box-shadow: 0 0 0 3px rgba(94, 129, 255, 0.2);}
+
+/* Grid & Card (Lebih clean dan shadow halus) */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
+.card{border:none;border-radius:12px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform 0.2s, box-shadow 0.2s; position:relative; box-shadow: 0 2px 8px rgba(0,0,0,0.2);}
+.card:active{transform:scale(0.96)}
+.card:hover{box-shadow: 0 4px 16px rgba(0,0,0,0.4);}
+.cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--panel2)}.cardbody{padding:12px 10px}.title{font-weight:700;line-height:1.3;font-size:14px}
+
+/* Tombol (Bato.to rounded buttons) */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:6px; border:0;border-radius:12px;padding:10px 16px;background:var(--btn-bg);color:var(--btn-text);text-decoration:none;pointer-events:auto;font-weight:600; cursor:pointer; transition: background 0.2s, opacity 0.2s;}
+.btn:active{opacity: 0.8;}
+.btn.primary { background: var(--accent); color: #fff; }
+.btn.danger { background: #ef4444; color: #fff; }
+
+.back{border:0;background:transparent;color:var(--text);padding:8px;border-radius:50%;pointer-events:auto;font-weight:bold; cursor:pointer;}
+
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.tag{border:0;background:var(--panel2);color:var(--text);border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;pointer-events:auto;}
+.detailcover{width:min(240px,100%);aspect-ratio:2/3;object-fit:cover;border-radius:12px;margin-top:16px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);}
+
+.chapters{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.chapter{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--panel);border:1px solid var(--border);border-radius:12px; font-weight: 500;}
+
+.notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.hidden{display:none}
+
+.theme-toggle{border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:var(--panel2);color:var(--text);font-size:18px;cursor:pointer; pointer-events:auto;}
 .home-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 
-.home-filters{display:flex;gap:8px;margin:8px 0 16px}
-.type-btn{flex:1;border:1px solid var(--border2);border-radius:12px;padding:10px 6px;background:var(--panel2);color:var(--muted);font-weight:800;font-size:14px;transition:all 0.2s; pointer-events:auto; text-align:center;}
-.type-btn.active{background:var(--btn-bg);color:var(--btn-text);border-color:var(--border)}
+/* Filter Tipe */
+.home-filters{display:flex;gap:10px;margin:8px 0 20px}
+.type-btn{flex:1;border:0;border-radius:14px;padding:12px;background:var(--panel);color:var(--muted);font-weight:700;font-size:13px;transition:all 0.2s; pointer-events:auto; text-align:center;}
+.type-btn.active{background:var(--accent);color:#fff;}
 
-.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:22px 0 12px}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:28px 0 16px}
 .section-title{font-size:18px;font-weight:800;display:flex;align-items:center;gap:6px}
-.section-sub{font-size:12px;color:var(--muted)}
-.popular-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.popular-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer; pointer-events:auto; position:relative;}
+
+.popular-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.popular-card{border:none;border-radius:12px;overflow:hidden;background:var(--panel);cursor:pointer; pointer-events:auto; position:relative; box-shadow: 0 4px 12px rgba(0,0,0,0.3);}
 .popular-card .cover{aspect-ratio:2/3}
-.popular-card .cardbody{padding:9px}
-.popular-card .title{font-size:13px}
-.all-title{margin-top:24px}
-.tag-filter{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px}
-.tag-filter .tag.active{background:var(--btn-bg);color:var(--btn-text);}
+.popular-card .cardbody{padding:10px}
+.popular-card .title{font-size:13px; font-weight:700;}
+
+.tag-filter{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px}
+.tag-filter .tag.active{background:var(--accent);color:#fff;}
 
 .home-layer{display:none}
 .home-layer.active{display:block}
 .catalog-layer{display:none}
 .catalog-layer.active{display:block}
-.catalog-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.catalog-back{border:0;background:var(--btn-bg);color:var(--btn-text);padding:9px 12px;border-radius:10px;font-weight:bold; pointer-events:auto;}
+.catalog-head{display:flex;align-items:center;gap:12px;margin-bottom:20px}
 
-.update-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.update-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s; pointer-events:auto; position:relative;}
-.update-card:active{transform:scale(0.97)}
+/* History (Lanjut Baca) */
+.update-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.update-card{border:none;border-radius:12px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .1s; pointer-events:auto; position:relative; box-shadow: 0 2px 8px rgba(0,0,0,0.2);}
+.update-card:active{transform:scale(0.96)}
 .update-card .cover{aspect-ratio:2/3}
-.update-card .cardbody{padding:9px}
-.update-card .title{font-size:13px;line-height:1.2;margin-bottom:4px}
-.update-card .chapter-label{font-size:12px;color:var(--muted)}
+.update-card .cardbody{padding:10px}
+.update-card .title{font-size:13px;line-height:1.3;margin-bottom:6px; font-weight: 700;}
+.update-card .chapter-label{font-size:11px;font-weight:600;color:var(--accent)}
 
 @media(max-width:420px){
-  .update-strip{gap:7px}
-  .update-card .cardbody{padding:7px}
-  .popular-grid{gap:7px}
-  .popular-card .cardbody{padding:7px}
+  .update-strip, .popular-grid, .grid {gap:10px}
+  .update-card .cardbody, .popular-card .cardbody {padding:8px}
 }
 
-/* OVERLAY KECIL & TRANSPARAN */
+/* OVERLAY KECIL & TRANSPARAN (GLASSMORPHISM) */
 .ui-hidden .readerhead { transform: translateY(-120%); }
 .ui-hidden .reader-nav { transform: translateY(120%); }
 
 .readerhead{
   position:fixed; top:0; left:0; width:100%; z-index:50;
-  padding:4px 6px; 
-  background:var(--overlay-bg); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
-  border-bottom:1px solid var(--border);
-  transition: transform 0.3s ease-in-out;
+  padding:10px; 
+  background:var(--overlay-bg); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.reader-topbar{display:flex;align-items:center;gap:5px;width:100%;position:relative}
-.reader-info{flex:0 0 auto;border:0;border-radius:6px;padding:6px 8px;background:var(--btn-bg);color:var(--btn-text);font-weight:700; font-size:12px; pointer-events:auto;}
+.reader-topbar{display:flex;align-items:center;gap:8px;width:100%;position:relative}
+.reader-info{flex:0 0 auto;border:0;border-radius:10px;padding:10px;background:var(--panel2);color:var(--text);font-weight:800; font-size:14px; pointer-events:auto;}
 .reader-chapter-wrap{flex:1;min-width:0;position:relative}
-.reader-chapter-btn{width:100%;border:1px solid var(--border2);border-radius:6px;padding:6px 8px;background:var(--panel2);color:var(--text);font-size:13px;font-weight:700;text-align:left; pointer-events:auto;}
-.reader-chapter-menu{position:absolute;left:0;top:calc(100% + 3px);width:min(310px,78vw);max-height:65vh;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:5px;box-shadow:0 8px 20px rgba(0,0,0,.45);z-index:40}
-.reader-chapter-option{display:block;width:100%;border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--text);text-align:left;padding:10px 14px;font-size:14px; pointer-events:auto;}
-.reader-chapter-option:active,.reader-chapter-option.current{background:var(--btn-bg);color:var(--btn-text);}
-.reader-arrow{flex:0 0 32px;border:0;border-radius:6px;padding:6px 4px;background:var(--btn-bg);color:var(--btn-text);font-size:14px;font-weight:700; pointer-events:auto;}
+.reader-chapter-btn{width:100%;border:none;border-radius:10px;padding:10px;background:var(--panel2);color:var(--text);font-size:14px;font-weight:700;text-align:center; pointer-events:auto;}
+.reader-chapter-menu{position:absolute;left:0;top:calc(100% + 8px);width:100%;max-height:60vh;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.6);z-index:40}
+.reader-chapter-option{display:block;width:100%;border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--text);text-align:left;padding:12px 16px;font-size:14px; pointer-events:auto; font-weight: 500;}
+.reader-chapter-option:active,.reader-chapter-option.current{background:var(--btn-bg);color:var(--btn-text); font-weight: 700;}
+.reader-arrow{flex:0 0 44px;border:0;border-radius:10px;padding:10px 0;background:var(--panel2);color:var(--text);font-size:16px;font-weight:700; pointer-events:auto;}
 .reader-arrow.disabled{opacity:.35;pointer-events:none}
 
 .reader-nav{
   position:fixed; bottom:0; left:0; width:100%; z-index:50;
-  display:flex; flex-direction:column; align-items:stretch; gap:4px;
-  padding:6px 6px calc(6px + env(safe-area-inset-bottom)); 
-  background:var(--overlay-bg); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
-  border-top:1px solid var(--border);
-  transition: transform 0.3s ease-in-out;
+  display:flex; flex-direction:column; align-items:stretch; gap:6px;
+  padding:10px 10px calc(10px + env(safe-area-inset-bottom)); 
+  background:var(--overlay-bg); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  border-top:1px solid rgba(255,255,255,0.05);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.reader-nav .navbtn{flex:1;min-width:0;text-align:center;border:0;border-radius:6px;padding:7px 4px;background:var(--btn-bg);color:var(--btn-text);font-weight:700; font-size:13px; pointer-events:auto;}
-.reader-nav-row{display:flex;align-items:center;gap:4px;width:100%}
+.reader-nav .navbtn{flex:1;min-width:0;text-align:center;border:0;border-radius:10px;padding:12px 8px;background:var(--panel2);color:var(--text);font-weight:700; font-size:13px; pointer-events:auto;}
+.reader-nav-row{display:flex;align-items:center;gap:6px;width:100%}
 .reader-nav-row .navbtn{flex:1;min-width:0}
-.reader-nav-row .upbtn{flex:.72}
 .reader-nav .commentbtn{width:100%;margin-top:2px}
 .reader-nav .disabled{opacity:.35;pointer-events:none}
 
@@ -131,19 +153,43 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 }
 .readerpage{display:block;width:100vw;max-width:100vw;height:auto;margin:0;padding:0;background:#000;object-fit:contain; touch-action: pan-x pan-y pinch-zoom;}
 
-.readererror{padding:18px;text-align:center;border:1px solid #55333a;border-radius:12px;background:#24181b;margin-top:12px}
+.readererror{padding:18px;text-align:center;border:1px solid #ef4444;border-radius:12px;background:#24181b;margin-top:12px}
 
-.reader-watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;pointer-events:none;text-align:center;line-height:1.15;opacity:.34;color:var(--text);text-shadow:0 1px 3px rgba(0,0,0,.75);white-space:nowrap;font-weight:700}
-.reader-watermark .wm-title{font-size:18px}
-.reader-watermark .wm-user{font-size:12px;font-weight:600;margin-top:3px}
-.novel-reader{width:min(820px,100%);margin:0 auto;padding:10px 22px 20px;background:transparent;color:var(--text);line-height:1.8;font-size:17px;user-select:none;-webkit-user-select:none;} 
-.novel-reader p{margin:0 0 1.1em}
-.novel-reader h1,.novel-reader h2,.novel-reader h3{line-height:1.35;margin:1.5em 0 .75em}
-.novel-reader blockquote{margin:1em 0;padding-left:16px;border-left:3px solid var(--border2);color:var(--muted)}
-.novel-loading{padding:40px 18px;text-align:center;color:var(--muted)}
+.reader-watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;pointer-events:none;text-align:center;line-height:1.15;opacity:.25;color:var(--text);text-shadow:0 1px 3px rgba(0,0,0,.75);white-space:nowrap;font-weight:700}
+.reader-watermark .wm-title{font-size:24px; font-weight:900; letter-spacing: 2px;}
+.reader-watermark .wm-user{font-size:12px;font-weight:600;margin-top:4px}
 
-#progressContainer{position:fixed;top:0;left:0;width:100vw;height:4px;background:rgba(0,0,0,0.3);z-index:9999;display:none;pointer-events:none;}
-#progressBar{height:100%;background:#f39c12;width:0%;transition:width 0.1s ease-out;}
+/* Novel Reader */
+.novel-reader{width:min(820px,100%);margin:0 auto;padding:10px 24px 20px;background:transparent;color:var(--text);line-height:1.8;font-size:17px;user-select:none;-webkit-user-select:none;} 
+.novel-reader p{margin:0 0 1.2em}
+.novel-reader h1,.novel-reader h2,.novel-reader h3{line-height:1.4;margin:1.8em 0 .8em}
+.novel-reader blockquote{margin:1.2em 0;padding-left:16px;border-left:4px solid var(--accent);color:var(--muted); font-style:italic;}
+.novel-loading{padding:60px 20px;text-align:center;color:var(--muted); font-weight:600;}
+
+#progressContainer{position:fixed;top:0;left:0;width:100vw;height:3px;background:transparent;z-index:9999;display:none;pointer-events:none;}
+#progressBar{height:100%;background:var(--accent);width:0%;transition:width 0.1s ease-out;}
+
+/* Badge Status Absolute (Bato.to style) */
+.badge-status {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    z-index: 2;
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    text-transform: uppercase;
+}
+.badge-tamat { background: #10b981; } /* Emerald */
+.badge-new { background: #ef4444; } /* Red */
+.badge-hot { background: #f59e0b; } /* Amber */
+
+/* Author & Info di Detail */
+.detail-meta { font-size: 13px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+.detail-meta strong { color: var(--text); }
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -172,68 +218,72 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
     debugger; 
     const end = performance.now();
     if (end - start > 100) {
-      document.body.innerHTML = "<div style='display:flex;height:100vh;align-items:center;justify-content:center;background:#000;color:#f00;font-size:20px;text-align:center;padding:20px;'>Akses Ilegal Terdeteksi!<br>Sistem Dimatikan.</div>";
+      document.body.innerHTML = "<div style='display:flex;height:100vh;align-items:center;justify-content:center;background:#000;color:#ef4444;font-size:20px;text-align:center;padding:20px;font-weight:bold;'>Akses Ilegal Terdeteksi!<br>Sistem Dimatikan.</div>";
     }
   }, 1000);
 </script>
 
-<div id="gate" class="notice hidden"><div><h2>Akses Ditolak</h2><p class="muted" style="margin-top:8px">MVP Miniweb eksklusif hanya dapat dibuka melalui aplikasi Telegram di HP (Android & iOS).</p></div></div>
+<div id="gate" class="notice hidden"><div><h2>🔒 Akses Ditolak</h2><p class="muted" style="margin-top:8px">MVP Miniweb eksklusif hanya dapat dibuka melalui aplikasi Telegram di HP (Android & iOS).</p></div></div>
 
 <div id="home" class="wrap hidden">
 <header>
   <div class="home-top">
     <div>
-      <h1>MVP Miniweb</h1>
-      <p class="muted" style="margin-top:4px">Pusat bacaan komik dan novel MVP.</p>
+      <h1 style="font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">MVP</h1>
+      <p class="muted" style="margin-top:2px; font-size:13px;">Bato.to clone by Zhenya</p>
     </div>
-    <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema">☀️</button>
+    <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+    </button>
   </div>
 </header>
 
-<input id="search" class="search" placeholder="🔍 Cari Judul atau Author...">
+<input id="search" class="search" placeholder="Cari Judul atau Author...">
 
 <div id="homeLayer" class="home-layer active">
-  <div id="historySection" style="display:none;margin-bottom:12px">
+  <div class="home-filters" id="homeFilters">
+    <button class="type-btn active" onclick="openCatalog('comic')">Komik</button>
+    <button class="type-btn" onclick="openCatalog('novel')">Novel</button>
+    <button class="type-btn" style="color:#ef4444" onclick="openCatalog('bookmark')">Bookmark</button>
+  </div>
+
+  <div id="historySection" style="display:none;margin-bottom:24px">
     <div class="section-head" style="margin-top:10px">
-      <div class="section-title">Terakhir Dibaca</div>
+      <div class="section-title">🕒 Terakhir Dibaca</div>
     </div>
     <div id="historyStrip" class="update-strip"></div>
   </div>
 
-  <div class="home-filters" id="homeFilters">
-    <button class="type-btn active" onclick="openCatalog('comic')">COMIC</button>
-    <button class="type-btn" onclick="openCatalog('novel')">NOVEL</button>
-    <button class="type-btn" onclick="openCatalog('bookmark')">BOOKMARK</button>
-  </div>
-
   <div class="section-head">
-    <div class="section-title">Latest Updates · Comic</div>
+    <div class="section-title">✨ Update Komik</div>
   </div>
   <div id="latestComic" class="update-strip"></div>
 
   <div class="section-head">
-    <div class="section-title">Latest Updates · Novel</div>
+    <div class="section-title">📖 Update Novel</div>
   </div>
   <div id="latestNovel" class="update-strip"></div>
 </div>
 
 <div id="catalogLayer" class="catalog-layer">
   <div class="catalog-head">
-    <button class="catalog-back" onclick="showHome()">← Beranda</button>
-    <h2 id="catalogTitle">Katalog</h2>
+    <button class="back" onclick="showHome()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </button>
+    <h2 id="catalogTitle" style="font-size:20px;">Katalog</h2>
   </div>
 
   <div id="tagFilter" class="tag-filter"></div>
 
   <div id="popularSection">
     <div class="section-head" style="margin-top:10px">
-      <div class="section-title">Populer</div>
+      <div class="section-title">🔥 Populer</div>
     </div>
     <div id="popularGrid" class="popular-grid"></div>
   </div>
 
   <div class="section-head all-title">
-    <div class="section-title">Semua Project</div>
+    <div class="section-title">📚 Semua Judul</div>
   </div>
   <div id="grid" class="grid"></div>
 </div>
@@ -246,7 +296,7 @@ header{padding:8px 0 18px}h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.search{
 <div id="reader" class="wrap hidden">
   <div id="readerContent" style="margin-top:0px"></div>
   <div id="readerWatermark" class="reader-watermark hidden">
-    <div class="wm-title">👑 MVP</div>
+    <div class="wm-title">MVP</div>
     <div id="readerWatermarkUser" class="wm-user"></div>
   </div>
 </div>
@@ -275,7 +325,7 @@ function showDenied(){
   $("home").classList.add("hidden");
   $("detail").classList.add("hidden");
   $("reader").classList.add("hidden");
-  $("gate").innerHTML=`<div><h2>Akses Ditolak</h2><p class="muted" style="margin-top:8px">MVP Miniweb eksklusif hanya dapat dibuka melalui aplikasi Telegram di HP (Android & iOS).</p></div>`;
+  $("gate").innerHTML=`<div><h2>🔒 Akses Ditolak</h2><p class="muted" style="margin-top:8px">Silakan buka melalui aplikasi Telegram.</p></div>`;
   $("gate").classList.remove("hidden");
 }
 
@@ -288,7 +338,7 @@ async function requireAccess(){
     $("home").classList.add("hidden");
     $("detail").classList.add("hidden");
     $("reader").classList.add("hidden");
-    $("gate").innerHTML=`<div><h2>Akses Ditolak</h2><p class="muted" style="margin-top:8px">Anda bukan bagian dari MVP</p><button class="btn" style="margin-top:16px" onclick="if(tg) tg.close()">Kembali ke Telegram</button></div>`;
+    $("gate").innerHTML=`<div><h2>🔒 Akses Ditolak</h2><p class="muted" style="margin-top:8px">Anda belum terdaftar.</p><button class="btn primary" style="margin-top:16px" onclick="if(tg) tg.close()">Tutup</button></div>`;
     $("gate").classList.remove("hidden");
     return false;
   }
@@ -324,7 +374,7 @@ function toggleBookmark(id) {
 function getStatusBadge(p) {
   const stat = p.status || "Ongoing";
   if (stat.toLowerCase() === "tamat" || stat.toLowerCase() === "completed") {
-    return `<div style="position:absolute;top:6px;right:6px;background:#2ecc71;color:#fff;font-size:10px;font-weight:800;padding:3px 6px;border-radius:6px;z-index:2;box-shadow:0 2px 4px rgba(0,0,0,0.5)">TAMAT</div>`;
+    return `<div class="badge-status badge-tamat">TAMAT</div>`;
   }
   return "";
 }
@@ -342,7 +392,7 @@ function showHome(){
   
   document.querySelectorAll('#homeFilters .type-btn').forEach(b => {
     b.classList.remove('active');
-    if (b.textContent.trim() === 'COMIC') b.classList.add('active');
+    if (b.textContent.trim().toLowerCase() === 'komik') b.classList.add('active');
   });
   currentType = "comic";
   
@@ -412,12 +462,12 @@ function renderHistory() {
   if(validRecent.length > 0) {
     $("historySection").style.display = "block";
     target.innerHTML = validRecent.map(({p, hist}) => `
-      <article class="update-card" style="border:1px solid #4a90e2;position:relative" onclick="openReader('${esc(p.id)}','${esc(hist.chapter)}',${hist.decensored})">
+      <article class="update-card" onclick="openReader('${esc(p.id)}','${esc(hist.chapter)}',${hist.decensored})">
         ${getStatusBadge(p)}
         ${p.cover_file_id ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="cover"></div>`}
         <div class="cardbody">
           <div class="title">${esc(p.title)}</div>
-          <div class="chapter-label" style="color:#4a90e2;font-weight:bold;margin-top:6px">Lanjut Ch. ${esc(hist.chapter)}${decBadge(hist.decensored)}</div>
+          <div class="chapter-label" style="margin-top:4px;">Ch. ${esc(hist.chapter)}${decBadge(hist.decensored)}</div>
         </div>
       </article>`).join("");
   } else {
@@ -433,10 +483,10 @@ function renderLatest(type,targetId){
   
   target.innerHTML=updates.length ? updates.map(({p,latest})=>{
     const isNew = (now - (latest.ts * 1000)) <= 86400000;
-    const newBadge = isNew ? `<div style="position:absolute;top:6px;left:6px;background:#e74c3c;color:#fff;font-size:10px;font-weight:800;padding:3px 6px;border-radius:6px;z-index:2;box-shadow:0 2px 4px rgba(0,0,0,0.5)">NEW</div>` : "";
+    const newBadge = isNew ? `<div class="badge-status badge-new">NEW</div>` : "";
     
     return `
-    <article class="update-card" style="position:relative" onclick="openReader('${esc(p.id)}','${esc(latest.chapter.chapter)}',${latest.chapter.decensored})">
+    <article class="update-card" onclick="openReader('${esc(p.id)}','${esc(latest.chapter.chapter)}',${latest.chapter.decensored})">
       ${newBadge}
       ${getStatusBadge(p)}
       ${p.cover_file_id
@@ -444,7 +494,7 @@ function renderLatest(type,targetId){
         : `<div class="cover"></div>`}
       <div class="cardbody">
         <div class="title">${esc(p.title)}</div>
-        <div class="chapter-label">Chapter ${esc(latest.chapter.chapter)}${decBadge(latest.chapter.decensored)}</div>
+        <div class="chapter-label">Ch. ${esc(latest.chapter.chapter)}${decBadge(latest.chapter.decensored)}</div>
       </div>
     </article>`;
   }).join("")
@@ -480,7 +530,7 @@ if($("search")) {
     if(val !== "") {
       $("homeLayer").classList.remove("active");
       $("catalogLayer").classList.add("active");
-      $("catalogTitle").textContent = "Hasil Pencarian";
+      $("catalogTitle").textContent = "Pencarian";
       $("popularSection").style.display = "none"; 
       renderCatalog(false);
     } else {
@@ -488,9 +538,9 @@ if($("search")) {
         $("catalogLayer").classList.remove("active");
         $("homeLayer").classList.add("active");
       } else {
-        let title = "Katalog Comic";
-        if (currentType === "novel") title = "Katalog Novel";
-        if (currentType === "bookmark") title = "Bookmark Saya";
+        let title = "Komik";
+        if (currentType === "novel") title = "Novel";
+        if (currentType === "bookmark") title = "Bookmark";
         $("catalogTitle").textContent = title;
       }
       $("popularSection").style.display = currentType === 'bookmark' ? 'none' : 'block';
@@ -520,38 +570,38 @@ function renderCards(list, targetId, popular=false){
 
     target.innerHTML=letters.length
       ? letters.map(letter=>`
-          <section style="margin-bottom:18px">
-            <div style="font-size:14px;font-weight:800;color:var(--muted);margin-bottom:7px">${esc(letter)}</div>
-            <div style="display:flex;flex-direction:column;gap:6px">
+          <section style="margin-bottom:20px">
+            <div style="font-size:14px;font-weight:800;color:var(--accent);margin-bottom:10px">${esc(letter)}</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;">
               ${groups[letter].map(p=>`
-                <div style="position:relative;">
-                  <button onclick="openProject('${esc(p.id)}')"
-                    style="width:100%;text-align:left;border:1px solid var(--border);border-radius:10px;padding:11px 13px;background:var(--panel);color:var(--text);font-size:15px;font-weight:650;pointer-events:auto;">
-                    ${esc(p.title)}
-                  </button>
-                </div>`).join("")}
+                <article class="card" onclick="openProject('${esc(p.id)}')">
+                  ${getStatusBadge(p)}
+                  ${p.cover_file_id ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" loading="lazy">` : `<div class="cover"></div>`}
+                  <div class="cardbody"><div class="title">${esc(p.title)}</div></div>
+                </article>
+              `).join("")}
             </div>
           </section>`).join("")
-      : "<p class='muted'>Tidak ada project.</p>";
+      : "<p class='muted'>Tidak ditemukan.</p>";
     return;
   }
 
   target.innerHTML=list.length?list.map(p=>`
-    <article class="popular-card" style="border:1px solid #f39c12;position:relative" onclick="openProject('${esc(p.id)}')">
-      ${getStatusBadge(p)}
+    <article class="popular-card" onclick="openProject('${esc(p.id)}')">
+      <div class="badge-status badge-hot" style="left:auto; right:8px;">HOT</div>
       ${p.cover_file_id
         ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" loading="lazy" onerror="this.style.display='none'">`
         : `<div class="cover"></div>`}
       <div class="cardbody"><div class="title">${esc(p.title)}</div></div>
     </article>`).join("")
-    : "<p class='muted'>Belum ada PJ populer.</p>";
+    : "<p class='muted'>Belum ada.</p>";
 }
 
 function renderTagFilter(list){
   const tags=[...new Set(list.flatMap(p=>Array.isArray(p && p.tags)?p.tags:[]).map(t=>String(t).trim()).filter(t => t && isNaN(Number(t))))]
     .sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:"base"}));
   $("tagFilter").innerHTML=tags.length
-    ? tags.map(t=>`<button class="tag ${currentTag===t.toLowerCase()?"active":""}" style="pointer-events:auto;" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")
+    ? tags.map(t=>`<button class="tag ${currentTag===t.toLowerCase()?"active":""}" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")
     : "";
 }
 
@@ -561,9 +611,9 @@ function openCatalog(type){
   $("homeLayer").classList.remove("active");
   $("catalogLayer").classList.add("active");
   
-  let title = "Katalog Comic";
-  if (type === "novel") title = "Katalog Novel";
-  if (type === "bookmark") title = "Bookmark Saya";
+  let title = "Komik";
+  if (type === "novel") title = "Novel";
+  if (type === "bookmark") title = "Bookmark";
   $("catalogTitle").textContent = title;
   
   $("popularSection").style.display = type === 'bookmark' ? 'none' : 'block';
@@ -585,22 +635,7 @@ function filterByTag(tag){
   renderCatalog(currentType !== 'bookmark');
 }
 
-function renderCatalog(withPopular = true){
-  const list=getFilteredProjects();
-  if(withPopular) renderCards(list.slice(0,3),"popularGrid",true);
-  renderCards(list,"grid",false);
-  
-  const searchVal = $("search") ? $("search").value.trim() : "";
-  if(searchVal !== "") {
-    $("tagFilter").innerHTML = "";
-  } else {
-    renderTagFilter(allTypeProjects(currentType));
-  }
-}
-
-// ----------------------------------------------------
-// FUNGSI PROFIL TRANSLATOR (PORTFOLIO MINI)
-// ----------------------------------------------------
+// PROFIL TRANSLATOR MINIMALIS
 function openTranslatorProfile(name) {
   const list = catalog.filter(p => {
     const t = (p.translator && p.translator.trim() !== "") ? p.translator : "MVP";
@@ -609,33 +644,32 @@ function openTranslatorProfile(name) {
   if (!list.length) return;
   
   const tTrakteer = (list.find(p => p.trakteer) || {}).trakteer || "";
-  const trakteerBtn = tTrakteer ? `<a href="${esc(tTrakteer)}" target="_blank" class="btn" style="margin-top:12px;background:#e74c3c;color:#fff;pointer-events:auto;">☕ Traktir Kopi</a>` : "";
+  const trakteerBtn = tTrakteer ? `<a href="${esc(tTrakteer)}" target="_blank" class="btn primary" style="margin-top:16px;">Traktir Kopi</a>` : "";
   
   $("home").classList.add("hidden"); 
   $("reader").classList.add("hidden");
   $("detail").classList.remove("hidden");
   
-  const roleLabel = name.toLowerCase() === "mvp" ? "MVP Core" : "Fan Translator";
+  const roleLabel = name.toLowerCase() === "mvp" ? "Official Translator" : "Guest Translator";
   
   $("detailContent").innerHTML = `
-    <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-      <button class="btn" onclick="showHome()">Beranda</button>
+    <div style="display:flex; justify-content:flex-start; align-items:center; margin-bottom:24px;">
+      <button class="back" onclick="showHome()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      </button>
     </div>
-    <div style="text-align:center; padding:24px; background:var(--panel2); border-radius:16px; border:1px solid var(--border); margin-bottom:24px;">
-      <div style="font-size:48px; margin-bottom:8px;">👤</div>
-      <h2 style="margin:0;">${esc(name)}</h2>
-      <div style="color:var(--muted); font-size:13px; margin-top:4px;">${roleLabel}</div>
+    <div style="text-align:center; padding:32px 20px; background:var(--panel); border-radius:16px; margin-bottom:32px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+      <div style="width:80px; height:80px; background:var(--panel2); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:36px; margin:0 auto 16px;">👤</div>
+      <h2 style="margin:0; font-size:22px;">${esc(name)}</h2>
+      <div style="color:var(--muted); font-size:14px; margin-top:4px; font-weight:500;">${roleLabel} • ${list.length} Project</div>
       ${trakteerBtn}
-      <div style="margin-top:16px;">
-        <span style="font-weight:bold; background:var(--panel); padding:6px 12px; border-radius:8px; border:1px solid var(--border); font-size:14px;">📚 ${list.length} Project</span>
-      </div>
     </div>
-    <h3 style="margin-bottom:14px; display:flex; align-items:center; gap:6px;">Karya</h3>
+    <h3 style="margin-bottom:16px; font-size:18px;">Karya Terjemahan</h3>
     <div class="grid" id="translatorProjectGrid"></div>
   `;
 
   $("translatorProjectGrid").innerHTML = list.map(p => `
-    <article class="card" style="pointer-events:auto; position:relative;" onclick="openProject('${esc(p.id)}')">
+    <article class="card" onclick="openProject('${esc(p.id)}')">
       ${getStatusBadge(p)}
       ${p.cover_file_id ? `<img class="cover" src="${fileUrl(p.cover_file_id)}" loading="lazy">` : `<div class="cover"></div>`}
       <div class="cardbody"><div class="title">${esc(p.title)}</div></div>
@@ -651,49 +685,76 @@ async function openProject(id){
   const cover=p.cover_file_id
     ? `<img class="detailcover" src="${fileUrl(p.cover_file_id)}" alt="${esc(p.title)}" onerror="this.style.display='none'">`
     : "";
-  
-  const authorInfo=p.author ? `<div style="margin-top:6px;font-size:14px;color:var(--muted)"><b>Author/Artist:</b> ${esc(p.author)}</div>` : "";
-  
-  // LOGIKA "BROUGHT TO YOU BY" OTOMATIS MVP JIKA KOSONG (TIDAK BISA DIKLIK JIKA MVP)
+    
   const transName = (p.translator && p.translator.trim() !== "") ? p.translator : "MVP";
   const transClickable = transName.toLowerCase() === "mvp" ? 
-        `<span style="font-weight:bold;">${esc(transName)}</span>` : 
-        `<span style="cursor:pointer;pointer-events:auto;font-weight:bold;" onclick="openTranslatorProfile('${esc(transName)}')">${esc(transName)}</span>`;
-  const transInfo = `<div style="margin-top:4px;font-size:14px;color:#f39c12"><b>Brought to you by:</b> ${transClickable}</div>`;
+        `<strong>${esc(transName)}</strong>` : 
+        `<strong style="color:var(--accent); cursor:pointer;" onclick="openTranslatorProfile('${esc(transName)}')">${esc(transName)}</strong>`;
+
+  const metaInfo = `
+    <div class="detail-meta">
+      ${p.author ? `<div>Author: <strong>${esc(p.author)}</strong></div>` : ""}
+      <div>Translator: ${transClickable}</div>
+      <div>Status: <strong style="color:${(p.status||"").toLowerCase()==="tamat" ? '#10b981' : '#f59e0b'}">${(p.status || "Ongoing").toUpperCase()}</strong></div>
+    </div>
+  `;
   
-  const trakteerDetail = p.trakteer ? `<br><a href="${esc(p.trakteer)}" target="_blank" class="btn" style="margin-top:12px;margin-bottom:8px;background:#e74c3c;color:#fff;">☕ Traktir Kopi</a>` : "";
+  const trakteerDetail = p.trakteer ? `<a href="${esc(p.trakteer)}" target="_blank" class="btn" style="background:#f97316; color:#fff; width:100%; margin-top:16px;">Trakteer Translator</a>` : "";
 
   const tagsArr = Array.isArray(p && p.tags) ? p.tags : [];
   const validTags = tagsArr.filter(t => t && isNaN(Number(t)));
   const tags=validTags.length
-    ? `<div class="tags">${validTags.map(t=>`<button class="tag" style="pointer-events:auto;" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
+    ? `<div class="tags">${validTags.map(t=>`<button class="tag" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>`
     : "";
 
   const isBm = isBookmark(p.id);
-  const favBtn = `<button class="btn" style="pointer-events:auto; font-weight:bold; background:${isBm ? '#e74c3c' : 'var(--btn-bg)'}; color:${isBm ? '#fff' : 'var(--btn-text)'};" onclick="toggleBookmark('${esc(p.id)}')">${isBm ? 'Hapus Bookmark' : 'Simpan Bookmark'}</button>`;
-  
-  const statusText = (p.status || "Ongoing").toUpperCase();
-  const statusColor = (statusText === "TAMAT" || statusText === "COMPLETED") ? "#2ecc71" : "#f39c12";
-  const statusBadgeDetail = `<span style="background:${statusColor};color:#fff;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:900;margin-left:8px;vertical-align:middle;">${statusText}</span>`;
+  const botUsername = "MVP_Zhenya_Bot"; // GANTI JIKA PERLU
+  const shareLink = `https://t.me/${botUsername}?start=${p.id}`;
+  const shareAction = `tg.openTelegramLink('https://t.me/share/url?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent("Baca " + p.title + " di MVP Miniweb!")}')`;
+
+  // HEADER INFO PROJECT (KIRI KEMBALI, KANAN BOOKMARK & SHARE)
+  const topBar = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button class="back" onclick="showHome()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      </button>
+      
+      <div style="display:flex; gap:8px;">
+        <button class="btn" onclick="${shareAction}" style="padding:8px 12px; background:var(--panel);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+        </button>
+        <button class="btn" style="padding:8px 12px; font-weight:bold; background:${isBm ? 'var(--accent)' : 'var(--panel)'}; color:${isBm ? '#fff' : 'var(--text)'};" onclick="toggleBookmark('${esc(p.id)}')">
+            ${isBm ? 'Tersimpan' : 'Bookmark'}
+        </button>
+      </div>
+    </div>
+  `;
 
   const chaptersArr = Array.isArray(p && p.chapters) ? p.chapters : [];
 
   $("detailContent").innerHTML=`
-    <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-      <button class="btn" onclick="showHome()">Beranda</button>
+    ${topBar}
+    <div style="display:flex; flex-direction:column; align-items:center; text-align:center;">
+        ${cover}
+        <h1 style="margin-top:20px; font-size:22px; line-height:1.3;">${esc(p.title)}</h1>
+        ${metaInfo}
     </div>
-    ${cover}
-    <h1 style="margin-top:16px;display:flex;align-items:center;">${esc(p.title)} ${statusBadgeDetail}</h1>
-    <div style="margin-top:12px;margin-bottom:8px;">${favBtn}</div>
-    ${authorInfo}
-    ${transInfo}
+    
     ${trakteerDetail}
     ${tags}
-    <p class="muted" style="margin-top:12px;white-space:pre-line">${esc(p.description)}</p>
-    <h2 style="margin-top:24px">Chapters</h2>
+    
+    <div style="margin-top:24px;">
+        <h3 style="font-size:16px; margin-bottom:8px;">Sinopsis</h3>
+        <p class="muted" style="white-space:pre-line; line-height:1.6; font-size:14px;">${esc(p.description)}</p>
+    </div>
+
+    <h3 style="margin-top:32px; margin-bottom:12px; font-size:18px;">Daftar Chapter</h3>
     <div class="chapters">${chaptersArr.map((c,i)=>`
-      <div class="chapter"><span>Chapter ${esc(c.chapter)} ${decBadge(c.decensored)}</span>
-      <button class="btn" style="pointer-events:auto;" onclick="openReader('${esc(p.id)}','${esc(c.chapter)}',${c.decensored})">Baca</button></div>`).join("")}</div>`;
+      <div class="chapter">
+        <span>Chapter ${esc(c.chapter)} ${decBadge(c.decensored)}</span>
+        <button class="btn primary" style="padding:6px 14px; font-size:13px;" onclick="openReader('${esc(p.id)}','${esc(c.chapter)}',${c.decensored})">Baca</button>
+      </div>`).join("")}
+    </div>`;
 }
 
 window.addEventListener('scroll', () => {
@@ -783,7 +844,9 @@ async function openNovelReader(projectId, idx){
   $("readerContent").innerHTML=`
     <div class="readerhead">
       <div class="reader-topbar">
-        <button class="reader-info" onclick="readerInfo('${esc(p.id)}')">INFO »</button>
+        <button class="reader-info" onclick="readerInfo('${esc(p.id)}')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </button>
 
         <div class="reader-chapter-wrap">
           <button id="readerChapterButton" class="reader-chapter-btn" onclick="toggleChapterMenu(event)">
@@ -793,15 +856,10 @@ async function openNovelReader(projectId, idx){
             ${chaptersArr.map((ch,i)=>`
               <button class="reader-chapter-option ${i===idx?"current":""}"
                 onclick="selectReaderChapter('${esc(p.id)}',${i})">
-                Ch.${esc(ch.chapter)}${decBadge(ch.decensored)}
+                Chapter ${esc(ch.chapter)}${decBadge(ch.decensored)}
               </button>`).join("")}
           </div>
         </div>
-
-        <button class="reader-arrow ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""}
-          onclick="openChapter('${esc(p.id)}',${idx-1})">←</button>
-        <button class="reader-arrow ${idx>=chaptersArr.length-1?"disabled":""}" ${idx>=chaptersArr.length-1?"disabled":""}
-          onclick="openChapter('${esc(p.id)}',${idx+1})">→</button>
       </div>
     </div>
 
@@ -829,11 +887,10 @@ async function openNovelReader(projectId, idx){
   }
 
   const commentUrl=chapterCommentLink(p);
-  const trakteerNav = (p && p.trakteer) ? `<button class="navbtn" style="background:#e74c3c;color:#fff;pointer-events:auto;" onclick="window.open('${esc(p.trakteer)}', '_blank')">☕ Traktir Kopi</button>` : "";
   const fontControls = `
-    <div class="reader-nav-row" style="margin-top:4px;margin-bottom:8px;">
-      <button class="navbtn" style="pointer-events:auto;background:var(--panel2);color:var(--text);border:1px solid var(--border2);" onclick="changeFontSize(-1, event)">A- Kecilkan</button>
-      <button class="navbtn" style="pointer-events:auto;background:var(--panel2);color:var(--text);border:1px solid var(--border2);" onclick="changeFontSize(1, event)">A+ Besarkan</button>
+    <div class="reader-nav-row" style="margin-bottom:4px;">
+      <button class="navbtn" onclick="changeFontSize(-1, event)">A- Kecilkan</button>
+      <button class="navbtn" onclick="changeFontSize(1, event)">A+ Besarkan</button>
     </div>
   `;
 
@@ -846,12 +903,11 @@ async function openNovelReader(projectId, idx){
       <button class="navbtn ${idx>=chaptersArr.length-1?"disabled":""}" ${idx>=chaptersArr.length-1?"disabled":""}
         onclick="openChapter('${esc(p.id)}',${idx+1})">Next »</button>
     </div>
-    <div class="reader-nav-row" style="margin-top:2px">
-      <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
+    <div class="reader-nav-row">
+      <button class="navbtn commentbtn primary ${commentUrl?"":"disabled"}"
         ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
         Tulis Komentar
       </button>
-      ${trakteerNav}
     </div>`;
 }
 
@@ -895,7 +951,9 @@ async function openReader(projectId, chapterName, decensored){
   $("readerContent").innerHTML=`
     <div class="readerhead">
       <div class="reader-topbar">
-        <button class="reader-info" onclick="readerInfo('${esc(p.id)}')">INFO »</button>
+        <button class="reader-info" onclick="readerInfo('${esc(p.id)}')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </button>
         <div class="reader-chapter-wrap">
           <button id="readerChapterButton" class="reader-chapter-btn" onclick="toggleChapterMenu(event)">
             Ch.${esc(c.chapter)}${decBadge(c.decensored)}
@@ -903,12 +961,10 @@ async function openReader(projectId, chapterName, decensored){
           <div id="readerChapterMenu" class="reader-chapter-menu hidden">
             ${chaptersArr.map((ch,i)=>`
               <button class="reader-chapter-option ${i===idx?"current":""}" onclick="selectReaderChapter('${esc(p.id)}',${i})">
-                Ch.${esc(ch.chapter)}${decBadge(ch.decensored)}
+                Chapter ${esc(ch.chapter)}${decBadge(ch.decensored)}
               </button>`).join("")}
           </div>
         </div>
-        <button class="reader-arrow ${idx<=0?"disabled":""}" ${idx<=0?"disabled":""} onclick="openChapter('${esc(p.id)}',${idx-1})">←</button>
-        <button class="reader-arrow ${idx>=chaptersArr.length-1?"disabled":""}" ${idx>=chaptersArr.length-1?"disabled":""} onclick="openChapter('${esc(p.id)}',${idx+1})">→</button>
       </div>
     </div>
     <div id="readerPages" class="readerpages" onclick="toggleReaderUI(event)"></div>
@@ -916,7 +972,6 @@ async function openReader(projectId, chapterName, decensored){
 
   const pages=$("readerPages");
   const commentUrl=chapterCommentLink(p);
-  const trakteerNav = (p && p.trakteer) ? `<button class="navbtn" style="background:#e74c3c;color:#fff;pointer-events:auto;" onclick="window.open('${esc(p.trakteer)}', '_blank')">☕ Traktir Kopi</button>` : "";
 
   $("readerNav").innerHTML=`
     <div class="reader-nav-row">
@@ -926,12 +981,11 @@ async function openReader(projectId, chapterName, decensored){
       <button class="navbtn ${idx>=chaptersArr.length-1?"disabled":""}" ${idx>=chaptersArr.length-1?"disabled":""}
         onclick="openChapter('${esc(p.id)}',${idx+1})">Next »</button>
     </div>
-    <div class="reader-nav-row" style="margin-top:6px">
-      <button class="navbtn commentbtn ${commentUrl?"":"disabled"}"
+    <div class="reader-nav-row">
+      <button class="navbtn commentbtn primary ${commentUrl?"":"disabled"}"
         ${commentUrl ? `onclick="location.href='${esc(commentUrl)}'"` : "disabled"}>
         Tulis Komentar
       </button>
-      ${trakteerNav}
     </div>
   `;
 
@@ -989,7 +1043,11 @@ function applyTheme(theme){
   const light=theme==="light";
   document.body.classList.toggle("light",light);
   const btn=$("themeToggle");
-  if(btn) btn.textContent=light?"🌙":"☀️";
+  if(btn) {
+    btn.innerHTML = light 
+    ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`
+    : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+  }
   try{localStorage.setItem("mvp_theme",light?"light":"dark")}catch(e){}
 }
 
