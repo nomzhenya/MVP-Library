@@ -8,7 +8,7 @@ function cors(headers = {}) {
   return {
     ...headers,
     "access-control-allow-origin": "*",
-    "access-control-allow-methods": "GET,PUT,POST,OPTIONS",
+    "access-control-allow-methods": "GET,PUT,OPTIONS",
     "access-control-allow-headers": "Content-Type,X-Library-Secret,X-Telegram-Init-Data"
   };
 }
@@ -151,49 +151,7 @@ export default {
       return json({ok: true, count: body.length});
     }
 
-    // =========================================================
-    // ENDPOINT BARU: MENERIMA VOTE & BOOKMARK DARI MINIWEB
-    // =========================================================
-    if (url.pathname === "/api/interact" && request.method === "POST") {
-      const access = await checkAccess(request, env);
-      if (!access.ok) return json({ok: false, code: access.code}, access.code);
-
-      try {
-        const body = await request.json();
-        const data = {
-          uid: access.user.id,
-          action: body.action, // "vote", "bookmark", atau "unbookmark"
-          pid: body.project_id,
-          val: body.value, // angka 1-10 untuk vote
-          ts: Date.now()
-        };
-
-        // Simpan ke Antrean (Queue) di Cloudflare KV
-        let queue = await env.LIBRARY.get("interaction_queue", "json") || [];
-        queue.push(data);
-        await env.LIBRARY.put("interaction_queue", JSON.stringify(queue));
-
-        return json({ok: true});
-      } catch (e) {
-        return json({ok: false, error: e.message}, 400);
-      }
-    }
-
-    // =========================================================
-    // ENDPOINT BARU: ZHENYA MENGAMBIL ANTREAN TIAP 1 MENIT
-    // =========================================================
-    if (url.pathname === "/api/admin/interactions" && request.method === "GET") {
-      const secret = request.headers.get("x-library-secret");
-      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) return json({error: "unauthorized"}, 401);
-
-      let queue = await env.LIBRARY.get("interaction_queue", "json") || [];
-      if (queue.length > 0) {
-        // Kosongkan antrean setelah diambil oleh bot agar tidak dobel
-        await env.LIBRARY.put("interaction_queue", "[]");
-      }
-      return json({ok: true, data: queue});
-    }
-
+    // TAMBAHAN: Endpoint Menerima Text HTML Novel dari Bot
     if (url.pathname === "/api/admin/novel" && request.method === "PUT") {
       const secret = request.headers.get("x-library-secret");
       if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
@@ -206,6 +164,7 @@ export default {
       return json({ok: true});
     }
 
+    // TAMBAHAN: Endpoint Mengirim Text HTML Novel ke Mini Web Reader
     if (url.pathname === "/api/novel" && request.method === "GET") {
       const access = await checkAccess(request, env);
       if (!access.ok) {
