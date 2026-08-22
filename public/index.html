@@ -14,7 +14,7 @@
   --bg:#121215; --text:#e0e0e0; --muted:#8a8a99; 
   --panel:#1c1c21; --panel2:#26262e; --border:#32323a; --border2:#42424b; --input:#1c1c21;
   --btn-bg: #3d3d4a; --btn-text: #ffffff; 
-  --overlay-bg: rgba(18, 18, 21, 0.85); 
+  --overlay-bg: rgba(18, 18, 21, 0.75); 
   --accent: #5e81ff; 
   --accent-hover: #7593ff;
   --bato-star: #fbbf24;
@@ -24,7 +24,7 @@ body.light{
   --bg:#f4f4f5; --text:#202020; --muted:#71717a; 
   --panel:#ffffff; --panel2:#e4e4e7; --border:#d4d4d8; --border2:#a1a1aa; --input:#ffffff;
   --btn-bg: #e4e4e7; --btn-text: #202020; 
-  --overlay-bg: rgba(244, 244, 245, 0.80); 
+  --overlay-bg: rgba(255, 255, 255, 0.80); 
   --accent: #3b82f6; 
   --accent-hover: #2563eb;
 }
@@ -110,7 +110,7 @@ h1,h2,h3,p{margin:0}
 
 .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
 .tag{border:0;background:var(--panel2);color:var(--text);border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;pointer-events:auto;}
-.detailcover{width:min(240px,100%);aspect-ratio:2/3;object-fit:cover;border-radius:12px;margin-top:16px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);}
+.detailcover{width:120px; aspect-ratio:2/3; object-fit:cover; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.3); flex-shrink:0; background:var(--panel2);}
 
 /* CHAPTER SCROLL BOX */
 .chapter-scroll-box { max-height:400px; overflow-y:auto; border:1px solid var(--border); border-radius:12px; background:var(--panel); display:flex; flex-direction:column; overscroll-behavior:contain; margin-top:12px; }
@@ -225,6 +225,7 @@ body.light .novel-reader p.bookmarked {
 
 <div id="progressContainer"><div id="progressBar"></div></div>
 
+<!-- KODE KEAMANAN MASTER (Anti Inspect & Vote Global) -->
 <script>
   // SORTIR ASC/DESC GLOBAL
   window.chapterSortDesc = true;
@@ -250,111 +251,91 @@ body.light .novel-reader p.bookmarked {
     }
   };
 
-  document.addEventListener('contextmenu', function(e) {
-    if(e.target.tagName === 'INPUT') return;
-    e.preventDefault();
-  });
+  document.addEventListener('contextmenu', function(e) { if(e.target.tagName==='INPUT')return; e.preventDefault(); });
   document.addEventListener('dragstart', function(e) { e.preventDefault(); });
-  document.addEventListener('selectstart', function(e) {
-    if(e.target.tagName !== 'INPUT') e.preventDefault(); 
-  });
+  document.addEventListener('selectstart', function(e) { if(e.target.tagName!=='INPUT')e.preventDefault(); });
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'F12' || 
-       (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
-       (e.ctrlKey && e.key === 'U')) {
-      e.preventDefault();
-      return false;
-    }
+    if (e.key==='F12' || (e.ctrlKey && e.shiftKey && (e.key==='I'||e.key==='J'||e.key==='C')) || (e.ctrlKey && e.key==='U')) { e.preventDefault(); return false; }
   });
   setInterval(function() {
-    var start = performance.now();
-    debugger; 
-    var end = performance.now();
-    if (end - start > 100) {
-      document.body.innerHTML = "<div style='display:flex;height:100vh;align-items:center;justify-content:center;background:#000;color:#ef4444;font-size:20px;text-align:center;padding:20px;font-weight:bold;'>Akses Ilegal Terdeteksi!<br>Sistem Dimatikan.</div>";
-    }
+    var start = performance.now(); debugger; var end = performance.now();
+    if (end-start > 100) document.body.innerHTML="<div style='display:flex;height:100vh;align-items:center;justify-content:center;background:#000;color:#ef4444;font-size:20px;text-align:center;padding:20px;font-weight:bold;'>Akses Ilegal Terdeteksi!<br>Sistem Dimatikan.</div>";
   }, 1000);
 </script>
 
-<div id="gate" class="notice hidden"><div><h2>🔒 Akses Ditolak</h2><p class="muted" style="margin-top:8px">MVP Miniweb eksklusif hanya dapat dibuka melalui aplikasi Telegram di HP (Android & iOS).</p></div></div>
+<div id="gate" class="notice hidden"><div><h2>🔒 Akses Ditolak</h2><p class="muted" style="margin-top:8px">Buka via Telegram.</p></div></div>
 
 <div id="home" class="wrap hidden">
-<header>
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-    <div>
-      <h1 style="font-size:24px; font-weight:900; letter-spacing:-0.5px; background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">MVP Miniweb</h1>
-      <p class="muted" style="margin-top:2px; font-size:13px; font-weight:600;">Baca sepuasnya, rebahan selamanya.</p>
+  <header>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div>
+        <h1 style="font-size:24px; font-weight:900; letter-spacing:-0.5px; background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">MVP Miniweb</h1>
+        <p class="muted" style="margin-top:2px; font-size:13px; font-weight:600;">Baca sepuasnya, rebahan selamanya.</p>
+      </div>
+      <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema"></button>
     </div>
-    <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema"></button>
+  </header>
+
+  <div class="search-container" id="mainSearchContainer">
+    <input id="search" class="search" placeholder="Cari Judul atau Author..." autocomplete="off">
+    <div id="searchDropdown" class="search-dropdown"></div>
   </div>
-</header>
 
-<div class="search-container" id="mainSearchContainer">
-  <input id="search" class="search" placeholder="Cari Judul atau Author..." autocomplete="off">
-  <div id="searchDropdown" class="search-dropdown"></div>
-</div>
-
-<!-- SWITCH MODE -->
-<div class="mode-switch">
-  <button id="btnModeComic" class="mode-btn active" onclick="setMode('comic')">Komik</button>
-  <button id="btnModeNovel" class="mode-btn" onclick="setMode('novel')">Novel</button>
-</div>
-
-<div id="homeLayer" class="home-layer active">
-  <section class="b-sec">
-    <div class="b-head" onclick="toggleSec('secUpdates', this)">
-      <div class="b-title">My Updates</div>
-      <div class="b-toggle">−</div>
-    </div>
-    <div id="secUpdates" class="b-list"></div>
-  </section>
-
-  <section class="b-sec">
-    <div class="b-head" onclick="toggleSec('secHistory', this)">
-      <div class="b-title">My History</div>
-      <div class="b-toggle">−</div>
-    </div>
-    <div id="secHistory" class="b-list"></div>
-  </section>
-
-  <section class="b-sec">
-    <div class="b-head" onclick="toggleSec('secPopular', this)">
-      <div class="b-title">Popular Updates</div>
-      <div class="b-toggle">−</div>
-    </div>
-    <div id="secPopular" class="b-grid"></div>
-  </section>
-
-  <section class="b-sec">
-    <div class="b-head" onclick="toggleSec('secLatest', this)">
-      <div class="b-title">Latest Releases</div>
-      <div class="b-toggle">−</div>
-    </div>
-    <div id="secLatest" class="b-list"></div>
-  </section>
-</div>
-
-<div id="catalogLayer" class="catalog-layer">
-  <div class="catalog-head">
-    <button class="back" onclick="showHome()">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-    </button>
-    <h2 id="catalogTitle" style="font-size:20px;">Hasil Pencarian</h2>
+  <!-- SWITCH MODE -->
+  <div class="mode-switch">
+    <button id="btnModeComic" class="mode-btn active" onclick="setMode('comic')">Komik</button>
+    <button id="btnModeNovel" class="mode-btn" onclick="setMode('novel')">Novel</button>
   </div>
-  <div id="searchGrid" class="b-list"></div>
-</div>
+
+  <div id="homeLayer" class="home-layer active">
+    <!-- SECTION HOMEPAGE TANPA EMOJI -->
+    <section class="b-sec">
+      <div class="b-head" onclick="toggleSec('secUpdates', this)">
+        <div class="b-title">My Updates</div>
+        <div class="b-toggle">−</div>
+      </div>
+      <div id="secUpdates" class="b-list"></div>
+    </section>
+
+    <section class="b-sec">
+      <div class="b-head" onclick="toggleSec('secHistory', this)">
+        <div class="b-title">My History</div>
+        <div class="b-toggle">−</div>
+      </div>
+      <div id="secHistory" class="b-list"></div>
+    </section>
+
+    <section class="b-sec">
+      <div class="b-head" onclick="toggleSec('secPopular', this)">
+        <div class="b-title">Popular Updates</div>
+        <div class="b-toggle">−</div>
+      </div>
+      <div id="secPopular" class="b-grid"></div>
+    </section>
+
+    <section class="b-sec">
+      <div class="b-head" onclick="toggleSec('secLatest', this)">
+        <div class="b-title">Latest Releases</div>
+        <div class="b-toggle">−</div>
+      </div>
+      <div id="secLatest" class="b-list"></div>
+    </section>
+  </div>
+
+  <div id="catalogLayer" class="catalog-layer">
+    <div class="catalog-head">
+      <button class="back" onclick="closeSearch()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
+      <h2 id="catalogTitle" style="font-size:20px;">Hasil Pencarian</h2>
+    </div>
+    <div id="searchGrid" class="b-list"></div>
+  </div>
 </div>
 
-<div id="detail" class="wrap hidden">
-  <div id="detailContent"></div>
-</div>
+<div id="detail" class="wrap hidden"><div id="detailContent"></div></div>
 
 <div id="reader" class="wrap hidden">
-  <div id="readerContent" style="margin-top:0px"></div>
-  <div id="readerWatermark" class="reader-watermark hidden">
-    <div class="wm-title">👑 MVP</div>
-    <div id="readerWatermarkUser" class="wm-user"></div>
-  </div>
+  <div id="readerContent"></div>
+  <div id="readerWatermark" class="reader-watermark hidden"><div class="wm-title">👑 MVP</div><div id="readerWatermarkUser" class="wm-user"></div></div>
 </div>
 
 <script>
@@ -368,262 +349,211 @@ var fileUrl = function(fileId) { return API_BASE + "/api/file?file_id=" + encode
 var accessUser = null;
 var accessDenied = false;
 var currentMode = "comic";
-var uiTimeout; 
+var uiTimeout;
 
 var decBadge = function(d) { return Number(d) === 1 ? " [Decensored]" : (Number(d) === 2 ? " [Uncensored]" : ""); };
 
 function getDummyTime(seed) { 
-  var t = ["Just now","18 hours ago","45 hours ago","62 hours ago","84 hours ago","4 days ago"]; 
-  return t[seed % t.length] || "Just now"; 
+  var t=["Just now","18 hours ago","45 hours ago","62 hours ago","84 hours ago","4 days ago"]; 
+  return t[seed % t.length]; 
 }
 function getTags(p) { 
   var arr = Array.isArray(p.tags) ? p.tags.filter(function(t){ return t && isNaN(Number(t)); }) : []; 
-  return arr.length ? esc(arr.join(", ")) : "Manhwa, Romance"; 
+  return arr.length ? esc(arr.join(", ")) : "Manhwa, Yaoi, Smut"; 
 }
 
-function accessHeaders(){
-  return {"X-Telegram-Init-Data": (tg && tg.initData) ? tg.initData : ""};
-}
-
+function accessHeaders(){ return {"X-Telegram-Init-Data": (tg && tg.initData) ? tg.initData : ""}; }
 function showDenied(){
-  accessDenied=true;
-  $("home").classList.add("hidden");
-  $("detail").classList.add("hidden");
-  $("reader").classList.add("hidden");
-  $("gate").innerHTML = "<div><h2>🔒 Akses Ditolak</h2><p class='muted' style='margin-top:8px'>Silakan buka melalui aplikasi Telegram.</p></div>";
+  accessDenied=true; $("home").classList.add("hidden"); $("detail").classList.add("hidden"); $("reader").classList.add("hidden"); 
+  $("gate").innerHTML="<div><h2>🔒 Akses Ditolak</h2><p class='muted' style='margin-top:8px'>Silakan buka melalui aplikasi Telegram Android/iOS.</p></div>";
   $("gate").classList.remove("hidden");
 }
 
 async function requireAccess(){
   if(accessDenied) return false;
   try {
-    var r = await fetch("/api/access",{cache:"no-store",headers:accessHeaders()});
-    var data = await r.json().catch(function(){ return {}; });
-    if(r.status === 403 || r.status === 401){
-      accessDenied=true;
-      $("home").classList.add("hidden");
-      $("detail").classList.add("hidden");
-      $("reader").classList.add("hidden");
-      $("gate").innerHTML = "<div><h2>🔒 Akses Ditolak</h2><p class='muted' style='margin-top:8px'>Anda belum terdaftar.</p><button class='btn primary' style='margin-top:16px' onclick='if(tg) tg.close()'>Tutup</button></div>";
-      $("gate").classList.remove("hidden");
-      return false;
-    }
-    if(!r.ok){
-      throw new Error(data.reason || "access");
-    }
-    accessUser = data.user || null;
-    return true;
-  } catch(e) {
-    return false;
-  }
-}
-
-function isBookmark(id) {
-  try {
-    var bm = JSON.parse(localStorage.getItem('mvp_bookmarks') || '[]');
-    if (!Array.isArray(bm)) return false;
-    return bm.includes(id);
+      var r = await fetch("/api/access",{cache:"no-store",headers:accessHeaders()});
+      var data = await r.json().catch(function(){ return {}; });
+      if(r.status===403 || r.status===401) { 
+        accessDenied=true; $("home").classList.add("hidden"); $("detail").classList.add("hidden"); $("reader").classList.add("hidden");
+        $("gate").innerHTML="<div><h2>🔒 Akses Ditolak</h2><p class='muted' style='margin-top:8px'>Anda bukan bagian dari MVP.</p><button class='btn primary' style='margin-top:16px' onclick='if(tg) tg.close()'>Tutup</button></div>";
+        $("gate").classList.remove("hidden"); 
+        return false; 
+      }
+      if(!r.ok) throw new Error(data.reason || "access");
+      accessUser = data.user || null;
+      return true;
   } catch(e) { return false; }
 }
 
+function isBookmark(id) { try{ return (JSON.parse(localStorage.getItem('mvp_bookmarks')||'[]')).includes(id); }catch(e){return false;} }
 function toggleBookmark(id) {
-  var bm = [];
-  try {
-    bm = JSON.parse(localStorage.getItem('mvp_bookmarks') || '[]');
-    if (!Array.isArray(bm)) bm = [];
-  } catch(e) { bm = []; }
-  
-  if (bm.includes(id)) { bm = bm.filter(function(x) { return x !== id; }); } 
-  else { bm.push(id); }
-  
+  var bm = []; try{ bm=JSON.parse(localStorage.getItem('mvp_bookmarks')||'[]'); }catch(e){}
+  if(bm.includes(id)) { bm = bm.filter(function(x){ return x !== id; }); } else { bm.push(id); }
   localStorage.setItem('mvp_bookmarks', JSON.stringify(bm));
   if(!$('detail').classList.contains('hidden')) openProject(id); else renderHome();
 }
-
-function getStatusBadge(p) {
-  var stat = p.status || "Ongoing";
-  if (stat.toLowerCase() === "tamat" || stat.toLowerCase() === "completed") {
-    return "<div class='badge-status badge-tamat'>TAMAT</div>";
-  }
-  return "";
+function saveHistory(pid, ch, dec) {
+  try{ var h=JSON.parse(localStorage.getItem("mvp_history")||"{}"); h[pid]={chapter:ch, decensored:Number(dec), ts:Date.now()}; localStorage.setItem("mvp_history",JSON.stringify(h)); }catch(e){}
 }
+function getHistory() { try{ return JSON.parse(localStorage.getItem("mvp_history")||"{}"); }catch(e){return {};} }
 
-function showHome(){
-  $("progressContainer").style.display="none";
-  $("detail").classList.add("hidden");
-  $("reader").classList.add("hidden");
-  $("home").classList.remove("hidden");
-  $("homeLayer").classList.add("active");
-  $("catalogLayer").classList.remove("active");
-  
-  if($("search")) $("search").value="";
-  renderHome();
-}
-
-function normalizeType(p){
-  return String((p && p.type) || "comic").toLowerCase() === "novel" ? "novel" : "comic";
-}
-
-function allTypeProjects(type){
-  return catalog.filter(function(p) { return normalizeType(p) === type; });
-}
-
+function normalizeType(p){ return String(p && p.type||"comic").toLowerCase()==="novel"?"novel":"comic"; }
 function projectLatestChapter(p){
-  var chapters = Array.isArray(p && p.chapters) ? p.chapters : [];
-  var best = null;
-  chapters.forEach(function(c, i){
-    var ts = Number(c.updated_at || 0);
-    if(!best || ts > best.ts || (ts === best.ts && i > best.i)) best = {chapter:c, i:i, ts:ts};
-  });
+  var chs = Array.isArray(p && p.chapters)?p.chapters:[]; var best=null;
+  chs.forEach(function(c,i){ var ts=Number(c.updated_at||0); if(!best || ts>best.ts) best={chapter:c,i:i,ts:ts}; });
   return best;
 }
-
 function getSortedProjects() {
-  return catalog.filter(function(p){ return normalizeType(p) === currentMode; }).map(function(p){
-    var l = projectLatestChapter(p); 
-    return l && l.chapter.chapter ? {p:p, latest:l} : null;
+  return catalog.filter(function(p){ return normalizeType(p)===currentMode; }).map(function(p){
+    var l=projectLatestChapter(p); return l && l.chapter.chapter ? {p:p, latest:l} : null;
   }).filter(Boolean).sort(function(a,b){ return b.latest.ts - a.latest.ts; });
 }
 
-function saveHistory(projectId, chapterName, decensored) {
-  try {
-    var hist = JSON.parse(localStorage.getItem("mvp_history") || "{}");
-    hist[projectId] = { chapter: chapterName, decensored: Number(decensored), ts: Date.now() };
-    localStorage.setItem("mvp_history", JSON.stringify(hist));
-  } catch(e) {}
-}
-
-function getHistory() { 
-  try { return JSON.parse(localStorage.getItem("mvp_history") || "{}"); } catch(e) { return {}; } 
-}
-
-// BATO UI LOGIC
+// UI LOGIC
 function setMode(mode) {
   currentMode = mode;
-  var btnC = $("btnModeComic");
-  var btnN = $("btnModeNovel");
-  if(btnC) btnC.classList.remove("active");
-  if(btnN) btnN.classList.remove("active");
-  if(mode === 'comic' && btnC) btnC.classList.add("active");
-  if(mode === 'novel' && btnN) btnN.classList.add("active");
+  var bC = $('btnModeComic'); var bN = $('btnModeNovel');
+  if(bC) bC.classList.toggle('active', mode==='comic');
+  if(bN) bN.classList.toggle('active', mode==='novel');
   renderHome();
 }
-
 function toggleSec(id, btn) {
   var el = $(id);
-  if(el && el.classList.contains('hidden')) { 
-    el.classList.remove('hidden'); 
-    btn.querySelector('.b-toggle').textContent = "−"; 
-  } else if(el) { 
-    el.classList.add('hidden'); 
-    btn.querySelector('.b-toggle').textContent = "+"; 
-  }
+  if(el && el.classList.contains('hidden')) { el.classList.remove('hidden'); btn.querySelector('.b-toggle').textContent = "−"; } 
+  else if(el) { el.classList.add('hidden'); btn.querySelector('.b-toggle').textContent = "+"; }
 }
 
 function renderBatoItem(p, chaptersToShow) {
   var cover = p.cover_file_id ? "<img class='b-cover' src='"+fileUrl(p.cover_file_id)+"' loading='lazy'>" : "<div class='b-cover'></div>";
-  var chHtml = chaptersToShow.map(function(ch, i) {
-    var timeAgo = getDummyTime(Date.now() + i);
+  var chHtml = chaptersToShow.map(function(ch, i){
     return "<div class='b-chap' onclick=\"event.stopPropagation(); openReader('"+esc(p.id)+"','"+esc(ch.chapter)+"',"+ch.decensored+")\">" +
       "<div class='b-chap-name'>Chapter "+esc(ch.chapter)+decBadge(ch.decensored)+"</div>" +
-      "<div class='b-chap-meta'>"+timeAgo+"</div>" +
+      "<div class='b-chap-meta'>"+getDummyTime(ch.ts || Date.now()+i)+"</div>" +
     "</div>";
   }).join("");
   
   return "<div class='b-item' onclick=\"openProject('"+esc(p.id)+"')\">" +
-    cover +
-    "<div class='b-info'>" +
-      "<div class='b-item-title'><span class='txt'>"+esc(p.title)+"</span></div>" +
-      "<div class='b-tags'>"+getTags(p)+"</div>" +
-      "<div class='b-chaps'>"+chHtml+"</div>" +
-    "</div>" +
-  "</div>";
+      cover +
+      "<div class='b-info'>" +
+        "<div class='b-item-title'><span class='txt'>"+esc(p.title)+"</span></div>" +
+        "<div class='b-tags'>"+getTags(p)+"</div>" +
+        "<div class='b-chaps'>"+chHtml+"</div>" +
+      "</div>" +
+    "</div>";
 }
 
 function renderHome() {
-  var all = getSortedProjects(); 
-  var histObj = getHistory();
+  var all = getSortedProjects(); var histObj = getHistory();
   
-  var myUpdates = all.filter(function(item) { return isBookmark(item.p.id); }).slice(0, 10);
-  $("secUpdates").innerHTML = myUpdates.length ? myUpdates.map(function(item) {
+  var myUpdates = all.filter(function(item){ return isBookmark(item.p.id); }).slice(0, 10);
+  $('secUpdates').innerHTML = myUpdates.length ? myUpdates.map(function(item){
     var chs = [item.latest.chapter];
     if(histObj[item.p.id] && histObj[item.p.id].chapter !== item.latest.chapter.chapter) { chs.push(histObj[item.p.id]); } 
     return renderBatoItem(item.p, chs);
   }).join("") : "<p class='muted' style='font-size:14px; text-align:center;'>Belum ada update bookmark.</p>";
 
   var histKeys = Object.keys(histObj);
-  var histArr = histKeys.map(function(pid) {
-    var o = histObj[pid]; o.pid = pid; return o;
-  }).sort(function(a,b){ return b.ts - a.ts; });
-  
-  var myHist = histArr.map(function(h) { 
-    var p = catalog.find(function(x) { return x.id === h.pid && normalizeType(x) === currentMode; }); 
-    return p ? {p: p, hist: h} : null; 
-  }).filter(Boolean).slice(0, 5);
-  
-  $("secHistory").innerHTML = myHist.length ? myHist.map(function(item) { return renderBatoItem(item.p, [item.hist]); }).join("") : "<p class='muted' style='font-size:14px; text-align:center;'>Belum ada riwayat.</p>";
+  var histArr = histKeys.map(function(pid){ var o=histObj[pid]; o.pid=pid; return o; }).sort(function(a,b){ return b.ts-a.ts; });
+  var myHist = histArr.map(function(h){ var p = catalog.find(function(x){ return x.id===h.pid && normalizeType(x)===currentMode; }); return p ? {p:p, hist:h} : null; }).filter(Boolean).slice(0, 5);
+  $('secHistory').innerHTML = myHist.length ? myHist.map(function(item){ return renderBatoItem(item.p, [item.hist]); }).join("") : "<p class='muted' style='font-size:14px; text-align:center;'>Belum ada riwayat.</p>";
 
-  var popular = all.slice().sort(function() { return Math.random() - 0.5; }).slice(0, 9); 
-  $("secPopular").innerHTML = popular.map(function(item, i) {
-    var statusBadge = (item.p.status==="tamat" || item.p.status==="completed") ? "<div class='badge-status badge-tamat'>Tamat</div>" : "";
+  var popular = all.slice().sort(function(){ return Math.random()-0.5; }).slice(0, 9); 
+  $('secPopular').innerHTML = popular.map(function(item, i){
+    var tamatBadge = (item.p.status==="tamat" || item.p.status==="completed") ? "<div class='badge-status badge-tamat'>Tamat</div>" : "";
     var coverHtml = item.p.cover_file_id ? "<img src='"+fileUrl(item.p.cover_file_id)+"' loading='lazy'>" : "";
     return "<div class='b-grid-item' onclick=\"openProject('"+esc(item.p.id)+"')\">" +
-      statusBadge +
-      "<div class='b-rank'>" + (i+1) + "</div>" +
+      tamatBadge +
+      "<div class='b-rank'>"+(i+1)+"</div>" +
       coverHtml +
       "<div class='b-grid-overlay'>" +
-        "<div class='b-grid-title'>" + esc(item.p.title) + "</div>" +
-        "<div class='b-grid-ch'>Ch." + esc(item.latest.chapter.chapter) + "</div>" +
+        "<div class='b-grid-title'>"+esc(item.p.title)+"</div>" +
+        "<div class='b-grid-ch'>Ch."+esc(item.latest.chapter.chapter)+"</div>" +
       "</div>" +
     "</div>";
   }).join("");
 
-  $("secLatest").innerHTML = all.slice(0, 15).map(function(item) { return renderBatoItem(item.p, [item.latest.chapter]); }).join("");
+  $('secLatest').innerHTML = all.slice(0, 15).map(function(item){ return renderBatoItem(item.p, [item.latest.chapter]); }).join("");
 }
 
-// SEARCH GLOBAL
+// DROPDOWN SEARCH LOGIC PADA HOMEPAGE
+function executeSearch(val) {
+  if(!val || !val.trim()) return;
+  var mainSearch = $("search");
+  if(mainSearch) {
+    mainSearch.value = val;
+    var dd = $("searchDropdown");
+    if(dd) dd.classList.remove("active");
+    $("homeLayer").classList.remove("active");
+    $("catalogLayer").classList.add("active");
+    
+    var res = catalog.filter(function(p){
+      return normalizeType(p)===currentMode && ((p.title||"").toLowerCase().includes(val.toLowerCase()) || (p.author||"").toLowerCase().includes(val.toLowerCase()));
+    });
+    $('searchGrid').innerHTML = res.length ? res.map(function(p){
+      var l=projectLatestChapter(p); return renderBatoItem(p, l?[l.chapter]:[]);
+    }).join("") : "<p class='muted' style='text-align:center;'>Tidak ditemukan.</p>";
+  }
+}
+
 if($("search")) {
   $("search").addEventListener("input", function(e) {
-    var q = this.value.trim().toLowerCase();
-    if(!q) { closeSearch(); return; }
-    $("homeLayer").classList.add("hidden"); 
-    $("catalogLayer").classList.remove("active");
-    $("catalogLayer").style.display = "block"; 
+    var val = this.value.trim().toLowerCase();
+    var dd = $("searchDropdown");
+    if(!dd) return;
+    if(val === "") { dd.classList.remove("active"); return; }
     
-    var res = catalog.filter(function(p) {
-      return normalizeType(p) === currentMode && ((p.title||"").toLowerCase().includes(q) || (p.author||"").toLowerCase().includes(q));
-    });
-    
-    $("searchGrid").innerHTML = res.length ? res.map(function(p) {
-      var l = projectLatestChapter(p); 
-      return renderBatoItem(p, l ? [l.chapter] : []);
-    }).join("") : "<p class='muted' style='text-align:center;'>Tidak ditemukan.</p>";
+    var matches = catalog.filter(function(p) {
+      var t = String((p && p.title) || "").toLowerCase();
+      var a = String((p && p.author) || "").toLowerCase();
+      return t.includes(val) || a.includes(val);
+    }).slice(0, 8); 
+
+    if(matches.length === 0) {
+      dd.innerHTML = "<div style='padding:16px; text-align:center; color:var(--muted); font-size:14px;'>Tidak ada hasil untuk \"" + esc(val) + "\"</div>";
+    } else {
+      dd.innerHTML = matches.map(function(p) {
+        var imgHtml = p.cover_file_id ? "<img src='"+fileUrl(p.cover_file_id)+"' loading='lazy'>" : "<div style='width:45px;height:65px;background:var(--panel2);border-radius:8px;flex:0 0 auto;'></div>";
+        var authorHtml = p.author ? "<div class='author'>"+esc(p.author)+"</div>" : "";
+        return "<div class='search-item' onclick=\"openProject('"+esc(p.id)+"'); document.getElementById('searchDropdown').classList.remove('active'); document.getElementById('search').value=''; \">" +
+          imgHtml +
+          "<div class='info'><div class='title'>"+esc(p.title)+"</div>"+authorHtml+"</div>" +
+        "</div>";
+      }).join("");
+    }
+    dd.classList.add("active");
+  });
+
+  $("search").addEventListener("keydown", function(e) {
+    if(e.key === "Enter") { e.preventDefault(); executeSearch(this.value.trim()); this.blur(); }
+  });
+
+  document.addEventListener("click", function(e) {
+    var container = $("mainSearchContainer");
+    if(container && !container.contains(e.target)) {
+      var dd = $("searchDropdown");
+      if (dd) dd.classList.remove("active");
+    }
   });
 }
+
 function closeSearch() { 
   var searchInput = $("search");
   if(searchInput) searchInput.value = ""; 
-  $("catalogLayer").style.display = "none";
-  $("homeLayer").classList.remove("hidden"); 
+  $("catalogLayer").classList.remove('active'); 
+  $("homeLayer").classList.add('active'); 
 }
 
-// SEARCH DETAIL PAGE
 function handleDetailSearch(val) {
   val = val.trim().toLowerCase();
   var dd = $("detailSearchDropdown");
   if(!dd) return;
-
-  if(val === "") {
-    dd.classList.remove("active");
-    return;
-  }
-
+  if(val === "") { dd.classList.remove("active"); return; }
   var matches = catalog.filter(function(p) {
     var t = String((p && p.title) || "").toLowerCase();
     var a = String((p && p.author) || "").toLowerCase();
     return t.includes(val) || a.includes(val);
   }).slice(0, 8);
-
   if(matches.length === 0) {
     dd.innerHTML = "<div style='padding:16px; text-align:center; color:var(--muted); font-size:14px;'>Tidak ada hasil untuk \"" + esc(val) + "\"</div>";
   } else {
@@ -641,13 +571,10 @@ function handleDetailSearch(val) {
 
 function executeDetailSearch(val) {
   if(!val || !val.trim()) return;
-  showHome(); 
+  $("detail").classList.add("hidden");
+  $("home").classList.remove("hidden");
   var mainSearch = $("search");
-  if(mainSearch) {
-    mainSearch.value = val;
-    mainSearch.focus();
-    mainSearch.dispatchEvent(new Event('input'));
-  }
+  if(mainSearch) { mainSearch.value = val; mainSearch.focus(); executeSearch(val); }
 }
 
 document.addEventListener("click", function(e) {
@@ -658,6 +585,7 @@ document.addEventListener("click", function(e) {
   }
 });
 
+// TRANSLATOR PROFILE (Semua Project)
 function openTranslatorProfile(name) {
   var list = catalog.filter(function(p) {
     var t = (p.translator && p.translator.trim() !== "") ? p.translator : "MVP";
@@ -665,7 +593,7 @@ function openTranslatorProfile(name) {
   });
   if (!list.length) return;
   
-  var targetP = list.find(function(p) { return p.trakteer; }) || {};
+  var targetP = list.find(function(p){ return p.trakteer; }) || {};
   var tTrakteer = targetP.trakteer || "";
   var trakteerBtn = tTrakteer ? "<a href='"+esc(tTrakteer)+"' target='_blank' class='btn primary' style='margin-top:16px;'>Traktir Kopi</a>" : "";
   
@@ -696,7 +624,7 @@ function openTranslatorProfile(name) {
     "<div class='b-list'>" + listHtml + "</div>";
 }
 
-// DETAIL PROJECT (BATO + UI ATAS LAMA)
+// DETAIL PROJECT (COVER KIRI, INFO KANAN - UI ATAS LAMA)
 async function openProject(id){
   if(!(await requireAccess())) return; 
   var p = catalog.find(function(x) { return x.id === id; }); 
@@ -712,14 +640,14 @@ async function openProject(id){
   var authorInfo = p.author ? "<div style='font-size:13px;color:var(--muted);margin-bottom:4px;'><b>Author:</b> "+esc(p.author)+"</div>" : "";
   var transName = (p.translator && p.translator.trim() !== "") ? p.translator : "MVP";
   var transClickable = transName.toLowerCase() === "mvp" ? 
-        "<strong>"+esc(transName)+"</strong>" : 
-        "<strong style='color:var(--accent); cursor:pointer;' onclick=\"openTranslatorProfile('"+esc(transName)+"')\">"+esc(transName)+"</strong>";
+        "<span style='font-weight:bold;color:var(--text);'>"+esc(transName)+"</span>" : 
+        "<span style='cursor:pointer;pointer-events:auto;font-weight:bold;color:var(--accent);text-decoration:underline;' onclick=\"openTranslatorProfile('"+esc(transName)+"')\">"+esc(transName)+"</span>";
   var transInfo = "<div style='font-size:13px;color:var(--muted);margin-bottom:4px;'><b>Brought to you by:</b> "+transClickable+"</div>";
 
   var tagsArr = Array.isArray(p.tags) ? p.tags.filter(function(t){ return t && isNaN(Number(t)); }) : [];
   var tagsHtml = tagsArr.length ? "<div class='tags'>" + tagsArr.map(function(t){ return "<button class='tag' style='pointer-events:auto;'>"+esc(t)+"</button>"; }).join("") + "</div>" : "";
 
-  var trakteerDetail = p.trakteer ? "<a href='"+esc(p.trakteer)+"' target='_blank' class='btn' style='background:#f97316; color:#fff; width:100%; margin-top:16px;'>☕ Traktir Kopi</a>" : "";
+  var trakteerDetail = p.trakteer ? "<a href='"+esc(p.trakteer)+"' target='_blank' class='btn' style='background:#e74c3c;color:#fff;width:100%;margin-top:16px;'>☕ Traktir Kopi</a>" : "";
 
   // BINTANG VOTE 1-10
   var savedVote = parseInt(localStorage.getItem("mvp_vote_" + p.id) || "0");
@@ -738,6 +666,11 @@ async function openProject(id){
       starsHtml +
     "</div>" +
   "</div>";
+
+  // STATS (TIDAK ADA DATA FIKTIF, 0 SAMPAI DATABASE READY)
+  var pRating = p.rating || "0.0";
+  var pBookmarks = p.bookmarks || "0";
+  var pComments = p.comments || "0";
 
   // UI ATAS HTML LAMA (Back, Search, Share, Bookmark Bulat)
   var btnFavColor = isBm ? "var(--accent)" : "var(--panel)";
@@ -784,18 +717,29 @@ async function openProject(id){
 
   $("detailContent").innerHTML = 
     topBar +
-    "<div style='display:flex; flex-direction:column; align-items:center; text-align:center;'>" +
-        cover +
-        "<h1 style='margin-top:20px; font-size:22px; line-height:1.3;'>"+esc(p.title)+"</h1>" +
-        "<div class='detail-meta'>" + authorInfo + transInfo + "</div>" +
+    "<div style='display:flex; gap:16px; align-items:flex-start;'>" +
+      cover +
+      "<div style='flex:1; min-width:0;'>" +
+        "<h1 style='margin:0 0 8px; font-size:18px; line-height:1.3;'>"+esc(p.title)+"</h1>" +
+        authorInfo +
+        transInfo +
+        "<div style='display:flex; gap:10px; margin-top:8px; font-size:12px; font-weight:700;'>" +
+          "<span style='color:var(--bato-star)'>⭐ " + pRating + "</span>" +
+          "<span style='color:var(--muted)'>🔖 " + pBookmarks + "</span>" +
+          "<span style='color:var(--muted)'>💬 " + pComments + "</span>" +
+        "</div>" +
+      "</div>" +
     "</div>" +
-    trakteerDetail + tagsHtml + voteUI +
-    "<div style='margin-top:24px;'>" +
-        "<h3 style='font-size:16px; margin-bottom:8px;'>Sinopsis</h3>" +
-        "<p class='muted' style='white-space:pre-line; line-height:1.6; font-size:14px;'>"+esc(p.description)+"</p>" +
+    
+    trakteerDetail + voteUI +
+    
+    "<div style='margin-top:20px;'>" +
+      tagsHtml +
+      "<p class='muted' style='margin-top:12px; white-space:pre-line; font-size:14px; line-height:1.6;'>"+esc(p.description)+"</p>" +
     "</div>" +
-    "<div style='display:flex; justify-content:space-between; align-items:center; margin-top:32px; border-bottom:2px solid var(--panel2); padding-bottom:8px;'>" +
-      "<h3 style='font-size:18px; margin:0;'>Daftar Chapter</h3>" +
+    
+    "<div style='display:flex; justify-content:space-between; align-items:center; margin-top:24px; margin-bottom:12px; border-bottom:2px solid var(--panel2); padding-bottom:8px;'>" +
+      "<h3 style='font-size:18px; margin:0;'>Chapters <span style='color:var(--muted); font-size:14px;'>("+chaptersArr.length+")</span></h3>" +
       "<button class='btn' style='padding:6px 12px; font-size:12px; background:var(--panel2); color:var(--text); border:1px solid var(--border); pointer-events:auto;' onclick=\"toggleChapterSort('"+esc(p.id)+"')\">⇅ Sortir</button>" +
     "</div>" +
     chaptersWrap;
@@ -910,6 +854,16 @@ async function openReader(projectId, chapterName, decensored){
   if (Number(c.decensored) === 1 && platform !== "android" && platform !== "android_x") {
       alert("Akses ditolak!\nChapter Decensored hanya tersedia di Android");
       return;
+  }
+
+  if(c && c.content_type === "docx"){
+    await openNovelReader(projectId, idx);
+    return;
+  }
+
+  if(!Array.isArray(c && c.file_ids) || !c.file_ids.length){
+    alert("Halaman chapter belum tersedia.");
+    return;
   }
 
   saveHistory(projectId, c.chapter, Number(c.decensored));
