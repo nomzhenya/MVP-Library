@@ -1,3 +1,18 @@
+
+async function getStats(env, projectId) {
+  const key = `stats:${String(projectId || "").toLowerCase()}`;
+  return (await env.LIBRARY.get(key, "json")) || {rating: 0, votes: 0, bookmarks: 0, comments: 0};
+}
+
+async function putStats(env, projectId, stats) {
+  const key = `stats:${String(projectId || "").toLowerCase()}`;
+  await env.LIBRARY.put(key, JSON.stringify({
+    rating: Number(stats.rating || 0),
+    votes: Number(stats.votes || 0),
+    bookmarks: Number(stats.bookmarks || 0),
+    comments: Number(stats.comments || 0)
+  }));
+}
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -206,7 +221,28 @@ export default {
       return json({ok:true, ...summarizeInteraction(data, access.user.id, catalog.find(p=>String(p.id)===projectId)?.comments || 0)});
     }
 
-    if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
+    
+    if (url.pathname === "/api/admin/comment-stats" && request.method === "PUT") {
+      const secret = request.headers.get("X-Library-Secret") || "";
+      if (!env.LIBRARY_SYNC_SECRET || secret !== env.LIBRARY_SYNC_SECRET) {
+        return json({ok:false, reason:"unauthorized"}, 401);
+      }
+      const body = await request.json().catch(() => null);
+      if (!body || !Array.isArray(body.projects)) {
+        return json({ok:false, reason:"invalid_payload"}, 400);
+      }
+      for (const item of body.projects) {
+        if (!item?.id) continue;
+        const current = await getStats(env, item.id);
+        await putStats(env, item.id, {
+          ...current,
+          comments: Number(item.comments || 0)
+        });
+      }
+      return json({ok:true, updated: body.projects.length});
+    }
+
+if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const secret = request.headers.get("x-library-secret");
       if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
         return json({error: "unauthorized"}, 401);
