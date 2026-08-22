@@ -118,12 +118,15 @@ h1,h2,h3,p{margin:0}
 .reader-chapter-menu{position:absolute;left:0;top:calc(100% + 8px);width:100%;max-height:60vh;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.6);z-index:40}
 .reader-chapter-option{display:block;width:100%;border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--text);text-align:left;padding:12px 16px;font-size:14px; pointer-events:auto; font-weight: 500;}
 .reader-chapter-option:active,.reader-chapter-option.current{background:var(--btn-bg);color:var(--btn-text); font-weight: 700;}
+
+/* NAVIGATION BAWAH READER */
 .reader-nav{ position:fixed; bottom:0; left:0; width:100%; z-index:50; display:flex; flex-direction:column; align-items:stretch; gap:6px; padding:10px 10px calc(10px + env(safe-area-inset-bottom)); background:var(--overlay-bg); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-top:1px solid rgba(255,255,255,0.05); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); }
-.reader-nav .navbtn{flex:1;min-width:0;text-align:center;border:0;border-radius:10px;padding:12px 8px;background:var(--panel2);color:var(--text);font-weight:700; font-size:13px; pointer-events:auto;}
+.reader-nav .navbtn{flex:1;min-width:0;text-align:center;border:0;border-radius:10px;padding:12px 8px;background:var(--panel2);color:var(--text);font-weight:700; font-size:13px; pointer-events:auto; cursor:pointer;}
 .reader-nav-row{display:flex;align-items:center;gap:6px;width:100%}
 .reader-nav-row .navbtn{flex:1;min-width:0}
 .reader-nav .disabled{opacity:.35;pointer-events:none}
-.readerpages{ display:flex;flex-direction:column;align-items:center;gap:0;margin:0; padding-top:40px; padding-bottom:90px; min-height:100vh; width:100vw;max-width:100vw;overflow-x:hidden; }
+
+.readerpages{ display:flex;flex-direction:column;align-items:center;gap:0;margin:0; padding-top:40px; padding-bottom:100px; min-height:100vh; width:100vw;max-width:100vw;overflow-x:hidden; }
 .readerpage{display:block;width:100vw;max-width:100vw;height:auto;margin:0;padding:0;background:#000;object-fit:contain; touch-action:pan-x pan-y pinch-zoom;}
 .readererror{padding:18px;text-align:center;border:1px solid #ef4444;border-radius:12px;background:#24181b;margin-top:12px}
 
@@ -147,7 +150,7 @@ body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15
 <body oncontextmenu="return false">
 <div id="progressContainer"><div id="progressBar"></div></div>
 
-<!-- KODE KEAMANAN MASTER -->
+<!-- KODE KEAMANAN MASTER (Anti Inspect & Vote) -->
 <script>
   window.doVote = function(pid, score) {
     for(var i=1; i<=10; i++){
@@ -199,7 +202,6 @@ body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15
   </div>
 
   <div id="homeLayer">
-    <!-- MY UPDATES -->
     <section class="b-sec">
       <div class="b-head" onclick="toggleSec('secUpdates', this)">
         <div class="b-title">My Updates 🔖</div>
@@ -208,7 +210,6 @@ body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15
       <div id="secUpdates" class="b-list"></div>
     </section>
 
-    <!-- MY HISTORY -->
     <section class="b-sec">
       <div class="b-head" onclick="toggleSec('secHistory', this)">
         <div class="b-title">My History 🕒</div>
@@ -217,7 +218,6 @@ body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15
       <div id="secHistory" class="b-list"></div>
     </section>
 
-    <!-- POPULAR UPDATES -->
     <section class="b-sec">
       <div class="b-head" onclick="toggleSec('secPopular', this)">
         <div class="b-title">Popular Updates 🔥</div>
@@ -226,7 +226,6 @@ body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15
       <div id="secPopular" class="b-grid"></div>
     </section>
 
-    <!-- LATEST RELEASES -->
     <section class="b-sec">
       <div class="b-head" onclick="toggleSec('secLatest', this)">
         <div class="b-title">Latest Releases ✨</div>
@@ -493,21 +492,16 @@ async function openProject(id){
     </div>
   </div>`;
 
+  // LIST CHAPTER (TIDAK ADA TOMBOL TULIS KOMENTAR DI SINI)
   const chaptersHtml = (p.chapters||[]).map((c,i)=>{
     const timeAgo = getDummyTime(Date.now() - (i*86400000));
     
-    // Tombol Komentar di bawah tiap chapter
-    const commentBtn = p.comment_link 
-        ? `<button class="btn" style="padding:6px 12px; font-size:12px; background:var(--panel2); border:1px solid var(--border); color:var(--text); margin-top:10px; pointer-events:auto;" onclick="event.stopPropagation(); location.href='${esc(p.comment_link)}'">💬 Tulis Komentar</button>` 
-        : "";
-
     return `
     <div class="chapter-bato" style="flex-direction:column; align-items:stretch;" onclick="openReader('${esc(p.id)}','${esc(c.chapter)}',${c.decensored})">
       <div style="display:flex; justify-content:space-between; align-items:center;">
           <div style="font-weight:700;font-size:14px;color:var(--text);">Chapter ${esc(c.chapter)}${decBadge(c.decensored)}</div>
           <div style="font-size:12px;color:var(--muted);font-weight:600;">🕒 ${timeAgo}</div>
       </div>
-      ${commentBtn}
     </div>`;
   }).join("");
 
@@ -554,13 +548,37 @@ window.addEventListener('scroll', () => {
   if (!$("reader").classList.contains("hidden")) {
     const h = document.documentElement.scrollHeight - document.documentElement.clientHeight;
     if(h>0) $("progressBar").style.width = ((document.body.scrollTop || document.documentElement.scrollTop) / h * 100) + "%";
+    
+    // Auto-hide saat scroll
     if ((document.body.scrollTop || document.documentElement.scrollTop) > 15 && !$("reader").classList.contains("ui-hidden") && $("readerChapterMenu")?.classList.contains("hidden")) {
       $("reader").classList.add("ui-hidden"); clearTimeout(uiTimeout);
     }
   }
 });
-function showReaderUI() { $("reader").classList.remove("ui-hidden"); clearTimeout(uiTimeout); uiTimeout = setTimeout(()=>{$("reader").classList.add("ui-hidden");}, 3500); }
-function toggleReaderUI(e) { if(!e.target.closest('button') && !e.target.closest('.readerhead') && !e.target.closest('.reader-nav')) { if($("reader").classList.contains("ui-hidden")) showReaderUI(); else { $("reader").classList.add("ui-hidden"); clearTimeout(uiTimeout); } } }
+
+function showReaderUI() { 
+  $("reader").classList.remove("ui-hidden"); 
+  clearTimeout(uiTimeout); 
+  uiTimeout = setTimeout(()=>{$("reader").classList.add("ui-hidden");}, 3500); 
+}
+
+function toggleReaderUI(e) { 
+  if(!e.target.closest('button') && !e.target.closest('.readerhead') && !e.target.closest('.reader-nav')) { 
+    if($("reader").classList.contains("ui-hidden")) showReaderUI(); 
+    else { $("reader").classList.add("ui-hidden"); clearTimeout(uiTimeout); } 
+  } 
+}
+
+function changeFontSize(dir, e) {
+  if (e) e.stopPropagation(); 
+  var currentFontSize = Number(localStorage.getItem('mvp_fontsize')) || 17;
+  currentFontSize += (dir * 2);
+  if (currentFontSize < 12) currentFontSize = 12;
+  if (currentFontSize > 32) currentFontSize = 32;
+  localStorage.setItem('mvp_fontsize', currentFontSize);
+  var reader = document.querySelector('.novel-reader');
+  if (reader) reader.style.fontSize = currentFontSize + 'px';
+}
 
 // WATERMARK READER
 function getTelegramIdentity(){
@@ -590,13 +608,30 @@ async function openReader(pid, ch, dec){
   $("home").classList.add("hidden"); $("detail").classList.add("hidden"); $("reader").classList.remove("hidden");
   $("progressContainer").style.display="block"; showReaderUI(); showReaderWatermark();
   
+  // SMART NEXT BUTTON (Bisa Jadi Detail Kalau Udah Mentok)
   const isLast = idx >= chArr.length - 1;
   const btnNextAction = isLast ? `closeReader()` : `openReader('${pid}','${chArr[idx+1]?.chapter}',${chArr[idx+1]?.decensored})`;
   const btnNextText = isLast ? "Detail »" : "Next »";
   const btnNextClass = isLast ? "primary" : "";
 
-  const top=`<div class="readerhead"><div class="reader-topbar"><button class="reader-info" onclick="openProject('${pid}'); $('readerWatermark').classList.add('hidden');">« Back</button><button class="reader-chapter-btn">Ch.${ch}${decBadge(dec)}</button></div></div>`;
-  const nav=`<div class="reader-nav"><div class="reader-nav-row"><button class="navbtn" onclick="openReader('${pid}','${chArr[idx-1]?.chapter}',${chArr[idx-1]?.decensored})" ${idx<=0?'disabled':''}>« Prev</button><button class="navbtn upbtn" onclick="window.scrollTo(0,0)">↑ Up</button><button class="navbtn ${btnNextClass}" onclick="${btnNextAction}">${btnNextText}</button></div></div>`;
+  const top=`<div class="readerhead"><div class="reader-topbar"><button class="reader-info" onclick="openProject('${pid}'); $('readerWatermark').classList.add('hidden');">« Back</button><button class="reader-chapter-btn" onclick="toggleChapterMenu(event)">Ch.${ch}${decBadge(dec)}</button>
+  <div id="readerChapterMenu" class="reader-chapter-menu hidden">${chArr.map((cList,i)=>`<button class="reader-chapter-option ${i===idx?"current":""}" onclick="selectReaderChapter('${esc(p.id)}',${i})">Ch.${esc(cList.chapter)}${decBadge(cList.decensored)}</button>`).join("")}</div></div></div>`;
+  
+  // TOMBOL TULIS KOMENTAR DIPINDAH KE BAWAH NAVIGASI CHAPTER DI SINI
+  const commentUrl = p.comment_link || "";
+  const commentBtnHtml = commentUrl 
+    ? `<div class="reader-nav-row" style="margin-top:4px;"><button class="navbtn primary" style="width:100%" onclick="location.href='${esc(commentUrl)}'">💬 Tulis Komentar</button></div>`
+    : "";
+
+  const nav=`<div class="reader-nav">
+      ${p.type === 'novel' ? `<div class="reader-nav-row" style="margin-bottom:8px;"><button class="navbtn" onclick="changeFontSize(-1, event)">A- Kecilkan</button><button class="navbtn" onclick="changeFontSize(1, event)">A+ Besarkan</button></div>` : ""}
+      <div class="reader-nav-row">
+        <button class="navbtn" onclick="openReader('${pid}','${chArr[idx-1]?.chapter}',${chArr[idx-1]?.decensored})" ${idx<=0?'disabled':''}>« Prev</button>
+        <button class="navbtn upbtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Up</button>
+        <button class="navbtn ${btnNextClass}" onclick="${btnNextAction}">${btnNextText}</button>
+      </div>
+      ${commentBtnHtml}
+    </div>`;
   
   $("readerContent").innerHTML = top + `<div id="readerPages" class="readerpages" onclick="toggleReaderUI(event)"></div>` + nav;
   const pages = $("readerPages");
@@ -604,8 +639,25 @@ async function openReader(pid, ch, dec){
   if(chArr[idx].content_type==="docx"){
     pages.innerHTML="<div class='novel-loading'>Loading...</div>";
     const r=await fetch(`/api/novel?project_id=${pid}&chapter=${ch}&decensored=${dec}`,{headers:accessHeaders()});
-    pages.innerHTML=`<article class="novel-reader" style="font-size:17px">${(await r.json()).html}</article>`;
-    setTimeout(()=>document.querySelectorAll('.novel-reader p').forEach((p,i)=>{ p.onclick=()=>{ document.querySelectorAll('.bookmarked').forEach(el=>el!==p&&el.classList.remove('bookmarked')); p.classList.toggle('bookmarked'); } }),100);
+    const data=await r.json();
+    const savedFont = Number(localStorage.getItem('mvp_fontsize')) || 17;
+    pages.innerHTML=`<article class="novel-reader" style="font-size:${savedFont}px">${data.html}</article>`;
+    setTimeout(()=>{
+        const paragraphs = document.querySelectorAll('.novel-reader p');
+        const saveKey = 'mvp_novel_mark_' + pid + '_' + ch;
+        const savedIndex = localStorage.getItem(saveKey);
+        paragraphs.forEach((pa, pIdx) => {
+            pa.onclick = () => {
+                document.querySelectorAll('.novel-reader p.bookmarked').forEach(el => { if (el !== pa) el.classList.remove('bookmarked'); });
+                if (pa.classList.contains('bookmarked')) { pa.classList.remove('bookmarked'); localStorage.removeItem(saveKey); } 
+                else { pa.classList.add('bookmarked'); localStorage.setItem(saveKey, pIdx); }
+            };
+        });
+        if (savedIndex !== null && paragraphs[savedIndex]) {
+            paragraphs[savedIndex].classList.add('bookmarked');
+            paragraphs[savedIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    },100);
   } else {
     chArr[idx].file_ids.forEach((fid,i)=>{
       const img=document.createElement("img"); img.className="readerpage"; img.loading=i<2?"eager":"lazy"; img.src=fileUrl(fid); pages.appendChild(img);
@@ -613,17 +665,48 @@ async function openReader(pid, ch, dec){
   }
 }
 
-// THEME & INIT
-function applyTheme(light){ document.body.classList.toggle("light",light); $('themeToggle').innerHTML=light?'🌙':'☀️'; localStorage.setItem("mvp_theme",light?"light":"dark"); }
-function toggleTheme(){ applyTheme(!document.body.classList.contains("light")); }
-(function(){ applyTheme((localStorage.getItem("mvp_theme")||"dark")==="light"); })();
+function toggleChapterMenu(e){
+  e?.stopPropagation();
+  const menu=$("readerChapterMenu");
+  if(menu) menu.classList.toggle("hidden");
+}
 
+function selectReaderChapter(projectId, index){
+  const p=catalog.find(x=>x.id===projectId);
+  if(!p || !p.chapters?.[index])return;
+  $("readerChapterMenu")?.classList.add("hidden");
+  const c=p.chapters[index];
+  openReader(projectId, c.chapter, Number(c.decensored));
+}
+
+document.addEventListener("click",e=>{
+  const menu=$("readerChapterMenu");
+  const wrap=menu?.parentElement;
+  if(menu && wrap && !wrap.contains(e.target)) menu.classList.add("hidden");
+});
+
+function readerInfo(projectId){
+  hideReaderWatermark();
+  $("reader").classList.add("hidden");
+  openProject(projectId);
+}
 function closeReader(){
   $("progressContainer").style.display="none";
-  $("readerWatermark").classList.add("hidden");
+  hideReaderWatermark();
   $("reader").classList.add("hidden");
   $("detail").classList.remove("hidden");
 }
+
+function applyTheme(theme){
+  const light=theme==="light";
+  document.body.classList.toggle("light",light);
+  const btn=$("themeToggle");
+  if(btn) btn.textContent=light?"🌙":"☀️";
+  try{localStorage.setItem("mvp_theme",light?"light":"dark")}catch(e){}
+}
+
+function toggleTheme(){ applyTheme(!document.body.classList.contains("light")); }
+(function(){ applyTheme((localStorage.getItem("mvp_theme")||"dark")==="light"); })();
 
 (async()=>{
   if(!tg){showDenied();return;} tg.ready();tg.expand();
