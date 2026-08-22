@@ -45,6 +45,17 @@ h1,h2,h3,p{margin:0}
 .search{width:100%;padding:14px 18px;border:1px solid var(--border);border-radius:24px;background:var(--input);color:var(--text);font-size:16px;margin:12px 0 16px; transition: border 0.3s, box-shadow 0.3s; pointer-events:auto;}
 .search:focus{outline:none;border-color:var(--accent);box-shadow: 0 0 0 3px rgba(94, 129, 255, 0.2);}
 
+/* SEARCH BAR DROPDOWN DETAIL PAGE */
+.search-dropdown { position:absolute; top:calc(100% + 8px); left:0; width:100%; background:var(--overlay-bg); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid var(--border); border-radius:16px; max-height:45vh; overflow-y:auto; z-index:100; box-shadow:0 8px 32px rgba(0,0,0,0.4); display:none; }
+.search-dropdown.active { display:block; }
+.search-item { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.2s; pointer-events:auto; }
+.search-item:last-child { border-bottom:none; }
+.search-item:active { background:var(--panel2); } 
+.search-item img { width:45px; height:65px; object-fit:cover; border-radius:8px; background:var(--panel2); flex:0 0 auto; }
+.search-item .info { flex:1; min-width:0; }
+.search-item .title { font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.search-item .author { font-size:12px; color:var(--muted); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
 /* SWITCH BUTTON (KOMIK/NOVEL) - BATO STYLE */
 .mode-switch { display:flex; background:var(--panel); border-radius:20px; padding:6px; margin-bottom:24px; box-shadow:inset 0 2px 4px rgba(0,0,0,0.2); }
 .mode-btn { flex:1; padding:12px; border-radius:14px; border:none; background:transparent; color:var(--muted); font-weight:800; font-size:15px; transition:0.3s; pointer-events:auto; cursor:pointer; }
@@ -57,16 +68,14 @@ h1,h2,h3,p{margin:0}
 .b-toggle { font-size:20px; font-weight:bold; color:var(--muted); width:32px; height:32px; display:flex; align-items:center; justify-content:center; background:var(--panel); border-radius:8px; transition: background 0.2s; }
 .b-head:active .b-toggle { background:var(--panel2); }
 
-/* BATO LIST STYLE */
+/* BATO LIST STYLE (TIDAK ADA DATA FIKTIF) */
 .b-list { display:flex; flex-direction:column; gap:16px; }
 .b-item { display:flex; gap:12px; background:transparent; pointer-events:auto; cursor:pointer; }
 .b-cover { width:90px; flex-shrink:0; aspect-ratio:2/3; object-fit:cover; border-radius:6px; background:var(--panel2); box-shadow:0 4px 8px rgba(0,0,0,0.3); }
 .b-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; padding:2px 0; }
-.b-item-title { font-size:15px; font-weight:800; line-height:1.3; }
+.b-item-title { font-size:15px; font-weight:800; line-height:1.3; margin-bottom:4px; }
 .b-item-title .txt { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.b-stats { display:flex; gap:12px; font-size:12px; font-weight:700; color:var(--text); align-items:center; margin-top:2px; }
-.b-stats span { display:flex; align-items:center; gap:4px; }
-.b-tags { font-size:12px; font-weight:600; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }
+.b-tags { font-size:12px; font-weight:600; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:6px; }
 .b-chaps { display:flex; flex-direction:column; gap:8px; }
 .b-chap { display:flex; justify-content:space-between; align-items:center; font-size:13px; font-weight:700; }
 .b-chap-name { color:var(--accent); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; padding-right:8px; }
@@ -97,7 +106,7 @@ h1,h2,h3,p{margin:0}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .tag{border:0;background:var(--panel2);color:var(--text);border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;pointer-events:auto;}
 
-.chapter-bato { padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer; pointer-events:auto; background:transparent; transition:background 0.2s; display:flex; flex-direction:column; gap:4px; }
+.chapter-bato { padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer; pointer-events:auto; background:transparent; transition:background 0.2s; display:flex; justify-content:space-between; align-items:center;}
 .chapter-bato:last-child { border-bottom:none; }
 .chapter-bato:active { background:var(--panel2); }
 
@@ -145,13 +154,26 @@ body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15
 #progressContainer{position:fixed;top:0;left:0;width:100vw;height:3px;background:transparent;z-index:9999;display:none;pointer-events:none;}
 #progressBar{height:100%;background:var(--accent);width:0%;transition:width 0.1s ease-out;}
 .theme-toggle{border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:var(--panel2);color:var(--text);font-size:18px;cursor:pointer; pointer-events:auto;}
+
+/* SCROLLBAR CHAPTER */
+.chapter-scroll-box::-webkit-scrollbar { width: 6px; }
+.chapter-scroll-box::-webkit-scrollbar-track { background: transparent; }
+.chapter-scroll-box::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 </style>
 </head>
 <body oncontextmenu="return false">
 <div id="progressContainer"><div id="progressBar"></div></div>
 
-<!-- KODE KEAMANAN MASTER (Anti Inspect & Vote) -->
+<!-- KODE KEAMANAN MASTER -->
 <script>
+  // SORTIR ASC/DESC
+  window.chapterSortDesc = true;
+  window.toggleChapterSort = function(pid) {
+      window.chapterSortDesc = !window.chapterSortDesc;
+      openProject(pid);
+  };
+
+  // VOTE 1-10
   window.doVote = function(pid, score) {
     for(var i=1; i<=10; i++){
         var st = document.getElementById("star_"+pid+"_"+i);
@@ -202,9 +224,10 @@ body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15
   </div>
 
   <div id="homeLayer">
+    <!-- SECTION HOMEPAGE (EMOJI DIHAPUS) -->
     <section class="b-sec">
       <div class="b-head" onclick="toggleSec('secUpdates', this)">
-        <div class="b-title">My Updates 🔖</div>
+        <div class="b-title">My Updates</div>
         <div class="b-toggle">−</div>
       </div>
       <div id="secUpdates" class="b-list"></div>
@@ -212,7 +235,7 @@ body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15
 
     <section class="b-sec">
       <div class="b-head" onclick="toggleSec('secHistory', this)">
-        <div class="b-title">My History 🕒</div>
+        <div class="b-title">My History</div>
         <div class="b-toggle">−</div>
       </div>
       <div id="secHistory" class="b-list"></div>
@@ -220,7 +243,7 @@ body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15
 
     <section class="b-sec">
       <div class="b-head" onclick="toggleSec('secPopular', this)">
-        <div class="b-title">Popular Updates 🔥</div>
+        <div class="b-title">Popular Updates</div>
         <div class="b-toggle">−</div>
       </div>
       <div id="secPopular" class="b-grid"></div>
@@ -228,7 +251,7 @@ body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15
 
     <section class="b-sec">
       <div class="b-head" onclick="toggleSec('secLatest', this)">
-        <div class="b-title">Latest Releases ✨</div>
+        <div class="b-title">Latest Releases</div>
         <div class="b-toggle">−</div>
       </div>
       <div id="secLatest" class="b-list"></div>
@@ -262,14 +285,6 @@ const fileUrl = fileId => `${API_BASE}/api/file?file_id=${encodeURIComponent(fil
 let accessUser = null, accessDenied = false, currentMode = "comic", uiTimeout;
 const decBadge = d => Number(d)===1 ? " [Decensored]" : Number(d)===2 ? " [Uncensored]" : "";
 
-// --- DUMMY DATA GENERATORS ---
-function getDummyStats() { 
-  return { 
-    rating: (Math.random()*2+8).toFixed(1), 
-    bookmarks: Math.floor(Math.random()*3000 + 100), 
-    comments: Math.floor(Math.random()*200 + 10) 
-  }; 
-}
 function getDummyTime(seed) { 
   const t=["Just now","18 hours ago","45 hours ago","62 hours ago","84 hours ago","4 days ago"]; 
   return t[seed % t.length]; 
@@ -278,7 +293,6 @@ function getTags(p) {
   const arr = Array.isArray(p.tags) ? p.tags.filter(t=>t && isNaN(Number(t))) : []; 
   return arr.length ? esc(arr.join(", ")) : "Manhwa, Yaoi, Smut"; 
 }
-// -----------------------------
 
 function accessHeaders(){ return {"X-Telegram-Init-Data": tg?.initData || ""}; }
 function showDenied(){
@@ -337,8 +351,8 @@ function toggleSec(id, btn) {
   else { el.classList.add('hidden'); btn.querySelector('.b-toggle').textContent = "+"; }
 }
 
+// RENDER ITEM TANPA DATA FIKTIF
 function renderBatoItem(p, chaptersToShow) {
-  const st = getDummyStats(); 
   const cover = p.cover_file_id ? `<img class="b-cover" src="${fileUrl(p.cover_file_id)}" loading="lazy">` : `<div class="b-cover"></div>`;
   const chHtml = chaptersToShow.map((ch, i) => `
     <div class="b-chap" onclick="event.stopPropagation(); openReader('${esc(p.id)}','${esc(ch.chapter)}',${ch.decensored})">
@@ -352,11 +366,6 @@ function renderBatoItem(p, chaptersToShow) {
       ${cover}
       <div class="b-info">
         <div class="b-item-title"><span class="txt">${esc(p.title)}</span></div>
-        <div class="b-stats">
-          <span><span style="color:var(--bato-star)">⭐</span> ${st.rating}</span> 
-          <span>🔖 ${st.bookmarks}</span> 
-          <span>💬 ${st.comments}</span>
-        </div>
         <div class="b-tags">${getTags(p)}</div>
         <div class="b-chaps">${chHtml}</div>
       </div>
@@ -367,7 +376,6 @@ function renderBatoItem(p, chaptersToShow) {
 function renderHome() {
   const all = getSortedProjects(); const histObj = getHistory();
   
-  // My Updates (Bookmarks with updates)
   const myUpdates = all.filter(item => isBookmark(item.p.id)).slice(0, 10);
   $('secUpdates').innerHTML = myUpdates.length ? myUpdates.map(item => {
     let chs = [item.latest.chapter];
@@ -375,12 +383,10 @@ function renderHome() {
     return renderBatoItem(item.p, chs);
   }).join("") : "<p class='muted' style='font-size:14px; text-align:center;'>Belum ada update bookmark.</p>";
 
-  // My History
   const histArr = Object.keys(histObj).map(pid => ({pid, ...histObj[pid]})).sort((a,b)=>b.ts-a.ts);
   const myHist = histArr.map(h => { const p = catalog.find(x=>x.id===h.pid && normalizeType(x)===currentMode); return p ? {p, hist:h} : null; }).filter(Boolean).slice(0, 5);
   $('secHistory').innerHTML = myHist.length ? myHist.map(item => renderBatoItem(item.p, [item.hist])).join("") : "<p class='muted' style='font-size:14px; text-align:center;'>Belum ada riwayat.</p>";
 
-  // Popular Updates (Grid)
   const popular = [...all].sort(()=>Math.random()-0.5).slice(0, 9); 
   $('secPopular').innerHTML = popular.map((item, i) => `
     <div class="b-grid-item" onclick="openProject('${esc(item.p.id)}')">
@@ -394,11 +400,10 @@ function renderHome() {
     </div>
   `).join("");
 
-  // Latest Releases
   $('secLatest').innerHTML = all.slice(0, 15).map(item => renderBatoItem(item.p, [item.latest.chapter])).join("");
 }
 
-// SEARCH
+// SEARCH GLOBAL
 $('search').oninput = () => {
   const q = $('search').value.trim().toLowerCase();
   if(!q) return closeSearch();
@@ -410,6 +415,54 @@ $('search').oninput = () => {
 };
 function closeSearch() { $('search').value=""; $('catalogLayer').classList.add('hidden'); $('homeLayer').classList.remove('hidden'); }
 
+// PENCARIAN DI HALAMAN DETAIL (STYLE LAMA)
+function handleDetailSearch(val) {
+  val = val.trim().toLowerCase();
+  const dd = $("detailSearchDropdown");
+  if(!dd) return;
+  if(val === "") { dd.classList.remove("active"); return; }
+
+  const matches = catalog.filter(p => {
+    const t = String((p && p.title) || "").toLowerCase();
+    const a = String((p && p.author) || "").toLowerCase();
+    return t.includes(val) || a.includes(val);
+  }).slice(0, 8);
+
+  if(matches.length === 0) {
+    dd.innerHTML = `<div style='padding:16px; text-align:center; color:var(--muted); font-size:14px;'>Tidak ada hasil untuk "${esc(val)}"</div>`;
+  } else {
+    dd.innerHTML = matches.map(p => {
+      const imgHtml = p.cover_file_id ? `<img src="${fileUrl(p.cover_file_id)}" loading="lazy">` : `<div style="width:45px;height:65px;background:var(--panel2);border-radius:8px;flex:0 0 auto;"></div>`;
+      const authorHtml = p.author ? `<div class="author">${esc(p.author)}</div>` : "";
+      return `<div class="search-item" onclick="openProject('${esc(p.id)}'); document.getElementById('detailSearchDropdown').classList.remove('active');">
+        ${imgHtml}
+        <div class="info"><div class="title">${esc(p.title)}</div>${authorHtml}</div>
+      </div>`;
+    }).join("");
+  }
+  dd.classList.add("active");
+}
+
+function executeDetailSearch(val) {
+  if(!val || !val.trim()) return;
+  $("detail").classList.add("hidden");
+  $("home").classList.remove("hidden");
+  const mainSearch = $("search");
+  if(mainSearch) {
+    mainSearch.value = val;
+    mainSearch.focus();
+    mainSearch.dispatchEvent(new Event('input'));
+  }
+}
+
+document.addEventListener("click", function(e) {
+  const detailContainer = $("detailSearchContainer");
+  if(detailContainer && !detailContainer.contains(e.target)) {
+    const ddd = $("detailSearchDropdown");
+    if (ddd) ddd.classList.remove("active");
+  }
+});
+
 
 // TRANSLATOR PROFILE
 function openTranslatorProfile(name) {
@@ -420,7 +473,7 @@ function openTranslatorProfile(name) {
   if (!list.length) return;
   
   const tTrakteer = (list.find(p => p.trakteer) || {}).trakteer || "";
-  const trakteerBtn = tTrakteer ? `<a href="${esc(tTrakteer)}" target="_blank" class="btn" style="margin-top:12px;background:#e74c3c;color:#fff;pointer-events:auto;">☕ Traktir Kopi</a>` : "";
+  const trakteerBtn = tTrakteer ? `<a href="${esc(tTrakteer)}" target="_blank" class="btn primary" style="margin-top:16px;">Traktir Kopi</a>` : "";
   
   $("home").classList.add("hidden"); 
   $("reader").classList.add("hidden");
@@ -428,7 +481,9 @@ function openTranslatorProfile(name) {
   
   $("detailContent").innerHTML = `
     <div style="display:flex;justify-content:space-between;margin-bottom:16px;">
-      <button class="back" onclick="showHome()">← Back</button>
+      <button class="back" onclick="showHome()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      </button>
     </div>
     <div style="text-align:center; padding:24px; background:var(--panel2); border-radius:16px; border:1px solid var(--border); margin-bottom:24px;">
       <div style="font-size:48px; margin-bottom:8px;">👤</div>
@@ -453,7 +508,7 @@ function openTranslatorProfile(name) {
 }
 
 
-// DETAIL PAGE BATO STYLE
+// DETAIL PAGE
 async function openProject(id){
   if(!(await requireAccess())) return; 
   const p=catalog.find(x=>x.id===id); if(!p)return;
@@ -461,7 +516,6 @@ async function openProject(id){
   
   const cover=p.cover_file_id ? `<img class="detailcover" src="${fileUrl(p.cover_file_id)}">` : `<div class="detailcover"></div>`;
   const isBm = isBookmark(p.id);
-  const st = getDummyStats();
   
   const authorInfo = p.author ? `<div style="font-size:13px;color:var(--muted);margin-bottom:4px;"><b>Author:</b> ${esc(p.author)}</div>` : "";
   const transName = (p.translator && p.translator.trim() !== "") ? p.translator : "MVP";
@@ -471,20 +525,20 @@ async function openProject(id){
   const transInfo = `<div style="font-size:13px;color:var(--muted);margin-bottom:4px;"><b>Brought to you by:</b> ${transClickable}</div>`;
 
   const tagsArr = Array.isArray(p.tags) ? p.tags.filter(t => t && isNaN(Number(t))) : [];
-  const tagsHtml = tagsArr.length ? `<div class="tags">${tagsArr.map(t=>`<button class="tag" style="pointer-events:auto;" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`).join("")}</div>` : "";
+  const tagsHtml = tagsArr.length ? `<div class="tags">${tagsArr.map(t=>`<button class="tag" style="pointer-events:auto;">${esc(t)}</button>`).join("")}</div>` : "";
 
   const trakteerDetail = p.trakteer ? `<a href="${esc(p.trakteer)}" target="_blank" class="btn" style="background:#e74c3c;color:#fff;width:100%;margin-top:16px;">☕ Traktir Kopi</a>` : "";
 
   // BINTANG VOTE 1-10
-  var savedVote = parseInt(localStorage.getItem("mvp_vote_" + p.id) || "0");
-  var starsHtml = [1,2,3,4,5,6,7,8,9,10].map(function(n) {
-      var isFilled = n <= savedVote;
-      var char = isFilled ? "★" : "☆";
-      var color = isFilled ? "var(--accent)" : "var(--border2)";
+  const savedVote = parseInt(localStorage.getItem("mvp_vote_" + p.id) || "0");
+  const starsHtml = [1,2,3,4,5,6,7,8,9,10].map(n => {
+      const isFilled = n <= savedVote;
+      const char = isFilled ? "★" : "☆";
+      const color = isFilled ? "var(--accent)" : "var(--border2)";
       return `<span id="star_${p.id}_${n}" onclick="event.stopPropagation(); doVote('${esc(p.id)}', ${n})" style="cursor:pointer; color:${color}; transition:0.2s;">${char}</span>`;
   }).join("");
 
-  var voteUI = `
+  const voteUI = `
   <div style="margin-top:20px; padding:16px; background:var(--panel); border-radius:12px; border:1px solid var(--border);">
     <div style="font-size:12px; font-weight:800; color:var(--text); margin-bottom:10px; text-align:center; letter-spacing:0.5px;">BERIKAN VOTE (1-10)</div>
     <div style="display:flex; justify-content:space-between; font-size:24px; user-select:none; pointer-events:auto;">
@@ -492,36 +546,54 @@ async function openProject(id){
     </div>
   </div>`;
 
-  // LIST CHAPTER (TIDAK ADA TOMBOL TULIS KOMENTAR DI SINI)
-  const chaptersHtml = (p.chapters||[]).map((c,i)=>{
-    const timeAgo = getDummyTime(Date.now() - (i*86400000));
-    
-    return `
-    <div class="chapter-bato" style="flex-direction:column; align-items:stretch;" onclick="openReader('${esc(p.id)}','${esc(c.chapter)}',${c.decensored})">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="font-weight:700;font-size:14px;color:var(--text);">Chapter ${esc(c.chapter)}${decBadge(c.decensored)}</div>
-          <div style="font-size:12px;color:var(--muted);font-weight:600;">🕒 ${timeAgo}</div>
+  // UI ATAS HTML LAMA (Back, Search, Share, Bookmark)
+  const btnFavColor = isBm ? "var(--accent)" : "var(--panel)";
+  const btnFavText = isBm ? "#fff" : "var(--text)";
+  const favIconColor = isBm ? "#fff" : "none";
+  const shareAction = `if(tg) tg.openTelegramLink('https://t.me/share/url?url=${encodeURIComponent("https://t.me/MVP_Zhenya_Bot?start="+p.id)}&text=${encodeURIComponent("Baca "+p.title+" di MVP!")}')`;
+
+  const topBar = `
+    <div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:8px;'>
+      <button class='back' onclick="$('detail').classList.add('hidden');$('home').classList.remove('hidden');" style='padding:8px; flex:0 0 auto; background:var(--panel2); color:var(--text);'>
+        <svg width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><line x1='19' y1='12' x2='5' y2='12'></line><polyline points='12 19 5 12 12 5'></polyline></svg>
+      </button>
+      <div id='detailSearchContainer' style='flex:1; position:relative;'>
+        <input type='text' id='detailSearch' class='search' style='margin:0; padding:10px 16px; width:100%; border-radius:24px; font-size:14px; background:var(--panel2); color:var(--text); border:1px solid var(--border); pointer-events:auto;' placeholder='Cari judul...' onkeydown="if(event.key==='Enter') executeDetailSearch(this.value)" oninput="handleDetailSearch(this.value)" autocomplete='off'>
+        <div id='detailSearchDropdown' class='search-dropdown'></div>
       </div>
+      <div style='display:flex; gap:6px; flex:0 0 auto;'>
+        <button class='btn' onclick="${shareAction}" style='padding:10px; border-radius:50%; background:var(--panel);' aria-label='Share'>
+            <svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8'></path><polyline points='16 6 12 2 8 6'></polyline><line x1='12' y1='2' x2='12' y2='15'></line></svg>
+        </button>
+        <button class='btn' style='padding:10px; border-radius:50%; background:${btnFavColor}; color:${btnFavText};' onclick="toggleBookmark('${esc(p.id)}')" aria-label='Bookmark'>
+            <svg width='18' height='18' viewBox='0 0 24 24' fill='${favIconColor}' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z'></path></svg>
+        </button>
+      </div>
+    </div>
+  `;
+
+  // SORTIR CHAPTERS LIST
+  let chaptersArr = Array.isArray(p.chapters) ? [...p.chapters] : [];
+  let mappedChaps = chaptersArr.map((c, i) => ({c, i}));
+  if (!window.chapterSortDesc) mappedChaps.reverse();
+
+  const chaptersHtml = mappedChaps.map(item => {
+    const timeAgo = getDummyTime(Date.now() - (item.i*86400000));
+    return `
+    <div class="chapter-bato" onclick="openReader('${esc(p.id)}','${esc(item.c.chapter)}',${item.c.decensored})">
+      <div style="font-weight:700;font-size:14px;color:var(--text);">Chapter ${esc(item.c.chapter)}${decBadge(item.c.decensored)}</div>
+      <div style="font-size:12px;color:var(--muted);font-weight:600;">🕒 ${timeAgo}</div>
     </div>`;
   }).join("");
 
   $("detailContent").innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <button class="back" onclick="$('detail').classList.add('hidden');$('home').classList.remove('hidden');">← Back</button>
-      <button class="btn" style="background:${isBm?'var(--accent)':'var(--panel)'};color:${isBm?'#fff':'var(--text)'};" onclick="toggleBookmark('${esc(p.id)}')">${isBm?'🔖 Tersimpan':'🔖 Bookmark'}</button>
-    </div>
-    
+    ${topBar}
     <div style="display:flex; gap:16px; align-items:flex-start;">
       ${cover}
       <div style="flex:1; min-width:0;">
         <h1 style="margin:0 0 8px; font-size:18px; line-height:1.3;">${esc(p.title)}</h1>
         ${authorInfo}
         ${transInfo}
-        <div style="display:flex; gap:10px; margin-top:8px; font-size:12px; font-weight:700;">
-          <span style="color:var(--bato-star)">⭐ ${st.rating}</span>
-          <span style="color:var(--muted)">🔖 ${st.bookmarks}</span>
-          <span style="color:var(--muted)">💬 ${st.comments}</span>
-        </div>
       </div>
     </div>
     
@@ -534,10 +606,11 @@ async function openProject(id){
     </div>
     
     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:24px; margin-bottom:12px; border-bottom:2px solid var(--panel2); padding-bottom:8px;">
-      <h3 style="font-size:18px; margin:0;">Chapters <span style="color:var(--muted); font-size:14px;">(${(p.chapters||[]).length})</span></h3>
+      <h3 style="font-size:18px; margin:0;">Chapters <span style="color:var(--muted); font-size:14px;">(${chaptersArr.length})</span></h3>
+      <button class="btn" style="padding:6px 12px; font-size:12px; background:var(--panel2);" onclick="toggleChapterSort('${esc(p.id)}')">⇅ Sortir</button>
     </div>
     
-    <div style="display:flex; flex-direction:column; gap:0; border:1px solid var(--border); border-radius:12px; overflow:hidden; background:var(--panel);">
+    <div class="chapter-scroll-box" style="max-height:400px; overflow-y:auto; border:1px solid var(--border); border-radius:12px; background:var(--panel); display:flex; flex-direction:column; overscroll-behavior:contain;">
       ${chaptersHtml}
     </div>
   `;
@@ -549,38 +622,26 @@ window.addEventListener('scroll', () => {
     const h = document.documentElement.scrollHeight - document.documentElement.clientHeight;
     if(h>0) $("progressBar").style.width = ((document.body.scrollTop || document.documentElement.scrollTop) / h * 100) + "%";
     
-    // Auto-hide saat scroll
     if ((document.body.scrollTop || document.documentElement.scrollTop) > 15 && !$("reader").classList.contains("ui-hidden") && $("readerChapterMenu")?.classList.contains("hidden")) {
       $("reader").classList.add("ui-hidden"); clearTimeout(uiTimeout);
     }
   }
 });
 
-function showReaderUI() { 
-  $("reader").classList.remove("ui-hidden"); 
-  clearTimeout(uiTimeout); 
-  uiTimeout = setTimeout(()=>{$("reader").classList.add("ui-hidden");}, 3500); 
-}
-
-function toggleReaderUI(e) { 
-  if(!e.target.closest('button') && !e.target.closest('.readerhead') && !e.target.closest('.reader-nav')) { 
-    if($("reader").classList.contains("ui-hidden")) showReaderUI(); 
-    else { $("reader").classList.add("ui-hidden"); clearTimeout(uiTimeout); } 
-  } 
-}
+function showReaderUI() { $("reader").classList.remove("ui-hidden"); clearTimeout(uiTimeout); uiTimeout = setTimeout(()=>{$("reader").classList.add("ui-hidden");}, 3500); }
+function toggleReaderUI(e) { if(!e.target.closest('button') && !e.target.closest('.readerhead') && !e.target.closest('.reader-nav')) { if($("reader").classList.contains("ui-hidden")) showReaderUI(); else { $("reader").classList.add("ui-hidden"); clearTimeout(uiTimeout); } } }
 
 function changeFontSize(dir, e) {
   if (e) e.stopPropagation(); 
-  var currentFontSize = Number(localStorage.getItem('mvp_fontsize')) || 17;
+  let currentFontSize = Number(localStorage.getItem('mvp_fontsize')) || 17;
   currentFontSize += (dir * 2);
   if (currentFontSize < 12) currentFontSize = 12;
   if (currentFontSize > 32) currentFontSize = 32;
   localStorage.setItem('mvp_fontsize', currentFontSize);
-  var reader = document.querySelector('.novel-reader');
+  const reader = document.querySelector('.novel-reader');
   if (reader) reader.style.fontSize = currentFontSize + 'px';
 }
 
-// WATERMARK READER
 function getTelegramIdentity(){
   const user = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
   if(!user) return {id:"", username:""};
@@ -592,8 +653,8 @@ function showReaderWatermark(){
   $("readerWatermark").classList.remove("hidden");
 }
 
-// OPEN READER
 async function openReader(pid, ch, dec){
+  if(!(await requireAccess())) return;
   const p=catalog.find(x=>x.id===pid); if(!p) return;
   const chArr=Array.isArray(p.chapters)?p.chapters:[]; const idx=chArr.findIndex(c=>c.chapter==ch && c.decensored==dec);
   if(idx===-1) return;
@@ -608,7 +669,6 @@ async function openReader(pid, ch, dec){
   $("home").classList.add("hidden"); $("detail").classList.add("hidden"); $("reader").classList.remove("hidden");
   $("progressContainer").style.display="block"; showReaderUI(); showReaderWatermark();
   
-  // SMART NEXT BUTTON (Bisa Jadi Detail Kalau Udah Mentok)
   const isLast = idx >= chArr.length - 1;
   const btnNextAction = isLast ? `closeReader()` : `openReader('${pid}','${chArr[idx+1]?.chapter}',${chArr[idx+1]?.decensored})`;
   const btnNextText = isLast ? "Detail »" : "Next »";
@@ -617,14 +677,14 @@ async function openReader(pid, ch, dec){
   const top=`<div class="readerhead"><div class="reader-topbar"><button class="reader-info" onclick="openProject('${pid}'); $('readerWatermark').classList.add('hidden');">« Back</button><button class="reader-chapter-btn" onclick="toggleChapterMenu(event)">Ch.${ch}${decBadge(dec)}</button>
   <div id="readerChapterMenu" class="reader-chapter-menu hidden">${chArr.map((cList,i)=>`<button class="reader-chapter-option ${i===idx?"current":""}" onclick="selectReaderChapter('${esc(p.id)}',${i})">Ch.${esc(cList.chapter)}${decBadge(cList.decensored)}</button>`).join("")}</div></div></div>`;
   
-  // TOMBOL TULIS KOMENTAR DIPINDAH KE BAWAH NAVIGASI CHAPTER DI SINI
+  // KOMENTAR PINDAH KE SINI TEPAT DI BAWAH NAVIGASI
   const commentUrl = p.comment_link || "";
   const commentBtnHtml = commentUrl 
-    ? `<div class="reader-nav-row" style="margin-top:4px;"><button class="navbtn primary" style="width:100%" onclick="location.href='${esc(commentUrl)}'">💬 Tulis Komentar</button></div>`
+    ? `<div class="reader-nav-row" style="margin-top:2px;"><button class="navbtn commentbtn primary" onclick="location.href='${esc(commentUrl)}'">💬 Tulis Komentar</button></div>`
     : "";
 
   const nav=`<div class="reader-nav">
-      ${p.type === 'novel' ? `<div class="reader-nav-row" style="margin-bottom:8px;"><button class="navbtn" onclick="changeFontSize(-1, event)">A- Kecilkan</button><button class="navbtn" onclick="changeFontSize(1, event)">A+ Besarkan</button></div>` : ""}
+      ${p.type === 'novel' ? `<div class="reader-nav-row" style="margin-bottom:6px;"><button class="navbtn" onclick="changeFontSize(-1, event)">A- Kecilkan</button><button class="navbtn" onclick="changeFontSize(1, event)">A+ Besarkan</button></div>` : ""}
       <div class="reader-nav-row">
         <button class="navbtn" onclick="openReader('${pid}','${chArr[idx-1]?.chapter}',${chArr[idx-1]?.decensored})" ${idx<=0?'disabled':''}>« Prev</button>
         <button class="navbtn upbtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Up</button>
