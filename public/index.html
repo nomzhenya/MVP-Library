@@ -172,6 +172,18 @@ body.light .reader-watermark{opacity:0.35;text-shadow:0 1px 3px rgba(255,255,255
 .novel-reader blockquote{margin:1.2em 0;padding-left:16px;border-left:4px solid var(--accent);color:var(--muted); font-style:italic;}
 .novel-loading{padding:60px 20px;text-align:center;color:var(--muted); font-weight:600;}
 
+/* CSS BOOKMARK (PENANDA BACAAN NOVEL) */
+.novel-reader p.bookmarked {
+    background-color: rgba(94, 129, 255, 0.15);
+    border-left: 4px solid var(--accent);
+    padding: 4px 12px;
+    border-radius: 0 8px 8px 0;
+    transition: all 0.3s ease;
+}
+body.light .novel-reader p.bookmarked {
+    background-color: rgba(59, 130, 246, 0.15);
+}
+
 #progressContainer{position:fixed;top:0;left:0;width:100vw;height:3px;background:transparent;z-index:9999;display:none;pointer-events:none;}
 #progressBar{height:100%;background:var(--accent);width:0%;transition:width 0.1s ease-out;}
 
@@ -320,6 +332,7 @@ var accessUser = null;
 var accessDenied = false;
 var currentType = "comic";
 var currentTag = "";
+var uiTimeout; 
 
 var decBadge = function(d) { return Number(d) === 1 ? " [Decensored]" : (Number(d) === 2 ? " [Uncensored]" : ""); };
 
@@ -636,7 +649,6 @@ if($("search")) {
   });
 }
 
-// LOGIKA SEARCH DROPDOWN UNTUK HALAMAN DETAIL PROJECT
 function handleDetailSearch(val) {
   val = val.trim().toLowerCase();
   var dd = $("detailSearchDropdown");
@@ -920,13 +932,24 @@ async function openProject(id){
     "<div class='chapters'>" + chaptersHtml + "</div>";
 }
 
+// LOGIKA SCROLL: Progress bar & Auto-hide UI
 window.addEventListener('scroll', function() {
   if (!$("reader").classList.contains("hidden")) {
     var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
     var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    
     if (height > 0) {
       var scrolled = (winScroll / height) * 100;
       $("progressBar").style.width = scrolled + "%";
+    }
+    
+    // Auto-hide UI saat scroll
+    if (winScroll > 15 && !$("reader").classList.contains("ui-hidden")) {
+      var menu = $("readerChapterMenu");
+      if (!menu || menu.classList.contains("hidden")) {
+        $("reader").classList.add("ui-hidden");
+        if(typeof uiTimeout !== 'undefined') clearTimeout(uiTimeout);
+      }
     }
   }
 });
@@ -974,9 +997,29 @@ function chapterCommentLink(p){
   return (p && p.comment_link) || "";
 }
 
+// LOGIKA TAMPIL/SEMBUNYI MENU UI (AUTO-HIDE 3 DETIK)
+function showReaderUI() {
+    $("reader").classList.remove("ui-hidden");
+    clearTimeout(uiTimeout);
+    uiTimeout = setTimeout(function() {
+        var menu = $("readerChapterMenu");
+        var isMenuOpen = menu && !menu.classList.contains("hidden");
+        // Hanya sembunyi jika dropdown menu chapter sedang tertutup
+        if (!isMenuOpen && !$("reader").classList.contains("hidden")) {
+            $("reader").classList.add("ui-hidden");
+        }
+    }, 3500); 
+}
+
 function toggleReaderUI(e) {
-  if(e.target.closest('button') || e.target.closest('a') || e.target.closest('.readerhead') || e.target.closest('.reader-nav') || e.target.closest('input')) return;
-  $("reader").classList.toggle("ui-hidden");
+  if(e && e.target && (e.target.closest('button') || e.target.closest('a') || e.target.closest('.readerhead') || e.target.closest('.reader-nav') || e.target.closest('input'))) return;
+  
+  if ($("reader").classList.contains("ui-hidden")) {
+      showReaderUI();
+  } else {
+      $("reader").classList.add("ui-hidden");
+      clearTimeout(uiTimeout);
+  }
 }
 
 function changeFontSize(dir, e) {
@@ -1003,7 +1046,7 @@ async function openNovelReader(projectId, idx){
   $("home").classList.add("hidden");
   $("detail").classList.add("hidden");
   $("reader").classList.remove("hidden");
-  $("reader").classList.remove("ui-hidden"); 
+  showReaderUI(); 
   showReaderWatermark();
 
   var chapterOptions = chaptersArr.map(function(ch, i) {
@@ -1038,6 +1081,36 @@ async function openNovelReader(projectId, idx){
     $("readerPages").innerHTML = "<article class='novel-reader' style='font-size:"+savedFont+"px'>" +
         ((data && data.html) ? data.html : "<p class='muted'>Chapter kosong.</p>") +
       "</article>";
+      
+    // LOGIKA PENANDA BACAAN NOVEL
+    setTimeout(function() {
+        var paragraphs = document.querySelectorAll('.novel-reader p');
+        var saveKey = 'mvp_novel_mark_' + projectId + '_' + c.chapter;
+        var savedIndex = localStorage.getItem(saveKey);
+
+        paragraphs.forEach(function(p, pIdx) {
+            p.onclick = function(e) {
+                // UI Toggle akan tetap berjalan ketika ini diklik
+                document.querySelectorAll('.novel-reader p.bookmarked').forEach(function(el) {
+                    if (el !== p) el.classList.remove('bookmarked');
+                });
+                
+                if (p.classList.contains('bookmarked')) {
+                    p.classList.remove('bookmarked');
+                    localStorage.removeItem(saveKey);
+                } else {
+                    p.classList.add('bookmarked');
+                    localStorage.setItem(saveKey, pIdx);
+                }
+            };
+        });
+
+        if (savedIndex !== null && paragraphs[savedIndex]) {
+            paragraphs[savedIndex].classList.add('bookmarked');
+            paragraphs[savedIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, 100);
+
   } catch(e) {
     $("readerPages").innerHTML = "<div class='readererror'>Gagal memuat chapter novel.</div>";
   }
@@ -1096,7 +1169,7 @@ async function openReader(projectId, chapterName, decensored){
   $("home").classList.add("hidden");
   $("detail").classList.add("hidden");
   $("reader").classList.remove("hidden");
-  $("reader").classList.remove("ui-hidden");
+  showReaderUI(); 
   showReaderWatermark();
 
   var chapterOptions = chaptersArr.map(function(ch, i) {
