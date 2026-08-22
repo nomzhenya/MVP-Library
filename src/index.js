@@ -224,7 +224,7 @@ export default {
     
     if (url.pathname === "/api/admin/comment-stats" && request.method === "PUT") {
       const secret = request.headers.get("X-Library-Secret") || "";
-      if (!env.LIBRARY_SYNC_SECRET || secret !== env.LIBRARY_SYNC_SECRET) {
+      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
         return json({ok:false, reason:"unauthorized"}, 401);
       }
       const body = await request.json().catch(() => null);
