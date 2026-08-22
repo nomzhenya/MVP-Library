@@ -8,7 +8,7 @@ function cors(headers = {}) {
   return {
     ...headers,
     "access-control-allow-origin": "*",
-    "access-control-allow-methods": "GET,PUT,OPTIONS",
+    "access-control-allow-methods": "GET,POST,PUT,OPTIONS",
     "access-control-allow-headers": "Content-Type,X-Library-Secret,X-Telegram-Init-Data"
   };
 }
@@ -97,6 +97,43 @@ async function checkAccess(request, env) {
   return {ok: true, user};
 }
 
+
+async function getInteraction(env, projectId) {
+  const data = await env.LIBRARY.get(`interaction:${projectId}`, "json");
+  if (!data || typeof data !== "object") return {votes:{}, bookmarks:{}, comments:0};
+  return {
+    votes: data.votes && typeof data.votes === "object" ? data.votes : {},
+    bookmarks: data.bookmarks && typeof data.bookmarks === "object" ? data.bookmarks : {},
+    comments: Number(data.comments || 0)
+  };
+}
+
+function summarizeInteraction(data, userId, fallbackComments=0) {
+  const votes = data.votes || {};
+  const bookmarks = data.bookmarks || {};
+  const values = Object.values(votes).map(Number).filter(v => v >= 1 && v <= 10);
+  const rating = values.length ? (values.reduce((a,b)=>a+b,0) / values.length).toFixed(1) : "0.0";
+  return {
+    rating,
+    bookmarks: Object.keys(bookmarks).length,
+    comments: Number(data.comments || fallbackComments || 0),
+    user_vote: Number(votes[String(userId)] || 0),
+    bookmarked: Object.prototype.hasOwnProperty.call(bookmarks, String(userId))
+  };
+}
+
+async function saveInteraction(env, projectId, data) {
+  await env.LIBRARY.put(`interaction:${projectId}`, JSON.stringify(data));
+}
+
+async function enrichCatalog(env, catalog, userId) {
+  if (!Array.isArray(catalog)) return [];
+  return Promise.all(catalog.map(async p => {
+    const data = await getInteraction(env, p.id);
+    return {...p, ...summarizeInteraction(data, userId, p.comments || 0)};
+  }));
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -131,9 +168,42 @@ export default {
       }
 
       const catalog = await env.LIBRARY.get("catalog", "json");
-      return new Response(JSON.stringify(catalog || []), {
+      const enriched = await enrichCatalog(env, catalog || [], access.user.id);
+      return new Response(JSON.stringify(enriched), {
         headers: cors({"content-type": "application/json; charset=utf-8"})
       });
+    }
+
+
+    if (url.pathname === "/api/vote" && request.method === "POST") {
+      const access = await checkAccess(request, env);
+      if (!access.ok) return json({ok:false, code:access.code}, access.code);
+      const body = await request.json().catch(() => ({}));
+      const projectId = String(body.project_id || "").trim();
+      const score = Number(body.score);
+      if (!projectId || !Number.isInteger(score) || score < 1 || score > 10) return json({error:"invalid vote"},400);
+      const catalog = await env.LIBRARY.get("catalog","json");
+      if (!Array.isArray(catalog) || !catalog.some(p => String(p.id) === projectId)) return json({error:"project not found"},404);
+      const data = await getInteraction(env, projectId);
+      data.votes[String(access.user.id)] = score;
+      await saveInteraction(env, projectId, data);
+      return json({ok:true, ...summarizeInteraction(data, access.user.id, catalog.find(p=>String(p.id)===projectId)?.comments || 0)});
+    }
+
+    if (url.pathname === "/api/bookmark" && request.method === "POST") {
+      const access = await checkAccess(request, env);
+      if (!access.ok) return json({ok:false, code:access.code}, access.code);
+      const body = await request.json().catch(() => ({}));
+      const projectId = String(body.project_id || "").trim();
+      const bookmarked = Boolean(body.bookmarked);
+      if (!projectId) return json({error:"missing project_id"},400);
+      const catalog = await env.LIBRARY.get("catalog","json");
+      if (!Array.isArray(catalog) || !catalog.some(p => String(p.id) === projectId)) return json({error:"project not found"},404);
+      const data = await getInteraction(env, projectId);
+      const uid = String(access.user.id);
+      if (bookmarked) data.bookmarks[uid] = true; else delete data.bookmarks[uid];
+      await saveInteraction(env, projectId, data);
+      return json({ok:true, ...summarizeInteraction(data, access.user.id, catalog.find(p=>String(p.id)===projectId)?.comments || 0)});
     }
 
     if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
