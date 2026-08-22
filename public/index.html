@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5.0,user-scalable=yes,viewport-fit=cover">
 <meta name="theme-color" content="#121215">
 <title>MVP Miniweb</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -31,9 +31,9 @@ body.light{
 
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden;transition:background .3s,color .3s}
 
-/* ANTI-COPY CSS (DIKEMBALIKAN KE MODE KETAT) */
+/* ANTI-COPY CSS */
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
-img{-webkit-user-drag:none;-webkit-touch-callout:none;pointer-events:none;} 
+img{-webkit-user-drag:none;-webkit-touch-callout:none;pointer-events:auto;} 
 
 .wrap{max-width:900px;margin:auto;padding:24px 20px}
 #reader.wrap{width:100vw;max-width:none;margin:0;padding:0;overflow-x:hidden}
@@ -185,18 +185,19 @@ body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15
   };
 
   // VOTE 1-10 GLOBAL
-  window.doVote = async function(pid, score) {
-    try {
-      var r = await fetch("/api/vote", {method:"POST",headers:Object.assign({"Content-Type":"application/json"},accessHeaders()),body:JSON.stringify({project_id:pid,score:score})});
-      var data = await r.json().catch(function(){return {};});
-      if(!r.ok) throw new Error(data.error || "vote");
-      try { localStorage.setItem("mvp_vote_"+pid, score); } catch(e){}
-      var p = catalog.find(function(x){return x.id===pid;});
-      if(p){p.rating=data.rating;p.bookmarks=data.bookmarks;p.comments=data.comments;p.user_vote=data.user_vote;p.bookmarked=data.bookmarked;}
-      for(var i=1;i<=10;i++){var st=document.getElementById("star_"+pid+"_"+i);if(st){st.textContent=i<=score?"★":"☆";st.style.color=i<=score?"var(--accent)":"var(--border2)";}}
-      openProject(pid);
-    } catch(e) {
-      if(tg && tg.showAlert) tg.showAlert("Vote gagal disimpan."); else alert("Vote gagal disimpan.");
+  window.doVote = function(pid, score) {
+    for(var i=1; i<=10; i++){
+        var st = document.getElementById("star_"+pid+"_"+i);
+        if(st) {
+            st.textContent = i <= score ? "★" : "☆";
+            st.style.color = i <= score ? "var(--accent)" : "var(--border2)";
+        }
+    }
+    try { localStorage.setItem("mvp_vote_"+pid, score); } catch(e){}
+    if(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.showAlert) {
+        window.Telegram.WebApp.showAlert("Vote " + score + "/10 berhasil disimpan!");
+    } else {
+        alert("Vote " + score + "/10 berhasil disimpan!");
     }
   };
 
@@ -344,22 +345,12 @@ async function requireAccess(){
   } catch(e) { return false; }
 }
 
-function isBookmark(id) {
-  var p=catalog.find(function(x){return x.id===id;});
-  if(p && typeof p.bookmarked === "boolean") return p.bookmarked;
-  try{return (JSON.parse(localStorage.getItem('mvp_bookmarks')||'[]')).includes(id);}catch(e){return false;}
-}
-async function toggleBookmark(id) {
-  var p=catalog.find(function(x){return x.id===id;});
-  var next=!(p && p.bookmarked===true);
-  try{
-    var r=await fetch("/api/bookmark",{method:"POST",headers:Object.assign({"Content-Type":"application/json"},accessHeaders()),body:JSON.stringify({project_id:id,bookmarked:next})});
-    var data=await r.json().catch(function(){return {};});
-    if(!r.ok) throw new Error(data.error||"bookmark");
-    if(p){p.rating=data.rating;p.bookmarks=data.bookmarks;p.comments=data.comments;p.user_vote=data.user_vote;p.bookmarked=data.bookmarked;}
-    try{var bm=JSON.parse(localStorage.getItem('mvp_bookmarks')||'[]').filter(function(x){return x!==id;});if(data.bookmarked)bm.push(id);localStorage.setItem('mvp_bookmarks',JSON.stringify(bm));}catch(e){}
-    if(!$('detail').classList.contains('hidden')) openProject(id); else renderHome();
-  }catch(e){if(tg&&tg.showAlert)tg.showAlert("Bookmark gagal disimpan.");}
+function isBookmark(id) { try{ return (JSON.parse(localStorage.getItem('mvp_bookmarks')||'[]')).includes(id); }catch(e){return false;} }
+function toggleBookmark(id) {
+  var bm = []; try{ bm=JSON.parse(localStorage.getItem('mvp_bookmarks')||'[]'); }catch(e){}
+  if(bm.includes(id)) { bm = bm.filter(function(x){ return x !== id; }); } else { bm.push(id); }
+  localStorage.setItem('mvp_bookmarks', JSON.stringify(bm));
+  if(!$('detail').classList.contains('hidden')) openProject(id); else renderHome();
 }
 function saveHistory(pid, ch, dec) {
   try{ var h=JSON.parse(localStorage.getItem("mvp_history")||"{}"); h[pid]={chapter:ch, decensored:Number(dec), ts:Date.now()}; localStorage.setItem("mvp_history",JSON.stringify(h)); }catch(e){}
@@ -395,7 +386,7 @@ function toggleSec(id, btn) {
 // FORMAT BATO LIST DENGAN STATS DARI DATABASE
 function renderBatoItem(p, chaptersToShow) {
   var cover = p.cover_file_id ? "<img class='b-cover' src='"+fileUrl(p.cover_file_id)+"' loading='lazy'>" : "<div class='b-cover'></div>";
-  var pRating = (p.rating != null ? Number(p.rating).toFixed(1) : "0.0");
+  var pRating = p.rating || "0.0";
   var pBookmarks = p.bookmarks || "0";
   var pComments = p.comments || "0";
 
@@ -631,7 +622,7 @@ async function openProject(id){
   var trakteerDetail = p.trakteer ? "<a href='"+esc(p.trakteer)+"' target='_blank' class='btn' style='background:#e74c3c;color:#fff;width:100%;margin-top:16px;'>☕ Traktir Kopi</a>" : "";
 
   // BINTANG VOTE 1-10
-  var savedVote = Number(p.user_vote || localStorage.getItem("mvp_vote_" + p.id) || "0");
+  var savedVote = parseInt(localStorage.getItem("mvp_vote_" + p.id) || "0");
   var starsArr = [1,2,3,4,5,6,7,8,9,10];
   var starsHtml = starsArr.map(function(n) {
       var isFilled = n <= savedVote;
@@ -649,7 +640,7 @@ async function openProject(id){
   "</div>";
 
   // STATS (TIDAK ADA DATA FIKTIF)
-  var pRating = (p.rating != null ? Number(p.rating).toFixed(1) : "0.0");
+  var pRating = p.rating || "0.0";
   var pBookmarks = p.bookmarks || "0";
   var pComments = p.comments || "0";
 
