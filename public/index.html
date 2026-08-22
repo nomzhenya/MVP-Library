@@ -395,7 +395,7 @@ function toggleSec(id, btn) {
 // FORMAT BATO LIST DENGAN STATS DARI DATABASE
 function renderBatoItem(p, chaptersToShow) {
   var cover = p.cover_file_id ? "<img class='b-cover' src='"+fileUrl(p.cover_file_id)+"' loading='lazy'>" : "<div class='b-cover'></div>";
-  var pRating = p.rating || "0.0";
+  var pRating = (p.rating != null ? Number(p.rating).toFixed(1) : "0.0");
   var pBookmarks = p.bookmarks || "0";
   var pComments = p.comments || "0";
 
@@ -649,7 +649,7 @@ async function openProject(id){
   "</div>";
 
   // STATS (TIDAK ADA DATA FIKTIF)
-  var pRating = p.rating || "0.0";
+  var pRating = (p.rating != null ? Number(p.rating).toFixed(1) : "0.0");
   var pBookmarks = p.bookmarks || "0";
   var pComments = p.comments || "0";
 
