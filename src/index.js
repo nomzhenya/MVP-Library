@@ -145,8 +145,7 @@ async function enrichCatalog(env, catalog, userId) {
   if (!Array.isArray(catalog)) return [];
   return Promise.all(catalog.map(async p => {
     const data = await getInteraction(env, p.id);
-    const summary = summarizeInteraction(data, userId, 0);
-    return {...p, rating: summary.rating, bookmarks: summary.bookmarks, user_vote: summary.user_vote, bookmarked: summary.bookmarked};
+    return {...p, ...summarizeInteraction(data, userId, p.comments || 0)};
   }));
 }
 
