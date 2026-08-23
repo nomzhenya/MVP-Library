@@ -33,7 +33,7 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,
 
 /* ANTI-COPY CSS */
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
-img{-webkit-user-drag:none;-webkit-touch-callout:none;pointer-events:auto;user-select:none;-webkit-user-select:none;} .readerpage{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;} body.screenshot-guard .readerpages{filter:blur(18px)!important;} body.screenshot-guard .reader-watermark{filter:none!important;opacity:.9!important;} 
+img{-webkit-user-drag:none;-webkit-touch-callout:none;pointer-events:auto;} 
 
 .wrap{max-width:900px;margin:auto;padding:24px 20px}
 #reader.wrap{width:100vw;max-width:none;margin:0;padding:0;overflow-x:hidden}
@@ -153,7 +153,7 @@ h1,h2,h3,p{margin:0}
 .reader-nav .disabled{opacity:.35;pointer-events:none}
 
 .readerpages{ display:flex;flex-direction:column;align-items:center;gap:0;margin:0; padding-top:40px; padding-bottom:110px; min-height:100vh; width:100vw;max-width:100vw;overflow-x:hidden; }
-.readerpage{display:block;width:100vw;max-width:100vw;height:auto;margin:0;padding:0;background:#000;object-fit:contain;touch-action:pan-x pan-y pinch-zoom;pointer-events:none;-webkit-user-drag:none;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;}
+.readerpage{display:block;width:100vw;max-width:100vw;height:auto;margin:0;padding:0;background:#000;object-fit:contain; touch-action:pan-x pan-y pinch-zoom;}
 .readererror{padding:18px;text-align:center;border:1px solid #ef4444;border-radius:12px;background:#24181b;margin-top:12px}
 
 /* WATERMARK SECURITY */
@@ -166,7 +166,6 @@ h1,h2,h3,p{margin:0}
 .novel-reader h1,.novel-reader h2,.novel-reader h3{line-height:1.4;margin:1.8em 0 .8em}
 .novel-reader p.bookmarked { background-color:rgba(94, 129, 255, 0.15); border-left:4px solid var(--accent); padding:4px 12px; border-radius:0 8px 8px 0; transition:all 0.3s ease; }
 body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15); }
-
 
 /* PROGRESS BAR */
 #progressContainer{position:fixed;top:0;left:0;width:100vw;height:3px;background:transparent;z-index:9999;display:none;pointer-events:none;}
@@ -293,7 +292,7 @@ var catalog = [];
 var $ = function(id) { return document.getElementById(id); };
 var esc = function(s) { return String(s != null ? s : "").replace(/[&<>"']/g, function(m) { return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]); }); };
 var API_BASE = location.origin;
-var fileUrl = function(fileId) { return API_BASE + "/api/file?file_id=" + encodeURIComponent(fileId) + "&init_data=" + encodeURIComponent((tg && tg.initData) ? tg.initData : "") + "&v=" + encodeURIComponent(Date.now()); };
+var fileUrl = function(fileId) { return API_BASE + "/api/file?file_id=" + encodeURIComponent(fileId) + "&init_data=" + encodeURIComponent((tg && tg.initData) ? tg.initData : ""); };
 
 var accessUser = null;
 var accessDenied = false;
@@ -576,7 +575,6 @@ function openTranslatorProfile(name) {
   
   $("home").classList.add("hidden"); 
   $("reader").classList.add("hidden");
-  document.body.style.filter = "none";
   $("detail").classList.remove("hidden");
   
   var roleLabel = name.toLowerCase() === "mvp" ? "MVP Core" : "Fan Translator";
@@ -762,7 +760,6 @@ function showReaderWatermark(){
 
 function hideReaderWatermark(){
   $("readerWatermark").classList.add("hidden");
-  document.body.style.filter = "none";
 }
 
 function chapterIndex(projectId, chapterName, decensored){
@@ -844,8 +841,7 @@ async function openReader(projectId, chapterName, decensored){
   $("home").classList.add("hidden");
   $("detail").classList.add("hidden");
   $("reader").classList.remove("hidden");
-  $("reader").classList.remove("ui-hidden");
-  document.body.style.filter = "none"; 
+  $("reader").classList.remove("ui-hidden"); 
   showReaderWatermark();
 
   var chapterOptions = chaptersArr.map(function(ch, i) {
@@ -944,8 +940,6 @@ async function openReader(projectId, chapterName, decensored){
       img.className = "readerpage";
       img.alt = p.title + " Chapter " + chapterName + " Page " + (i+1);
       img.loading = i < 2 ? "eager" : "lazy";
-      img.referrerPolicy = "no-referrer";
-      img.draggable = false;
       img.src = fileUrl(fid);
       img.onerror = function() {
         var err = document.createElement("div");
@@ -991,7 +985,6 @@ function closeReader(){
   $("progressContainer").style.display="none";
   hideReaderWatermark();
   $("reader").classList.add("hidden");
-  document.body.style.filter = "none";
   $("detail").classList.remove("hidden");
 }
 
@@ -1016,92 +1009,6 @@ function toggleTheme(){
   try{theme = localStorage.getItem("mvp_theme") || "dark"}catch(e){}
   applyTheme(theme);
 })(); 
-
-
-// SCREENSHOT / CAPTURE DETERRENCE
-// NOTE: Mini Apps cannot reliably block the OS screenshot facility.
-// This layer minimizes casual capture and hides the reader when the
-// WebView loses focus, while the per-user watermark remains visible.
-(function installReaderSecurity(){
-  document.addEventListener("visibilitychange", function(){
-    if(document.hidden && !$("reader").classList.contains("hidden")){
-      document.body.classList.add("screenshot-guard");
-    } else {
-      document.body.classList.remove("screenshot-guard");
-    }
-  });
-
-  window.addEventListener("blur", function(){
-    if(!$("reader").classList.contains("hidden")){
-      document.body.classList.add("screenshot-guard");
-    }
-  });
-
-  window.addEventListener("focus", function(){
-    document.body.classList.remove("screenshot-guard");
-  });
-
-  window.addEventListener("beforeprint", function(){
-    document.body.classList.add("screenshot-guard");
-  });
-
-  window.addEventListener("afterprint", function(){
-    document.body.classList.remove("screenshot-guard");
-  });
-
-  document.addEventListener("keydown", function(e){
-    // Common save/print shortcuts.
-    if((e.ctrlKey || e.metaKey) && ["s","p","u"].includes(String(e.key).toLowerCase())){
-      e.preventDefault();
-    }
-  }, {capture:true});
-
-  // Keep the reader watermark current if Telegram identity is available.
-  setInterval(function(){
-    if(!$("reader").classList.contains("hidden")){
-      showReaderWatermark();
-    }
-  }, 5000);
-})();
-
-// READER CAPTURE DETERRENCE — based on the original MVP reader behavior.
-// This cannot disable the OS screenshot button, but it restores the original
-// blur-on-WebView-focus-loss behavior.
-(function installOriginalReaderGuard(){
-  function readerIsOpen(){
-    var r = $("reader");
-    return r && !r.classList.contains("hidden");
-  }
-
-  window.addEventListener("blur", function(){
-    if(readerIsOpen()){
-      document.body.style.filter = "blur(20px)";
-    }
-  });
-
-  window.addEventListener("focus", function(){
-    document.body.style.filter = "none";
-  });
-
-  document.addEventListener("visibilitychange", function(){
-    if(!readerIsOpen()) return;
-    if(document.hidden){
-      document.body.style.filter = "blur(20px)";
-    } else {
-      document.body.style.filter = "none";
-    }
-  });
-
-  window.addEventListener("beforeprint", function(){
-    if(readerIsOpen()){
-      document.body.style.filter = "blur(20px)";
-    }
-  });
-
-  window.addEventListener("afterprint", function(){
-    document.body.style.filter = "none";
-  });
-})();
 
 // FUNGSI INIT GLOBAL
 (async function(){
