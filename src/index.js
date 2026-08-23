@@ -126,10 +126,21 @@ async function getInteraction(env, projectId) {
 function summarizeInteraction(data, userId, fallbackComments=0) {
   const votes = data.votes || {};
   const bookmarks = data.bookmarks || {};
-  const values = Object.values(votes).map(Number).filter(v => v >= 1 && v <= 10);
+  const values = Object.values(votes).map(Number).filter(v => Number.isInteger(v) && v >= 1 && v <= 10);
   const rating = values.length ? (values.reduce((a,b)=>a+b,0) / values.length).toFixed(1) : "0.0";
+
+  // Five compact display bands from the underlying 1-10 voting system:
+  // 5★ = 9-10, 4★ = 7-8, 3★ = 5-6, 2★ = 3-4, 1★ = 1-2.
+  const vote_distribution = [0,0,0,0,0];
+  values.forEach(v => {
+    const band = Math.min(4, Math.floor((v - 1) / 2));
+    vote_distribution[band]++;
+  });
+
   return {
     rating,
+    votes: values.length,
+    vote_distribution,
     bookmarks: Object.keys(bookmarks).length,
     comments: Number(data.comments || fallbackComments || 0),
     user_vote: Number(votes[String(userId)] || 0),
