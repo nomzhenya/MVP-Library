@@ -16,7 +16,7 @@ async function putStats(env, projectId, stats) {
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
-    headers: {"content-type": "application/json; charset=utf-8"}
+    headers: {"content-type": "application/json; charset=utf-8", "cache-control":"no-store"}
   });
 
 function cors(headers = {}) {
@@ -321,8 +321,14 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       }
 
       const headers = new Headers(cors({
-        "cache-control": "public, max-age=3600",
-        "content-type": file.headers.get("content-type") || "image/jpeg"
+        "cache-control": "private, no-store, max-age=0, must-revalidate",
+        "pragma": "no-cache",
+        "expires": "0",
+        "content-type": file.headers.get("content-type") || "image/jpeg",
+        "content-disposition": "inline",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer",
+        "cross-origin-resource-policy": "same-site"
       }));
       return new Response(file.body, {status: 200, headers});
     }
