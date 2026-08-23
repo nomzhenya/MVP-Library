@@ -261,6 +261,16 @@ html,body{background:var(--bg)}
 #detail .detailcover{width:132px;border-radius:10px;box-shadow:0 8px 18px rgba(0,0,0,.28)}#detailContent>.mvp-detail-top{display:flex;gap:16px;align-items:flex-start;margin:8px 0 14px}.mvp-detail-title{font-size:21px!important;line-height:1.25!important;letter-spacing:-.3px}.mvp-detail-stats{display:flex;flex-wrap:wrap;gap:9px;margin-top:9px;font-size:12px;font-weight:800}.mvp-detail-stat{padding:6px 9px;background:var(--panel2);border-radius:8px;border:1px solid var(--border)}.mvp-detail-status{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 3px}.mvp-detail-chip{padding:6px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--border);font-size:11px;font-weight:800;color:var(--muted)}
 .novel-reader p{position:relative;touch-action:pan-y;cursor:default;transition:background-color .18s,border-color .18s,box-shadow .18s}.novel-reader p.mvp-hold-armed{background:rgba(238,99,184,.07)}.novel-reader p.bookmarked{background-color:rgba(238,99,184,.13)!important;border-left:4px solid var(--accent)!important;padding:7px 14px!important;border-radius:0 9px 9px 0;box-shadow:inset 0 0 0 1px rgba(238,99,184,.08)}body.light .novel-reader p.bookmarked{background-color:rgba(216,74,159,.10)!important}.mvp-mark-hint{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:100;pointer-events:none;background:var(--panel);color:var(--text);border:1px solid var(--border);box-shadow:0 8px 28px rgba(0,0,0,.35);padding:8px 12px;border-radius:999px;font-size:11px;font-weight:800;opacity:0;transition:opacity .15s}.mvp-mark-hint.show{opacity:1}
 
+
+
+/* SIMPLE NAV PAGES — palette intentionally inherited from locked MVP palette */
+.mvp-simple-page{display:none}
+.mvp-simple-page.active{display:block}
+.mvp-lapak-list{margin-top:8px}
+.mvp-lapak-letter{font-size:12px;font-weight:900;color:var(--muted);letter-spacing:.15em;margin:18px 0 7px}
+.mvp-lapak-item{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--text);padding:14px 4px;text-align:left;font-size:15px;font-weight:750;cursor:pointer}
+.mvp-lapak-item:active{background:var(--panel2)}
+.mvp-lapak-arrow{color:var(--accent);font-size:18px}
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -316,8 +326,8 @@ html,body{background:var(--bg)}
     <div style="display:flex;gap:8px;overflow-x:auto;padding:12px 0 2px;scrollbar-width:none">
       <button class="btn primary" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="showHome()">Home</button>
       <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="openBrowse()">Browse</button>
-      <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="$('secUpdates').scrollIntoView({behavior:'smooth'})">List</button>
-      <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="$('secHistory').scrollIntoView({behavior:'smooth'})">Translators</button>
+      <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="openLapakList()">List</button>
+      <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="openGuestPage()">Guest</button>
     </div>
   </header>
 
@@ -336,7 +346,7 @@ html,body{background:var(--bg)}
     <!-- SECTION HOMEPAGE TANPA EMOJI -->
     <section class="b-sec">
       <div class="b-head" onclick="toggleSec('secUpdates', this)">
-        <div class="b-title">List</div>
+        <div class="b-title">My Updates</div>
         <div class="b-toggle">−</div>
       </div>
       <div id="secUpdates" class="b-list"></div>
@@ -344,7 +354,7 @@ html,body{background:var(--bg)}
 
     <section class="b-sec">
       <div class="b-head" onclick="toggleSec('secHistory', this)">
-        <div class="b-title">Translators</div>
+        <div class="b-title">My History</div>
         <div class="b-toggle">−</div>
       </div>
       <div id="secHistory" class="b-list"></div>
@@ -383,7 +393,7 @@ html,body{background:var(--bg)}
     </button>
     <div>
       <div class="mvp-browse-title">Browse</div>
-      <div class="mvp-browse-sub">Filter project berdasarkan tag atau status yang benar-benar dipakai.</div>
+      <div class="mvp-browse-sub">Filter project berdasarkan tag.</div>
     </div>
   </div>
   <div class="mode-switch" style="margin-bottom:14px;">
@@ -393,6 +403,32 @@ html,body{background:var(--bg)}
   <div id="browseTagCloud" class="mvp-tag-cloud"></div>
   <div id="browseStatusFilter" class="mvp-status-filter"></div>
   <div id="browseResults" class="mvp-browse-results"></div>
+</div>
+
+<div id="lapakLayer" class="wrap hidden mvp-simple-page">
+  <div class="mvp-browse-top">
+    <button class="back" onclick="closeLapakList()" style="padding:8px;background:var(--panel2);color:var(--text);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </button>
+    <div>
+      <div class="mvp-browse-title">List</div>
+      <div class="mvp-browse-sub">Lapak semua project</div>
+    </div>
+  </div>
+  <div id="lapakListContent" class="mvp-lapak-list"></div>
+</div>
+
+<div id="guestLayer" class="wrap hidden mvp-simple-page">
+  <div class="mvp-browse-top">
+    <button class="back" onclick="closeGuestPage()" style="padding:8px;background:var(--panel2);color:var(--text);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="5"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </button>
+    <div>
+      <div class="mvp-browse-title">Guest</div>
+      <div class="mvp-browse-sub">Translator yang bukan staff MVP</div>
+    </div>
+  </div>
+  <div id="guestListContent" class="mvp-translator-list"></div>
 </div>
 
 <div id="detail" class="wrap hidden"><div id="detailContent"></div></div>
@@ -555,7 +591,103 @@ function renderBrowseResults(){
   out.innerHTML="<div class='mvp-browse-results-head'><div class='mvp-browse-results-title'>"+esc(label)+"</div><div class='mvp-browse-count'>"+list.length+" project</div></div>"+(list.length?"<div class='b-list'>"+list.map(function(p){return renderBatoItem(p,[]);}).join("")+"</div>":"<div class='mvp-empty-state'>Tidak ada project dengan filter ini.</div>");
 }
 function setBrowseMode(mode){browseMode=mode;$("browseModeComic").classList.toggle("active",mode==="comic");$("browseModeNovel").classList.toggle("active",mode==="novel");browseSelectedTag="";browseSelectedStatus="";renderBrowseTags();renderBrowseResults();}
-function openBrowse(tag){browseMode=currentMode;browseSelectedTag=tag||"";browseSelectedStatus="";$("home").classList.add("hidden");$("detail").classList.add("hidden");$("catalogLayer").classList.remove("active");$("browseLayer").classList.remove("hidden");$("browseLayer").classList.add("active");$("browseModeComic").classList.toggle("active",browseMode==="comic");$("browseModeNovel").classList.toggle("active",browseMode==="novel");renderBrowseTags();renderBrowseResults();window.scrollTo(0,0);}
+function hideHomeForPage(){
+  $("home").classList.add("hidden");
+  $("detail").classList.add("hidden");
+  $("catalogLayer").classList.remove("active");
+  $("browseLayer").classList.remove("active");
+  $("browseLayer").classList.add("hidden");
+  $("lapakLayer").classList.remove("hidden");
+  $("guestLayer").classList.remove("active");
+  $("guestLayer").classList.add("hidden");
+}
+
+function openLapakList(){
+  hideHomeForPage();
+  $("lapakLayer").classList.remove("hidden");
+  $("lapakLayer").classList.add("active");
+  renderLapakList();
+  window.scrollTo(0,0);
+}
+function closeLapakList(){
+  $("lapakLayer").classList.remove("active");
+  $("lapakLayer").classList.add("hidden");
+  $("home").classList.remove("hidden");
+  window.scrollTo(0,0);
+}
+function renderLapakList(){
+  var target=$("lapakListContent");
+  if(!target)return;
+  var projects=catalog.slice().sort(function(a,b){
+    return String(a.title||"").localeCompare(String(b.title||""),undefined,{sensitivity:"base"});
+  });
+  if(!projects.length){
+    target.innerHTML="<p class='muted' style='font-size:14px;text-align:center;padding:20px 0;'>Belum ada project.</p>";
+    return;
+  }
+  var groups={};
+  projects.forEach(function(p){
+    var letter=(String(p.title||"?").trim().charAt(0)||"?").toUpperCase();
+    if(!groups[letter])groups[letter]=[];
+    groups[letter].push(p);
+  });
+  target.innerHTML=Object.keys(groups).sort().map(function(letter){
+    return `<div class="mvp-lapak-letter">${esc(letter)}</div>`+
+      groups[letter].map(function(p){
+        return `<button type="button" class="mvp-lapak-item" onclick="openProjectFromLapak('${esc(p.id)}')"><span>${esc(p.title)}</span><span class="mvp-lapak-arrow">›</span></button>`;
+      }).join("");
+  }).join("");
+}
+function openProjectFromLapak(id){
+  $("lapakLayer").classList.remove("active");
+  $("lapakLayer").classList.add("hidden");
+  openProject(id);
+}
+function guestTranslatorMap(){
+  var map={};
+  catalog.forEach(function(p){
+    var name=String(p.translator||"").trim();
+    if(!name || name.toLowerCase()==="mvp")return;
+    var key=name.toLowerCase();
+    if(!map[key])map[key]={name:name,projects:[],url:"",label:"Traktir Kopi"};
+    if(!map[key].projects.some(function(x){return x.id===p.id;}))map[key].projects.push(p);
+    if(!map[key].url&&p.trakteer)map[key].url=p.trakteer;
+    if(p.trakteer_label)map[key].label=p.trakteer_label;
+  });
+  return Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){
+    return a.name.localeCompare(b.name,undefined,{sensitivity:"base"});
+  });
+}
+function openGuestPage(){
+  hideHomeForPage();
+  $("guestLayer").classList.remove("hidden");
+  $("guestLayer").classList.add("active");
+  renderGuestPage();
+  window.scrollTo(0,0);
+}
+function closeGuestPage(){
+  $("guestLayer").classList.remove("active");
+  $("guestLayer").classList.add("hidden");
+  $("home").classList.remove("hidden");
+  window.scrollTo(0,0);
+}
+function renderGuestPage(){
+  var target=$("guestListContent");
+  if(!target)return;
+  var list=guestTranslatorMap();
+  target.innerHTML=list.length?list.map(function(t){
+    var support=t.url?`<a class="mvp-support-btn" href="${esc(t.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">☕ ${esc(t.label||"Traktir Kopi")}</a>`:"";
+    return `<article class="mvp-translator-card" onclick="openTranslatorProfile('${esc(t.name)}')">
+      <div class="mvp-translator-head">
+        <div class="mvp-translator-name">${esc(t.name)}</div>
+        <div class="mvp-translator-count">${t.projects.length} project${t.projects.length===1?"":"s"}</div>
+      </div>
+      <div class="mvp-translator-actions">${support}</div>
+    </article>`;
+  }).join(""):"<p class='muted' style='font-size:14px;text-align:center;padding:20px 0;'>Belum ada guest translator.</p>";
+}
+
+function openBrowse(tag){$("lapakLayer").classList.remove("active");$("lapakLayer").classList.add("hidden");$("guestLayer").classList.remove("active");$("guestLayer").classList.add("hidden");browseMode=currentMode;browseSelectedTag=tag||"";browseSelectedStatus="";$("home").classList.add("hidden");$("detail").classList.add("hidden");$("catalogLayer").classList.remove("active");$("browseLayer").classList.remove("hidden");$("browseLayer").classList.add("active");$("browseModeComic").classList.toggle("active",browseMode==="comic");$("browseModeNovel").classList.toggle("active",browseMode==="novel");renderBrowseTags();renderBrowseResults();window.scrollTo(0,0);}
 function openTagBrowse(tag){openBrowse(tag);}
 function openStatusBrowse(status){browseMode=currentMode;browseSelectedTag="";browseSelectedStatus=normalizeStatusKey(status);$("home").classList.add("hidden");$("detail").classList.add("hidden");$("catalogLayer").classList.remove("active");$("browseLayer").classList.remove("hidden");$("browseLayer").classList.add("active");$("browseModeComic").classList.toggle("active",browseMode==="comic");$("browseModeNovel").classList.toggle("active",browseMode==="novel");renderBrowseTags();renderBrowseResults();window.scrollTo(0,0);}
 function closeBrowse(){$("browseLayer").classList.remove("active");$("browseLayer").classList.add("hidden");$("home").classList.remove("hidden");window.scrollTo(0,0);}
@@ -591,31 +723,37 @@ function renderBatoItem(p,chaptersToShow,homeContext){
   return `<div class="b-item" onclick="openProject('${esc(p.id)}')">${cover}<div class="b-info"><div class="b-item-title"><span class="txt">${esc(p.title)}</span></div><div class="b-stats"><span><span style="color:var(--bato-star)">⭐</span> ${pRating}</span><span class="bookmark-stat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>${pBookmarks}</span></div><div class="b-tags">${getTags(p)}</div>${homeLines}</div></div>`;
 }
 function renderHome(){
-  var all=getSortedProjects();
-  var listProjects=catalog.slice().sort(function(a,b){return String(a.title||"").localeCompare(String(b.title||""),undefined,{sensitivity:"base"});});
-  var listTarget=$("secUpdates");
-  if(listTarget){
-    if(!listProjects.length){listTarget.innerHTML="<p class='muted' style='font-size:14px;text-align:center;padding:20px 0;'>Belum ada project.</p>";}
-    else{
-      var groups={};
-      listProjects.forEach(function(p){var letter=(String(p.title||"?").trim().charAt(0)||"?").toUpperCase();if(!groups[letter])groups[letter]=[];groups[letter].push(p);});
-      var letters=Object.keys(groups).sort();
-      listTarget.innerHTML=letters.map(function(letter){return `<div class="mvp-list-letter">${esc(letter)}</div>${groups[letter].map(function(p){return `<button type="button" class="mvp-alpha-item" onclick="openProject('${esc(p.id)}')"><span>${esc(p.title)}</span><span class="mvp-alpha-arrow">›</span></button>`;}).join("")}`;}).join("");
-    }
+  var all=getSortedProjects(), histObj=getHistory();
+  var myUpdates=all.filter(function(item){return isBookmark(item.p.id);}).slice(0,10);
+  var updatesTarget=$("secUpdates");
+  if(updatesTarget){
+    updatesTarget.innerHTML=myUpdates.length
+      ?myUpdates.map(function(item){return renderBatoItem(item.p,[],{history:histObj[item.p.id]||null,latest:item.latest.chapter});}).join("")
+      :"<p class='muted' style='font-size:14px;text-align:center;padding:20px 0;'>Belum ada update bookmark.</p>";
   }
-  var transMap={};
-  catalog.forEach(function(p){
-    var name=String(p.translator||"").trim();if(!name)return;var key=name.toLowerCase();
-    if(!transMap[key])transMap[key]={name:name,projects:[],url:"",label:"Traktir Kopi"};
-    transMap[key].projects.push(p);if(!transMap[key].url&&p.trakteer)transMap[key].url=p.trakteer;if(p.trakteer_label)transMap[key].label=p.trakteer_label;
-  });
-  var transList=Object.keys(transMap).map(function(k){return transMap[k];}).sort(function(a,b){return a.name.localeCompare(b.name,undefined,{sensitivity:"base"});});
-  var histTarget=$("secHistory");
-  if(histTarget){
-    histTarget.innerHTML=transList.length?`<div class="mvp-translator-list">${transList.map(function(t){var support=t.url?`<a class="mvp-support-btn" href="${esc(t.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">☕ ${esc(t.label||"Traktir Kopi")}</a>`:"";return `<article class="mvp-translator-card" onclick="openTranslatorProfile('${esc(t.name)}')"><div class="mvp-translator-head"><div class="mvp-translator-name">${esc(t.name)}</div><div class="mvp-translator-count">${t.projects.length} project${t.projects.length===1?"":"s"}</div></div><div class="mvp-translator-projects">${t.projects.map(function(p){return esc(p.title);}).join(" · ")}</div><div class="mvp-translator-actions">${support}</div></article>`;}).join("")}</div>`:"<p class='muted' style='font-size:14px;text-align:center;padding:20px 0;'>Belum ada translator.</p>";
+
+  var histArr=Object.keys(histObj).map(function(pid){var o=histObj[pid];o.pid=pid;return o;}).sort(function(a,b){return b.ts-a.ts;});
+  var myHist=histArr.map(function(h){
+    var p=catalog.find(function(x){return x.id===h.pid&&normalizeType(x)===currentMode;});
+    if(!p)return null;
+    var latest=projectLatestChapter(p);
+    return {p:p,hist:h,latest:latest?latest.chapter:null};
+  }).filter(Boolean).slice(0,5);
+
+  var historyTarget=$("secHistory");
+  if(historyTarget){
+    historyTarget.innerHTML=myHist.length
+      ?myHist.map(function(item){return renderBatoItem(item.p,[],{history:item.hist,latest:item.latest});}).join("")
+      :"<p class='muted' style='font-size:14px;text-align:center;padding:20px 0;'>Belum ada riwayat.</p>";
   }
+
   var popular=all.slice().sort(function(){return Math.random()-0.5;}).slice(0,9);
-  $("secPopular").innerHTML=popular.map(function(item,i){var tamatBadge=(normalizeStatusKey(item.p.status)==="completed")?"<div class='badge-status badge-tamat'>Completed</div>":"";var coverHtml=item.p.cover_file_id?"<img src='"+fileUrl(item.p.cover_file_id)+"' loading='lazy'>":"";return `<div class="b-grid-item" onclick="openProject('${esc(item.p.id)}')">${tamatBadge}<div class="b-rank">${i+1}</div>${coverHtml}<div class="b-grid-overlay"><div class="b-grid-title">${esc(item.p.title)}</div><div class="b-grid-ch">Ch.${esc(item.latest.chapter.chapter)}</div></div></div>`;}).join("");
+  $("secPopular").innerHTML=popular.map(function(item,i){
+    var tamatBadge=(normalizeStatusKey(item.p.status)==="completed")?"<div class='badge-status badge-tamat'>Completed</div>":"";
+    var coverHtml=item.p.cover_file_id?"<img src='"+fileUrl(item.p.cover_file_id)+"' loading='lazy'>":"";
+    return `<div class="b-grid-item" onclick="openProject('${esc(item.p.id)}')">${tamatBadge}<div class="b-rank">${i+1}</div>${coverHtml}<div class="b-grid-overlay"><div class="b-grid-title">${esc(item.p.title)}</div><div class="b-grid-ch">Ch.${esc(item.latest.chapter.chapter)}</div></div></div>`;
+  }).join("");
+
   $("secLatest").innerHTML=all.slice(0,15).map(function(item){return renderBatoItem(item.p,[item.latest.chapter]);}).join("");
 }
 
