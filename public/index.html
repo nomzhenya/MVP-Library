@@ -365,6 +365,47 @@ html,body{background:var(--bg)}
   color:var(--muted);
 }
 .chapter-translator .mvp-translator{
+  display:inline-block;
+  font-size:13px;
+  font-weight:900;
+  background:linear-gradient(90deg,#ff9fcf,#c9a7ff,#9ee7ff);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+
+
+/* v9 chapter row */
+.chapter-item .chapter-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  width:100%;
+}
+.chapter-item .chapter-title{
+  min-width:0;
+  flex:1;
+}
+.chapter-item .chapter-age{
+  flex:0 0 auto;
+  white-space:nowrap;
+  color:var(--muted);
+  font-size:12px;
+}
+.chapter-item .chapter-translator{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  width:100%;
+  text-align:center;
+  margin:4px 0 2px;
+  min-height:18px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:700;
+}
+.chapter-item .chapter-translator .mvp-translator{
   font-size:13px;
 }
 
@@ -424,7 +465,7 @@ html,body{background:var(--bg)}
       <button class="btn primary" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="showHome()">Home</button>
       <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="openBrowse()">Browse</button>
       <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="openLapakList()">List</button>
-      <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="openGuestPage()">Semua project</button>
+      <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="openGuestPage()">Guest</button>
     </div>
   </header>
 
