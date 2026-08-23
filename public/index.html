@@ -134,6 +134,70 @@ h1,h2,h3,p{margin:0}
 .catalog-layer.active{display:block}
 .catalog-head{display:flex;align-items:center;gap:12px;margin-bottom:20px}
 
+
+/* MVP BATO VISUAL V2 — PALETTE LOCKED
+   Uses only the existing --bg/--panel/--panel2/--text/--muted/--border/--accent tokens.
+   Do not change the palette above when revising other sections. */
+.mvp-browse-layer{display:none}
+.mvp-browse-layer.active{display:block}
+.mvp-browse-top{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.mvp-browse-title{font-size:22px;font-weight:900;letter-spacing:-.3px}
+.mvp-browse-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.mvp-tag-cloud{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.mvp-tag-link{border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:9px;padding:8px 11px;font-size:12px;font-weight:650;cursor:pointer;transition:transform .12s,background .12s,border-color .12s}
+.mvp-tag-link:active{transform:scale(.97);background:var(--panel2)}
+.mvp-tag-link.major{font-weight:900;border-color:var(--accent);color:var(--accent)}
+.mvp-tag-link.secondary{font-weight:900}
+.mvp-browse-results{margin-top:24px}
+.mvp-browse-results-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:2px}
+.mvp-browse-results-title{font-size:18px;font-weight:900}
+.mvp-browse-count{font-size:11px;color:var(--muted);font-weight:700}
+.mvp-detail-part{margin-top:18px}
+.mvp-detail-part-title{font-size:13px;font-weight:900;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.mvp-detail-top{display:flex;gap:16px;align-items:flex-start;margin:8px 0 8px}
+.mvp-detail-top .detailcover{width:132px;min-width:132px}
+.mvp-detail-title{font-size:21px!important;line-height:1.25!important;letter-spacing:-.3px}
+.mvp-detail-alt{margin-top:5px;font-size:13px;line-height:1.4;color:var(--muted)}
+.mvp-detail-author{margin-top:8px;font-size:14px;line-height:1.35;color:var(--text);font-weight:700}
+.mvp-detail-stats{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}
+.mvp-detail-stat{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;background:var(--panel2);border-radius:8px;border:1px solid var(--border);font-size:12px;font-weight:800}
+.mvp-detail-stat.bookmark-on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.mvp-detail-stat-btn{border:0;cursor:pointer;color:inherit}
+.mvp-detail-tags{margin-top:0}
+.mvp-detail-tags .tag{font-weight:650;cursor:pointer}
+.mvp-detail-tags .tag.tag-major,.mvp-detail-tags .tag.tag-secondary{font-weight:900}
+.mvp-vote-panel{display:grid;gap:14px;margin-top:12px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:12px}
+.mvp-vote-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mvp-vote-label{font-size:12px;font-weight:900;letter-spacing:.4px}
+.mvp-vote-stars{display:flex;justify-content:space-between;gap:2px;font-size:22px;line-height:1;user-select:none}
+.mvp-vote-stars span{cursor:pointer;padding:3px}
+.mvp-rating-summary{display:flex;gap:16px;align-items:center}
+.mvp-rating-score{min-width:72px;text-align:center}
+.mvp-rating-score .num{font-size:30px;line-height:1;font-weight:900}
+.mvp-rating-score .stars{margin-top:5px;color:var(--bato-star);font-size:17px}
+.mvp-rating-score .votes{margin-top:3px;font-size:11px;color:var(--muted)}
+.mvp-rating-bars{flex:1;min-width:0}
+.mvp-rating-bar{display:grid;grid-template-columns:25px minmax(0,1fr) 42px;align-items:center;gap:8px;margin:5px 0}
+.mvp-rating-bar .lbl{font-size:12px;font-weight:800;text-align:right}
+.mvp-rating-bar .track{height:7px;border-radius:999px;background:var(--panel2);overflow:hidden}
+.mvp-rating-bar .fill{height:100%;background:var(--accent);border-radius:999px}
+.mvp-rating-bar .pct{font-size:11px;color:var(--muted);text-align:right}
+.mvp-description{font-size:14px;line-height:1.7;white-space:pre-line;color:var(--text)}
+.mvp-chapters-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:24px;margin-bottom:10px;border-bottom:2px solid var(--panel2);padding-bottom:8px}
+.mvp-chapters-head h3{font-size:18px}
+.mvp-detail-status{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 3px}
+.mvp-detail-chip{padding:6px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--border);font-size:11px;font-weight:800;color:var(--muted)}
+.mvp-empty-state{padding:22px 8px;text-align:center;color:var(--muted);font-size:13px}
+@media(max-width:520px){
+  .mvp-detail-top{gap:12px}
+  .mvp-detail-top .detailcover{width:112px;min-width:112px}
+  .mvp-detail-title{font-size:18px!important}
+  .mvp-detail-author{font-size:13px}
+  .mvp-rating-summary{gap:10px}
+  .mvp-rating-score{min-width:62px}
+  .mvp-vote-stars{font-size:19px}
+}
+
 /* READER UI */
 .ui-hidden .readerhead { transform: translateY(-120%); }
 .ui-hidden .reader-nav { transform: translateY(120%); }
@@ -242,7 +306,7 @@ html,body{background:var(--bg)}
     </div>
     <div style="display:flex;gap:8px;overflow-x:auto;padding:12px 0 2px;scrollbar-width:none">
       <button class="btn primary" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="showHome()">Home</button>
-      <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="$('search').focus()">Browse</button>
+      <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="openBrowse()">Browse</button>
       <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="$('secUpdates').scrollIntoView({behavior:'smooth'})">Updates</button>
       <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="$('secHistory').scrollIntoView({behavior:'smooth'})">History</button>
     </div>
@@ -301,6 +365,24 @@ html,body{background:var(--bg)}
     </div>
     <div id="searchGrid" class="b-list"></div>
   </div>
+</div>
+
+<div id="browseLayer" class="wrap hidden mvp-browse-layer">
+  <div class="mvp-browse-top">
+    <button class="back" onclick="closeBrowse()" style="padding:8px;background:var(--panel2);color:var(--text);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </button>
+    <div>
+      <div class="mvp-browse-title">Browse</div>
+      <div class="mvp-browse-sub">Filter project berdasarkan tag yang benar-benar dipakai.</div>
+    </div>
+  </div>
+  <div class="mode-switch" style="margin-bottom:14px;">
+    <button id="browseModeComic" class="mode-btn active" onclick="setBrowseMode('comic')">Komik</button>
+    <button id="browseModeNovel" class="mode-btn" onclick="setBrowseMode('novel')">Novel</button>
+  </div>
+  <div id="browseTagCloud" class="mvp-tag-cloud"></div>
+  <div id="browseResults" class="mvp-browse-results"></div>
 </div>
 
 <div id="detail" class="wrap hidden"><div id="detailContent"></div></div>
@@ -399,6 +481,97 @@ function getSortedProjects() {
   }).filter(Boolean).sort(function(a,b){ return b.latest.ts - a.latest.ts; });
 }
 
+
+function normalizeTagKey(tag){
+  return String(tag||"").trim().toLowerCase().replace(/\s+/g," ").replace(/[()_\-]/g,"");
+}
+function tagPriority(tag){
+  var k=normalizeTagKey(tag);
+  if(k==="manhwa" || k==="manga" || k==="manhua") return 0;
+  if(k==="yaoi" || k==="yaoibl" || k==="shounenai" || k==="shounen ai") return 1;
+  return 2;
+}
+function sortedTags(tags){
+  var seen={};
+  return (Array.isArray(tags)?tags:[]).map(function(t){return String(t||"").trim();})
+    .filter(function(t){return t && isNaN(Number(t));})
+    .filter(function(t){var k=normalizeTagKey(t);if(seen[k])return false;seen[k]=true;return true;})
+    .sort(function(a,b){
+      var pa=tagPriority(a), pb=tagPriority(b);
+      if(pa!==pb) return pa-pb;
+      return a.localeCompare(b,undefined,{sensitivity:"base"});
+    });
+}
+function allUsedTags(mode){
+  var map={};
+  catalog.forEach(function(p){
+    if(mode && normalizeType(p)!==mode) return;
+    sortedTags(p.tags).forEach(function(t){
+      var k=normalizeTagKey(t);
+      if(!map[k]) map[k]=t;
+    });
+  });
+  return Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){
+    var pa=tagPriority(a), pb=tagPriority(b);
+    if(pa!==pb) return pa-pb;
+    return a.localeCompare(b,undefined,{sensitivity:"base"});
+  });
+}
+function tagButtonHtml(tag, extraClass){
+  var cls="tag "+(tagPriority(tag)===0?"tag-major ":(tagPriority(tag)===1?"tag-secondary ":""))+(extraClass||"");
+  return "<button type='button' class='"+cls+"' onclick=\"event.stopPropagation();openTagBrowse('"+esc(tag).replace(/'/g,"&#39;")+"')\">"+esc(tag)+"</button>";
+}
+var browseMode=currentMode;
+var browseSelectedTag="";
+function renderBrowseTags(){
+  var cloud=$("browseTagCloud"); if(!cloud) return;
+  var tags=allUsedTags(browseMode);
+  cloud.innerHTML=tags.length ? tags.map(function(t){
+    var active=normalizeTagKey(t)===normalizeTagKey(browseSelectedTag);
+    return "<button type='button' class='mvp-tag-link "+(tagPriority(t)===0?"major ":"")+(tagPriority(t)===1?"secondary ":"")+(active?" active":"")+"' onclick=\"openTagBrowse('"+esc(t).replace(/'/g,"&#39;")+"')\">"+esc(t)+"</button>";
+  }).join("") : "<div class='mvp-empty-state'>Belum ada tag pada mode ini.</div>";
+}
+function renderBrowseResults(){
+  var out=$("browseResults"); if(!out) return;
+  var list=catalog.filter(function(p){
+    if(normalizeType(p)!==browseMode) return false;
+    if(!browseSelectedTag) return false;
+    return sortedTags(p.tags).some(function(t){return normalizeTagKey(t)===normalizeTagKey(browseSelectedTag);});
+  });
+  var label=browseSelectedTag ? esc(browseSelectedTag) : "Pilih tag";
+  out.innerHTML="<div class='mvp-browse-results-head'><div class='mvp-browse-results-title'>"+label+"</div><div class='mvp-browse-count'>"+list.length+" project</div></div>"+
+    (list.length ? "<div class='b-list'>"+list.map(function(p){return renderBatoItem(p,[]);}).join("")+"</div>" : "<div class='mvp-empty-state'>Tidak ada project dengan tag ini.</div>");
+}
+function setBrowseMode(mode){
+  browseMode=mode;
+  $("browseModeComic").classList.toggle("active",mode==="comic");
+  $("browseModeNovel").classList.toggle("active",mode==="novel");
+  browseSelectedTag="";
+  renderBrowseTags();
+  renderBrowseResults();
+}
+function openBrowse(tag){
+  browseMode=currentMode;
+  browseSelectedTag=tag||"";
+  $("home").classList.add("hidden");
+  $("detail").classList.add("hidden");
+  $("catalogLayer").classList.remove("active");
+  $("browseLayer").classList.remove("hidden");
+  $("browseLayer").classList.add("active");
+  $("browseModeComic").classList.toggle("active",browseMode==="comic");
+  $("browseModeNovel").classList.toggle("active",browseMode==="novel");
+  renderBrowseTags();
+  renderBrowseResults();
+  window.scrollTo(0,0);
+}
+function openTagBrowse(tag){ openBrowse(tag); }
+function closeBrowse(){
+  $("browseLayer").classList.remove("active");
+  $("browseLayer").classList.add("hidden");
+  $("home").classList.remove("hidden");
+  window.scrollTo(0,0);
+}
+
 // UI LOGIC
 function setMode(mode) {
   currentMode = mode;
@@ -406,6 +579,9 @@ function setMode(mode) {
   if(bC) bC.classList.toggle('active', mode==='comic');
   if(bN) bN.classList.toggle('active', mode==='novel');
   renderHome();
+  if($("browseLayer") && $("browseLayer").classList.contains("active")){
+    setBrowseMode(mode);
+  }
 }
 function toggleSec(id, btn) {
   var el = $(id);
@@ -598,164 +774,161 @@ function openTranslatorProfile(name) {
 
 // DETAIL PROJECT (COVER KIRI, INFO KANAN - UI ATAS LAMA)
 async function openProject(id){
-  if(!(await requireAccess())) return; 
-  var p = catalog.find(function(x) { return x.id === id; }); 
+  if(!(await requireAccess())) return;
+  var p = catalog.find(function(x){ return x.id===id; });
   if(!p) return;
-  
-  $("home").classList.add("hidden"); 
+
+  $("home").classList.add("hidden");
+  $("browseLayer").classList.remove("active");
+  $("browseLayer").classList.add("hidden");
+  $("catalogLayer").classList.remove("active");
   $("detail").classList.remove("hidden");
   window.scrollTo(0,0);
-  
-  var cover = p.cover_file_id ? "<img class='detailcover' src='"+fileUrl(p.cover_file_id)+"' alt='"+esc(p.title)+"' onerror=\"this.style.display='none'\">" : "<div class='detailcover'></div>";
-  var isBm = isBookmark(p.id);
-  
-  var authorInfo = p.author ? "<div style='font-size:13px;color:var(--muted);margin-bottom:4px;'><b>Author:</b> "+esc(p.author)+"</div>" : "";
-  var transName = (p.translator && p.translator.trim() !== "") ? p.translator : "MVP";
-  var transClickable = transName.toLowerCase() === "mvp" ? 
-        "<span style='font-weight:bold;color:var(--text);'>"+esc(transName)+"</span>" : 
-        "<span style='cursor:pointer;pointer-events:auto;font-weight:bold;color:var(--accent);text-decoration:underline;' onclick=\"openTranslatorProfile('"+esc(transName)+"')\">"+esc(transName)+"</span>";
-  var transInfo = "<div style='font-size:13px;color:var(--muted);margin-bottom:4px;'><b>Brought to you by:</b> "+transClickable+"</div>";
 
-  var tagsArr = Array.isArray(p.tags) ? p.tags.filter(function(t){ return t && isNaN(Number(t)); }) : [];
-  var tagsHtml = tagsArr.length ? "<div class='tags'>" + tagsArr.map(function(t){ return "<button class='tag' style='pointer-events:auto;'>"+esc(t)+"</button>"; }).join("") + "</div>" : "";
+  var cover = p.cover_file_id
+    ? "<img class='detailcover' src='"+fileUrl(p.cover_file_id)+"' alt='"+esc(p.title)+"' onerror=\"this.style.display='none'\">"
+    : "<div class='detailcover'></div>";
 
-  var trakteerDetail = p.trakteer ? "<a href='"+esc(p.trakteer)+"' target='_blank' class='btn' style='background:#e74c3c;color:#fff;width:100%;margin-top:16px;'>☕ Traktir Kopi</a>" : "";
+  var isBm=isBookmark(p.id);
+  var pRating=(p.rating!=null?Number(p.rating).toFixed(1):"0.0");
+  var pVotes=Number(p.votes||0);
+  var pBookmarks=p.bookmarks||"0";
 
-  var latestDetail = projectLatestChapter(p);
-  var detailStatus = "<div class='mvp-detail-status'><span class='mvp-detail-chip'>"+(normalizeType(p)==="novel"?"NOVEL":"KOMIK")+"</span>"+(p.status?"<span class='mvp-detail-chip'>"+esc(String(p.status).toUpperCase())+"</span>":"")+(latestDetail&&latestDetail.chapter?"<span class='mvp-detail-chip'>Chapter "+esc(latestDetail.chapter.chapter)+" terbaru</span>":"")+"</div>";
+  // PART 1 — cover + title + alternative title + author + rating/bookmark.
+  var altTitle=p.alternative_title||p.alt_title||p.altTitle||p.alternatif_title||"";
+  var altHtml=altTitle ? "<div class='mvp-detail-alt'>"+esc(altTitle)+"</div>" : "";
+  var authorHtml=p.author ? "<div class='mvp-detail-author'>"+esc(p.author)+"</div>" : "";
+  var btnFavColor=isBm?"var(--accent)":"var(--panel2)";
+  var btnFavText=isBm?"#fff":"var(--text)";
+  var favIconColor=isBm?"#fff":"none";
 
-  // BINTANG VOTE 1-10
-  var savedVote = Number(p.user_vote || "0");
-  var starsArr = [1,2,3,4,5,6,7,8,9,10];
-  var starsHtml = starsArr.map(function(n) {
-      var isFilled = n <= savedVote;
-      var char = isFilled ? "★" : "☆";
-      var color = isFilled ? "var(--accent)" : "var(--border2)";
-      return "<span id='star_"+p.id+"_"+n+"' onclick=\"event.stopPropagation(); doVote('"+esc(p.id)+"', "+n+")\" style='cursor:pointer; color:"+color+"; transition:0.2s;'>"+char+"</span>";
+  var shareAction="if(tg) tg.openTelegramLink('https://t.me/share/url?url="+encodeURIComponent("https://t.me/MVP_Zhenya_Bot?start="+p.id)+"&text="+encodeURIComponent("Baca "+p.title+" di MVP!")+"')";
+
+  var topBar=
+    "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:8px;'>"+
+      "<button class='back' onclick=\"$('detail').classList.add('hidden');$('home').classList.remove('hidden');\" style='padding:8px;flex:0 0 auto;background:var(--panel2);color:var(--text);'>"+
+        "<svg width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><line x1='19' y1='12' x2='5' y2='12'></line><polyline points='12 19 5 12 12 5'></polyline></svg>"+
+      "</button>"+
+      "<div id='detailSearchContainer' style='flex:1;position:relative;'>"+
+        "<input type='text' id='detailSearch' class='search' style='margin:0;padding:10px 16px;width:100%;border-radius:24px;font-size:14px;background:var(--panel2);color:var(--text);border:1px solid var(--border);pointer-events:auto;' placeholder='Cari judul...' onkeydown=\"if(event.key==='Enter') executeDetailSearch(this.value)\" oninput=\"handleDetailSearch(this.value)\" autocomplete='off'>"+
+        "<div id='detailSearchDropdown' class='search-dropdown'></div>"+
+      "</div>"+
+      "<div style='display:flex;gap:6px;flex:0 0 auto;'>"+
+        "<button class='btn' onclick=\""+shareAction+"\" style='padding:10px;border-radius:50%;background:var(--panel);' aria-label='Share'>"+
+          "<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8'></path><polyline points='16 6 12 2 8 6'></polyline><line x1='12' y1='2' x2='12' y2='15'></line></svg>"+
+        "</button>"+
+        "<button class='btn' style='padding:10px;border-radius:50%;background:"+btnFavColor+";color:"+btnFavText+";' onclick=\"toggleBookmark('"+esc(p.id)+"')\" aria-label='Bookmark'>"+
+          "<svg width='18' height='18' viewBox='0 0 24 24' fill='"+favIconColor+"' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z'></path></svg>"+
+        "</button>"+
+      "</div>"+
+    "</div>";
+
+  var latestDetail=projectLatestChapter(p);
+  var detailStatus="<div class='mvp-detail-status'>"+
+    "<span class='mvp-detail-chip'>"+(normalizeType(p)==="novel"?"NOVEL":"KOMIK")+"</span>"+
+    (p.status?"<span class='mvp-detail-chip'>"+esc(String(p.status).toUpperCase())+"</span>":"")+
+    (latestDetail&&latestDetail.chapter?"<span class='mvp-detail-chip'>Chapter "+esc(latestDetail.chapter.chapter)+" terbaru</span>":"")+
+    "</div>";
+
+  var part1=
+    "<section class='mvp-detail-part' style='margin-top:0'>"+
+      "<div class='mvp-detail-top'>"+
+        cover+
+        "<div style='flex:1;min-width:0;'>"+
+          "<h1 class='mvp-detail-title' style='margin:0;'>"+esc(p.title)+"</h1>"+
+          altHtml+
+          authorHtml+
+          "<div class='mvp-detail-stats'>"+
+            "<span class='mvp-detail-stat'><span style='color:var(--bato-star)'>★</span> "+pRating+"</span>"+
+            "<button type='button' class='mvp-detail-stat mvp-detail-stat-btn "+(isBm?"bookmark-on":"")+"' onclick=\"toggleBookmark('"+esc(p.id)+"')\">"+
+              "<svg width='14' height='14' viewBox='0 0 24 24' fill='"+favIconColor+"' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 0-2 2z'></path></svg>"+pBookmarks+
+            "</button>"+
+          "</div>"+
+          detailStatus+
+        "</div>"+
+      "</div>"+
+    "</section>";
+
+  // PART 2 — ordered clickable tags + voting + distribution.
+  var tagsArr=sortedTags(p.tags);
+  var tagsHtml=tagsArr.length
+    ? "<div class='mvp-detail-tags'><div class='tags'>"+tagsArr.map(function(t){return tagButtonHtml(t,tagPriority(t)===0?"tag-major":(tagPriority(t)===1?"tag-secondary":""));}).join("")+"</div></div>"
+    : "<div class='mvp-empty-state'>Belum ada tag.</div>";
+
+  var savedVote=Number(p.user_vote||"0");
+  var starsArr=[1,2,3,4,5,6,7,8,9,10];
+  var starsHtml=starsArr.map(function(n){
+    var filled=n<=savedVote;
+    return "<span id='star_"+p.id+"_"+n+"' onclick=\"event.stopPropagation();doVote('"+esc(p.id)+"',"+n+")\" style='cursor:pointer;color:"+(filled?"var(--accent)":"var(--border2)")+";transition:.2s;'>"+(filled?"★":"☆")+"</span>";
   }).join("");
 
-  var voteUI = 
-  "<div style='margin-top:20px; padding:16px; background:var(--panel); border-radius:12px; border:1px solid var(--border);'>" +
-    "<div style='font-size:12px; font-weight:800; color:var(--text); margin-bottom:10px; text-align:center; letter-spacing:0.5px;'>BERIKAN VOTE (1-10)</div>" +
-    "<div style='display:flex; justify-content:space-between; font-size:24px; user-select:none; pointer-events:auto;'>" +
-      starsHtml +
-    "</div>" +
-  "</div>";
-
-  // STATS (TIDAK ADA DATA FIKTIF)
-  var pRating = (p.rating != null ? Number(p.rating).toFixed(1) : "0.0");
-  var pVotes = Number(p.votes || 0);
-  var pBookmarks = p.bookmarks || "0";
-
-  // RATING SUMMARY: raw vote remains 1-10, display is compact 5-band.
-  var dist = Array.isArray(p.vote_distribution) && p.vote_distribution.length === 5
-    ? p.vote_distribution.map(function(n){ return Number(n)||0; })
+  var dist=Array.isArray(p.vote_distribution)&&p.vote_distribution.length===5
+    ? p.vote_distribution.map(function(n){return Number(n)||0;})
     : [0,0,0,0,0];
-  var distTotal = dist.reduce(function(a,b){ return a+b; }, 0);
-  var distLabels = ["5★","4★","3★","2★","1★"];
-  var ratingBars = distLabels.map(function(label, i){
-    var pct = distTotal ? (dist[i] / distTotal * 100) : 0;
-    var pctText = pct.toFixed(pct >= 10 ? 0 : 1);
-    return "<div style='display:flex;align-items:center;gap:8px;margin:5px 0;'>" +
-      "<span style='width:24px;font-size:12px;font-weight:800;color:var(--text);text-align:right;'>" + label + "</span>" +
-      "<div style='flex:1;height:7px;border-radius:999px;background:var(--panel2);overflow:hidden;'>" +
-        "<div style='width:"+pct+"%;height:100%;background:var(--accent);border-radius:999px;'></div>" +
-      "</div>" +
-      "<span style='width:42px;font-size:11px;color:var(--muted);text-align:right;'>" + pctText + "%</span>" +
+  var distTotal=dist.reduce(function(a,b){return a+b;},0);
+  var distLabels=["5★","4★","3★","2★","1★"];
+  var ratingBars=distLabels.map(function(label,i){
+    var pct=distTotal?(dist[i]/distTotal*100):0;
+    var pctText=pct.toFixed(pct>=10?0:1);
+    return "<div class='mvp-rating-bar'>"+
+      "<span class='lbl'>"+label+"</span>"+
+      "<div class='track'><div class='fill' style='width:"+pct+"%'></div></div>"+
+      "<span class='pct'>"+pctText+"%</span>"+
     "</div>";
   }).join("");
 
-  var ratingSummary =
-    "<div style='margin-top:16px;padding:14px 16px;background:var(--panel);border:1px solid var(--border);border-radius:12px;'>" +
-      "<div style='display:flex;gap:18px;align-items:center;'>" +
-        "<div style='min-width:72px;text-align:center;'>" +
-          "<div style='font-size:30px;line-height:1;font-weight:900;color:var(--text);'>" + pRating + "</div>" +
-          "<div style='margin-top:5px;color:var(--bato-star);font-size:17px;'>★★★★★</div>" +
-          "<div style='margin-top:3px;font-size:11px;color:var(--muted);'>" + pVotes + " vote" + (pVotes === 1 ? "" : "s") + "</div>" +
-        "</div>" +
-        "<div style='flex:1;min-width:0;'>" +
-          ratingBars +
-        "</div>" +
-      "</div>" +
-      "" +
+  var ratingPanel=
+    "<div class='mvp-vote-panel'>"+
+      "<div class='mvp-vote-top'><div class='mvp-vote-label'>BERIKAN VOTE (1–10)</div><div style='font-size:11px;color:var(--muted)'>"+pVotes+" vote"+(pVotes===1?"":"s")+"</div></div>"+
+      "<div class='mvp-vote-stars'>"+starsHtml+"</div>"+
+      "<div class='mvp-rating-summary'>"+
+        "<div class='mvp-rating-score'><div class='num'>"+pRating+"</div><div class='stars'>★★★★★</div><div class='votes'>"+pVotes+" vote"+(pVotes===1?"":"s")+"</div></div>"+
+        "<div class='mvp-rating-bars'>"+ratingBars+"</div>"+
+      "</div>"+
     "</div>";
 
-  // UI ATAS HTML LAMA (Back, Search, Share, Bookmark Bulat)
-  var btnFavColor = isBm ? "var(--accent)" : "var(--panel)";
-  var btnFavText = isBm ? "#fff" : "var(--text)";
-  var favIconColor = isBm ? "#fff" : "none";
-  var shareAction = "if(tg) tg.openTelegramLink('https://t.me/share/url?url="+encodeURIComponent("https://t.me/MVP_Zhenya_Bot?start="+p.id)+"&text="+encodeURIComponent("Baca "+p.title+" di MVP!")+"')";
+  var part2=
+    "<section class='mvp-detail-part'>"+
+      "<div class='mvp-detail-part-title'>Tags</div>"+
+      tagsHtml+
+      ratingPanel+
+    "</section>";
 
-  var topBar = 
-    "<div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:8px;'>" +
-      "<button class='back' onclick=\"$('detail').classList.add('hidden');$('home').classList.remove('hidden');\" style='padding:8px; flex:0 0 auto; background:var(--panel2); color:var(--text);'>" +
-        "<svg width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><line x1='19' y1='12' x2='5' y2='12'></line><polyline points='12 19 5 12 12 5'></polyline></svg>" +
-      "</button>" +
-      "<div id='detailSearchContainer' style='flex:1; position:relative;'>" +
-        "<input type='text' id='detailSearch' class='search' style='margin:0; padding:10px 16px; width:100%; border-radius:24px; font-size:14px; background:var(--panel2); color:var(--text); border:1px solid var(--border); pointer-events:auto;' placeholder='Cari judul...' onkeydown=\"if(event.key==='Enter') executeDetailSearch(this.value)\" oninput=\"handleDetailSearch(this.value)\" autocomplete='off'>" +
-        "<div id='detailSearchDropdown' class='search-dropdown'></div>" +
-      "</div>" +
-      "<div style='display:flex; gap:6px; flex:0 0 auto;'>" +
-        "<button class='btn' onclick=\""+shareAction+"\" style='padding:10px; border-radius:50%; background:var(--panel);' aria-label='Share'>" +
-            "<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8'></path><polyline points='16 6 12 2 8 6'></polyline><line x1='12' y1='2' x2='12' y2='15'></line></svg>" +
-        "</button>" +
-        "<button class='btn' style='padding:10px; border-radius:50%; background:"+btnFavColor+"; color:"+btnFavText+";' onclick=\"toggleBookmark('"+esc(p.id)+"')\" aria-label='Bookmark'>" +
-            "<svg width='18' height='18' viewBox='0 0 24 24' fill='"+favIconColor+"' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z'></path></svg>" +
-        "</button>" +
-      "</div>" +
-    "</div>";
+  // PART 3 — description.
+  var trakteerDetail=p.trakteer ? "<a href='"+esc(p.trakteer)+"' target='_blank' class='btn' style='background:#e74c3c;color:#fff;width:100%;margin-top:14px;'>☕ Traktir Kopi</a>" : "";
+  var part3=
+    "<section class='mvp-detail-part'>"+
+      "<div class='mvp-detail-part-title'>Deskripsi</div>"+
+      "<div class='mvp-description'>"+esc(p.description||"Belum ada deskripsi.")+"</div>"+
+      trakteerDetail+
+    "</section>";
 
-  // SORTIR CHAPTERS LIST
-  var chaptersArr = Array.isArray(p.chapters) ? p.chapters.slice() : [];
-  var mappedChaps = chaptersArr.map(function(c, i) { return {c: c, i: i}; });
-  if (!window.chapterSortDesc) { mappedChaps.reverse(); }
+  var chaptersArr=Array.isArray(p.chapters)?p.chapters.slice():[];
+  var mappedChaps=chaptersArr.map(function(c,i){return {c:c,i:i};});
+  if(!window.chapterSortDesc) mappedChaps.reverse();
 
-  var chaptersHtml = mappedChaps.map(function(item) {
-    var timeStr = item.c.updated_at ? timeAgo(item.c.updated_at) : "Just now";
-    return "<div class='chapter-bato' onclick=\"openReader('"+esc(p.id)+"','"+esc(item.c.chapter)+"',"+item.c.decensored+")\">" +
-      "<div style='font-weight:700;font-size:14px;color:var(--text);'>Chapter " + esc(item.c.chapter) + decBadge(item.c.decensored) + "</div>" +
-      "<div style='font-size:12px;color:var(--muted);font-weight:600;'>🕒 " + timeStr + "</div>" +
+  var chaptersHtml=mappedChaps.map(function(item){
+    var timeStr=item.c.updated_at?timeAgo(item.c.updated_at):"Just now";
+    return "<div class='chapter-bato' onclick=\"openReader('"+esc(p.id)+"','"+esc(item.c.chapter)+"',"+Number(item.c.decensored||0)+")\">"+
+      "<div style='font-weight:700;font-size:14px;color:var(--text);'>Chapter "+esc(item.c.chapter)+decBadge(item.c.decensored)+"</div>"+
+      "<div style='font-size:12px;color:var(--muted);font-weight:600;'>🕒 "+timeStr+"</div>"+
     "</div>";
   }).join("");
 
-  var chaptersWrap = 
-    "<div class='chapter-scroll-box'>" +
-      chaptersHtml +
+  var chaptersWrap="<div class='chapter-scroll-box'>"+
+    (chaptersHtml||"<div class='mvp-empty-state'>Belum ada chapter.</div>")+
     "</div>";
 
-  $("detailContent").innerHTML = 
-    topBar +
-    "<div class='mvp-detail-top'>" +
-      cover +
-      "<div style='flex:1; min-width:0;'>" +
-        "<h1 style='margin:0 0 8px; font-size:18px; line-height:1.3;'>"+esc(p.title)+"</h1>" +
-        authorInfo +
-        transInfo +
-        "<div style='display:flex; gap:10px; margin-top:8px; font-size:12px; font-weight:700;'>" +
-          "<span style='color:var(--bato-star)'>⭐ " + pRating + "</span>" +
-          "<span style='color:var(--muted);display:flex;align-items:center;gap:4px;'>" +
-            "<svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'>" +
-              "<path d='M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z'></path>" +
-            "</svg>" +
-            pBookmarks +
-          "</span>" +
-        "</div>" +
-        detailStatus +
-      "</div>" +
-    "</div>" +
-    
-    trakteerDetail + ratingSummary + voteUI +
-    
-    "<div style='margin-top:20px;'>" +
-      tagsHtml +
-      "<p class='muted' style='margin-top:12px; white-space:pre-line; font-size:14px; line-height:1.6;'>"+esc(p.description)+"</p>" +
-    "</div>" +
-    
-    "<div style='display:flex; justify-content:space-between; align-items:center; margin-top:24px; margin-bottom:12px; border-bottom:2px solid var(--panel2); padding-bottom:8px;'>" +
-      "<h3 style='font-size:18px; margin:0;'>Chapters <span style='color:var(--muted); font-size:14px;'>("+chaptersArr.length+")</span></h3>" +
-      "<button class='btn' style='padding:6px 12px; font-size:12px; background:var(--panel2); color:var(--text); border:1px solid var(--border); pointer-events:auto;' onclick=\"toggleChapterSort('"+esc(p.id)+"')\">⇅ Sortir</button>" +
-    "</div>" +
-    chaptersWrap;
+  var part4=
+    "<section class='mvp-detail-part'>"+
+      "<div class='mvp-chapters-head'>"+
+        "<h3>Chapters <span style='color:var(--muted);font-size:14px;'>("+chaptersArr.length+")</span></h3>"+
+        "<button class='btn' style='padding:6px 12px;font-size:12px;background:var(--panel2);color:var(--text);border:1px solid var(--border);pointer-events:auto;' onclick=\"toggleChapterSort('"+esc(p.id)+"')\">⇅ Sortir</button>"+
+      "</div>"+
+      chaptersWrap+
+    "</section>";
+
+  $("detailContent").innerHTML=topBar+part1+part2+part3+part4;
 }
 
 // LOGIKA SCROLL: Progress bar & Auto-hide UI
