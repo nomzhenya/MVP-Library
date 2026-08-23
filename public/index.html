@@ -353,6 +353,21 @@ html,body{background:var(--bg)}
   cursor:pointer;
 }
 
+
+/* v8: chapter translator identity */
+.chapter-translator{
+  display:block;
+  width:100%;
+  text-align:center;
+  margin:3px 0 5px;
+  font-size:12px;
+  font-weight:700;
+  color:var(--muted);
+}
+.chapter-translator .mvp-translator{
+  font-size:13px;
+}
+
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -1075,7 +1090,7 @@ async function openProject(id){
           "<h1 class='mvp-detail-title' style='margin:0;'>"+esc(p.title)+"</h1>"+
           altHtml+
           authorHtml+
-          "<div class='mvp-detail-translator'>" + translatorName(p) + "</div>"+
+          ""+
           "<div class='mvp-detail-stats'>"+
             "<span class='mvp-detail-stat'><span style='color:var(--bato-star)'>★</span> "+pRating+"</span>"+
             "<button type='button' class='mvp-detail-stat mvp-detail-stat-btn "+(isBm?"bookmark-on":"")+"' onclick=\"toggleBookmark('"+esc(p.id)+"')\">"+
