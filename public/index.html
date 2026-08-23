@@ -170,6 +170,26 @@ body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15
 /* PROGRESS BAR */
 #progressContainer{position:fixed;top:0;left:0;width:100vw;height:3px;background:transparent;z-index:9999;display:none;pointer-events:none;}
 #progressBar{height:100%;background:var(--accent);width:0%;transition:width 0.1s ease-out;}
+
+/* READER PRIVACY / SCREENSHOT HARDENING
+   Keep this layer independent from rating/bookmark features. */
+html.reader-private .readerpages,
+body.reader-private .readerpages{
+  visibility:hidden !important;
+}
+html.reader-private .reader-watermark{
+  visibility:visible !important;
+}
+.readerpages, .readerpage, .novel-reader{
+  -webkit-touch-callout:none !important;
+  -webkit-user-select:none !important;
+  user-select:none !important;
+}
+.readerpage{
+  -webkit-user-drag:none !important;
+  user-drag:none !important;
+}
+
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -843,6 +863,8 @@ async function openReader(projectId, chapterName, decensored){
   $("reader").classList.remove("hidden");
   $("reader").classList.remove("ui-hidden"); 
   showReaderWatermark();
+  document.documentElement.classList.remove("reader-private");
+  document.body.classList.remove("reader-private");
 
   var chapterOptions = chaptersArr.map(function(ch, i) {
     var isCur = i === idx ? "current" : "";
@@ -1009,6 +1031,51 @@ function toggleTheme(){
   try{theme = localStorage.getItem("mvp_theme") || "dark"}catch(e){}
   applyTheme(theme);
 })(); 
+
+
+// READER PRIVACY GUARD
+(function(){
+  function setReaderPrivate(on){
+    try{
+      document.documentElement.classList.toggle("reader-private", !!on);
+      document.body.classList.toggle("reader-private", !!on);
+    }catch(e){}
+  }
+
+  document.addEventListener("visibilitychange", function(){
+    var reader = document.getElementById("reader");
+    if(!reader || reader.classList.contains("hidden")) return;
+    setReaderPrivate(document.visibilityState !== "visible");
+  });
+
+  window.addEventListener("pagehide", function(){
+    var reader = document.getElementById("reader");
+    if(reader && !reader.classList.contains("hidden")) setReaderPrivate(true);
+  });
+
+  window.addEventListener("pageshow", function(){
+    setReaderPrivate(false);
+  });
+
+  // Block common image extraction gestures inside reader.
+  document.addEventListener("dragstart", function(e){
+    if(e.target && (e.target.tagName === "IMG" || e.target.closest(".readerpages"))){
+      e.preventDefault();
+    }
+  }, true);
+
+  document.addEventListener("contextmenu", function(e){
+    if(e.target && e.target.closest && e.target.closest(".readerpages")){
+      e.preventDefault();
+    }
+  }, true);
+
+  document.addEventListener("copy", function(e){
+    if(e.target && e.target.closest && e.target.closest(".readerpages")){
+      e.preventDefault();
+    }
+  }, true);
+})();
 
 // FUNGSI INIT GLOBAL
 (async function(){
