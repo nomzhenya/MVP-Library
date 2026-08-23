@@ -402,53 +402,40 @@ html,body{background:var(--bg)}
 }
 
 
-/* FINAL CHAPTER CARD REVISION */
+
+
+/* CHAPTER TRANSLATOR — FINAL CENTERING */
 .chapter-item{
-  display:block !important;
-  width:100%;
-  box-sizing:border-box;
-  text-align:initial;
+  position:relative !important;
 }
-.chapter-item .chapter-head{
-  display:flex !important;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  width:100%;
-  min-width:0;
-}
-.chapter-item .chapter-title{
-  flex:1 1 auto;
-  min-width:0;
-  text-align:left;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-.chapter-item .chapter-age{
-  flex:0 0 auto;
-  white-space:nowrap;
-  text-align:right;
-}
-.chapter-item .chapter-translator{
+.chapter-item .chapter-translator,
+.chapter-item .chapter-translator-row{
+  width:100% !important;
+  box-sizing:border-box !important;
   display:flex !important;
   justify-content:center !important;
-  align-items:center;
-  width:100%;
-  min-height:20px;
-  margin:4px 0 0;
+  align-items:center !important;
   text-align:center !important;
-  font-size:12px;
-  font-weight:700;
+  margin-left:0 !important;
+  margin-right:0 !important;
+  left:auto !important;
+  right:auto !important;
+}
+.chapter-item .chapter-translator{
+  flex:0 0 100% !important;
+  max-width:100% !important;
+  margin-top:5px !important;
+  font-size:12px !important;
+  font-weight:700 !important;
 }
 .chapter-item .chapter-translator .mvp-translator{
-  display:inline-block;
-  font-size:13px;
-  font-weight:900;
-  background:linear-gradient(90deg,#ff9fcf,#c9a7ff,#9ee7ff);
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
+  display:inline-block !important;
+  margin:0 auto !important;
+  background:linear-gradient(90deg,#ff9fcf,#c9a7ff,#9ee7ff) !important;
+  -webkit-background-clip:text !important;
+  background-clip:text !important;
+  color:transparent !important;
+  font-weight:900 !important;
 }
 
 </style>
