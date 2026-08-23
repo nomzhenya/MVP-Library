@@ -168,12 +168,64 @@ h1,h2,h3,p{margin:0}
 .novel-reader p.bookmarked { background-color:rgba(94, 129, 255, 0.15); border-left:4px solid var(--accent); padding:4px 12px; border-radius:0 8px 8px 0; transition:all 0.3s ease; }
 body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15); }
 
+
+/* ANTI-SCREENSHOT / ANTI-CAPTURE BEST EFFORT
+   Catatan: Mini App berbasis web tidak punya akses ke Android FLAG_SECURE/iOS
+   screenshot API. Jadi ini hanya mengurangi capture saat app kehilangan focus
+   dan mencegah print/selection; bukan proteksi screenshot 100%.
+*/
+html,body{
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+  -webkit-tap-highlight-color:transparent;
+}
+@media print{
+  body{display:none !important;}
+}
+#captureShield{
+  position:fixed;
+  inset:0;
+  z-index:2147483647;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:24px;
+  background:#000;
+  color:#fff;
+  font-weight:800;
+  font-size:16px;
+}
+#captureShield.active{display:flex !important;}
+#captureShield .shield-inner{
+  max-width:320px;
+  line-height:1.5;
+}
+#captureShield .shield-title{
+  font-size:22px;
+  margin-bottom:8px;
+}
+body.capture-locked #home,
+body.capture-locked #detail,
+body.capture-locked #reader,
+body.capture-locked #gate{
+  visibility:hidden !important;
+}
+
 /* PROGRESS BAR */
 #progressContainer{position:fixed;top:0;left:0;width:100vw;height:3px;background:transparent;z-index:9999;display:none;pointer-events:none;}
 #progressBar{height:100%;background:var(--accent);width:0%;transition:width 0.1s ease-out;}
 </style>
 </head>
 <body oncontextmenu="return false">
+<div id="captureShield" aria-hidden="true">
+  <div class="shield-inner">
+    <div class="shield-title">🔒 Konten Dilindungi</div>
+    <div>Konten disembunyikan sementara saat aplikasi kehilangan fokus.</div>
+  </div>
+</div>
+
 
 <div id="progressContainer"><div id="progressBar"></div></div>
 
@@ -200,16 +252,101 @@ body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15
     }
   };
 
-  document.addEventListener('contextmenu', function(e) { if(e.target.tagName==='INPUT')return; e.preventDefault(); });
-  document.addEventListener('dragstart', function(e) { e.preventDefault(); });
-  document.addEventListener('selectstart', function(e) { if(e.target.tagName!=='INPUT')e.preventDefault(); });
-  document.addEventListener('keydown', function(e) {
-    if (e.key==='F12' || (e.ctrlKey && e.shiftKey && (e.key==='I'||e.key==='J'||e.key==='C')) || (e.ctrlKey && e.key==='U')) { e.preventDefault(); return false; }
+  // Anti-copy / anti-print / anti-drag.
+  document.addEventListener('contextmenu', function(e) {
+    if (e.target && e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+  }, {passive:false});
+
+  document.addEventListener('dragstart', function(e) {
+    e.preventDefault();
+  }, {passive:false});
+
+  document.addEventListener('selectstart', function(e) {
+    if (e.target && e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+  }, {passive:false});
+
+  document.addEventListener('copy', function(e) {
+    if (e.target && e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+  }, {passive:false});
+
+  document.addEventListener('cut', function(e) {
+    if (e.target && e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+  }, {passive:false});
+
+  document.addEventListener('beforeprint', function() {
+    lockCaptureScreen();
   });
-  setInterval(function() {
-    var start = performance.now(); debugger; var end = performance.now();
-    if (end-start > 100) document.body.innerHTML="<div style='display:flex;height:100vh;align-items:center;justify-content:center;background:#000;color:#ef4444;font-size:20px;text-align:center;padding:20px;font-weight:bold;'>Akses Ilegal Terdeteksi!<br>Sistem Dimatikan.</div>";
-  }, 1000);
+  document.addEventListener('afterprint', function() {
+    unlockCaptureScreen();
+  });
+
+  document.addEventListener('keydown', function(e) {
+    var k = String(e.key || '').toLowerCase();
+    var blocked =
+      k === 'f12' ||
+      (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(k)) ||
+      (e.ctrlKey && ['u','s','p'].includes(k)) ||
+      (e.metaKey && ['s','p'].includes(k));
+
+    if (blocked) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  }, true);
+
+  // Best-effort capture shield:
+  // Browser/Mini App tidak menyediakan event "screenshot taken".
+  // Saat app/background/focus hilang, reader langsung disembunyikan.
+  var captureLocked = false;
+  function lockCaptureScreen() {
+    captureLocked = true;
+    var shield = document.getElementById('captureShield');
+    if (shield) shield.classList.add('active');
+    document.body.classList.add('capture-locked');
+
+    var reader = document.getElementById('reader');
+    if (reader && !reader.classList.contains('hidden')) {
+      reader.dataset.wasVisibleBeforeCaptureLock = '1';
+    }
+  }
+
+  function unlockCaptureScreen() {
+    captureLocked = false;
+    var shield = document.getElementById('captureShield');
+    if (shield) shield.classList.remove('active');
+    document.body.classList.remove('capture-locked');
+  }
+
+  function handleAppVisibility() {
+    if (document.visibilityState !== 'visible') {
+      lockCaptureScreen();
+      return;
+    }
+    // Sedikit delay agar compositor Telegram selesai kembali ke foreground.
+    setTimeout(unlockCaptureScreen, 120);
+  }
+
+  document.addEventListener('visibilitychange', handleAppVisibility, true);
+  window.addEventListener('pagehide', lockCaptureScreen, true);
+  window.addEventListener('blur', lockCaptureScreen, true);
+  window.addEventListener('focus', function() {
+    if (document.visibilityState === 'visible') {
+      setTimeout(unlockCaptureScreen, 120);
+    }
+  }, true);
+
+  // Telegram Mini App: minta konfirmasi saat user mencoba menutup.
+  // Ini bukan screenshot protection, hanya menjaga reader tidak tertutup tidak sengaja.
+  try {
+    if (window.Telegram && Telegram.WebApp && Telegram.WebApp.enableClosingConfirmation) {
+      Telegram.WebApp.enableClosingConfirmation();
+    }
+  } catch (_) {}
 </script>
 
 <div id="gate" class="notice hidden"><div><h2>🔒 Akses Ditolak</h2><p class="muted" style="margin-top:8px">Buka via Telegram.</p></div></div>
@@ -1011,6 +1148,10 @@ async function openReader(projectId, chapterName, decensored){
       img.className = "readerpage";
       img.alt = p.title + " Chapter " + chapterName + " Page " + (i+1);
       img.loading = i < 2 ? "eager" : "lazy";
+      img.draggable = false;
+      img.setAttribute("aria-hidden", "true");
+      img.oncontextmenu = function(e){ e.preventDefault(); return false; };
+      img.ondragstart = function(e){ e.preventDefault(); return false; };
       img.src = fileUrl(fid);
       img.onerror = function() {
         var err = document.createElement("div");
