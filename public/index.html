@@ -192,7 +192,7 @@ body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15
       var data = await r.json().catch(function(){return {};});
       if(!r.ok) throw new Error(data.error || "vote");
       var p = catalog.find(function(x){return x.id===pid;});
-      if(p){p.rating=data.rating;p.votes=data.votes;p.vote_distribution=data.vote_distribution;p.bookmarks=data.bookmarks;p.comments=data.comments;p.user_vote=data.user_vote;p.bookmarked=data.bookmarked;}
+      if(p){p.rating=data.rating;p.bookmarks=data.bookmarks;p.comments=data.comments;p.user_vote=data.user_vote;p.bookmarked=data.bookmarked;}
       for(var i=1;i<=10;i++){var st=document.getElementById("star_"+pid+"_"+i);if(st){st.textContent=i<=score?"★":"☆";st.style.color=i<=score?"var(--accent)":"var(--border2)";}}
       openProject(pid);
     } catch(e) {
@@ -355,7 +355,7 @@ async function toggleBookmark(id) {
     var r=await fetch("/api/bookmark",{method:"POST",headers:Object.assign({"Content-Type":"application/json"},accessHeaders()),body:JSON.stringify({project_id:id,bookmarked:next})});
     var data=await r.json().catch(function(){return {};});
     if(!r.ok) throw new Error(data.error||"bookmark");
-    if(p){p.rating=data.rating;p.votes=data.votes;p.vote_distribution=data.vote_distribution;p.bookmarks=data.bookmarks;p.comments=data.comments;p.user_vote=data.user_vote;p.bookmarked=data.bookmarked;}
+    if(p){p.rating=data.rating;p.bookmarks=data.bookmarks;p.comments=data.comments;p.user_vote=data.user_vote;p.bookmarked=data.bookmarked;}
     if(!$('detail').classList.contains('hidden')) openProject(id); else renderHome();
   }catch(e){if(tg&&tg.showAlert)tg.showAlert("Bookmark gagal disimpan.");}
 }
@@ -650,42 +650,7 @@ async function openProject(id){
 
   // STATS (TIDAK ADA DATA FIKTIF)
   var pRating = (p.rating != null ? Number(p.rating).toFixed(1) : "0.0");
-  var pVotes = Number(p.votes || 0);
   var pBookmarks = p.bookmarks || "0";
-
-  // RATING SUMMARY: raw vote remains 1-10, display is compact 5-band.
-  var dist = Array.isArray(p.vote_distribution) && p.vote_distribution.length === 5
-    ? p.vote_distribution.map(function(n){ return Number(n)||0; })
-    : [0,0,0,0,0];
-  var distTotal = dist.reduce(function(a,b){ return a+b; }, 0);
-  var distLabels = ["5★","4★","3★","2★","1★"];
-  var ratingBars = distLabels.map(function(label, i){
-    var pct = distTotal ? (dist[i] / distTotal * 100) : 0;
-    var pctText = pct.toFixed(pct >= 10 ? 0 : 1);
-    return "<div style='display:flex;align-items:center;gap:8px;margin:5px 0;'>" +
-      "<span style='width:24px;font-size:12px;font-weight:800;color:var(--text);text-align:right;'>" + label + "</span>" +
-      "<div style='flex:1;height:7px;border-radius:999px;background:var(--panel2);overflow:hidden;'>" +
-        "<div style='width:"+pct+"%;height:100%;background:var(--accent);border-radius:999px;'></div>" +
-      "</div>" +
-      "<span style='width:42px;font-size:11px;color:var(--muted);text-align:right;'>" + pctText + "%</span>" +
-    "</div>";
-  }).join("");
-
-  var ratingSummary =
-    "<div style='margin-top:16px;padding:14px 16px;background:var(--panel);border:1px solid var(--border);border-radius:12px;'>" +
-      "<div style='display:flex;gap:18px;align-items:center;'>" +
-        "<div style='min-width:72px;text-align:center;'>" +
-          "<div style='font-size:30px;line-height:1;font-weight:900;color:var(--text);'>" + pRating + "</div>" +
-          "<div style='margin-top:5px;color:var(--bato-star);font-size:17px;'>★★★★★</div>" +
-          "<div style='margin-top:3px;font-size:11px;color:var(--muted);'>" + pVotes + " vote" + (pVotes === 1 ? "" : "s") + "</div>" +
-        "</div>" +
-        "<div style='flex:1;min-width:0;'>" +
-          ratingBars +
-        "</div>" +
-      "</div>" +
-      "" +
-    "</div>";
-
   // UI ATAS HTML LAMA (Back, Search, Share, Bookmark Bulat)
   var btnFavColor = isBm ? "var(--accent)" : "var(--panel)";
   var btnFavText = isBm ? "#fff" : "var(--text)";
@@ -749,7 +714,7 @@ async function openProject(id){
       "</div>" +
     "</div>" +
     
-    trakteerDetail + ratingSummary + voteUI +
+    trakteerDetail + voteUI +
     
     "<div style='margin-top:20px;'>" +
       tagsHtml +
