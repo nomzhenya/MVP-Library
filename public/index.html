@@ -33,7 +33,7 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,
 
 /* ANTI-COPY CSS */
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
-img{-webkit-user-drag:none;-webkit-touch-callout:none;pointer-events:auto;} 
+img{-webkit-user-drag:none;-webkit-touch-callout:none;pointer-events:auto;user-select:none;-webkit-user-select:none;} .readerpage{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;} body.screenshot-guard .readerpages{filter:blur(18px)!important;} body.screenshot-guard .reader-watermark{filter:none!important;opacity:.9!important;} 
 
 .wrap{max-width:900px;margin:auto;padding:24px 20px}
 #reader.wrap{width:100vw;max-width:none;margin:0;padding:0;overflow-x:hidden}
@@ -167,6 +167,32 @@ h1,h2,h3,p{margin:0}
 .novel-reader p.bookmarked { background-color:rgba(94, 129, 255, 0.15); border-left:4px solid var(--accent); padding:4px 12px; border-radius:0 8px 8px 0; transition:all 0.3s ease; }
 body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15); }
 
+/* READER CONTENT PROTECTION / SCREENSHOT DETERRENCE */
+.reader-security-layer{
+  position:fixed;inset:0;z-index:15;pointer-events:none;
+  background:transparent;
+}
+.reader-security-layer .security-grid{
+  position:absolute;inset:0;opacity:.035;
+  background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.9) 0 1px,transparent 1px 90px);
+}
+.reader-watermark{
+  user-select:none;-webkit-user-select:none;
+  pointer-events:none;
+}
+.reader-watermark .wm-user{
+  overflow:hidden;text-overflow:ellipsis;max-width:90vw;
+}
+@media print{
+  body *{visibility:hidden!important;}
+  body:after{
+    content:"MVP content is protected.";
+    visibility:visible;position:fixed;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    font-size:24px;font-weight:800;
+  }
+}
+
 /* PROGRESS BAR */
 #progressContainer{position:fixed;top:0;left:0;width:100vw;height:3px;background:transparent;z-index:9999;display:none;pointer-events:none;}
 #progressBar{height:100%;background:var(--accent);width:0%;transition:width 0.1s ease-out;}
@@ -282,6 +308,9 @@ body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15
 <div id="detail" class="wrap hidden"><div id="detailContent"></div></div>
 
 <div id="reader" class="wrap hidden">
+  <div id="readerSecurityLayer" class="reader-security-layer hidden" aria-hidden="true">
+    <div class="security-grid"></div>
+  </div>
   <div id="readerContent"></div>
   <div id="readerWatermark" class="reader-watermark hidden"><div class="wm-title">👑 MVP</div><div id="readerWatermarkUser" class="wm-user"></div></div>
 </div>
@@ -292,7 +321,7 @@ var catalog = [];
 var $ = function(id) { return document.getElementById(id); };
 var esc = function(s) { return String(s != null ? s : "").replace(/[&<>"']/g, function(m) { return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]); }); };
 var API_BASE = location.origin;
-var fileUrl = function(fileId) { return API_BASE + "/api/file?file_id=" + encodeURIComponent(fileId) + "&init_data=" + encodeURIComponent((tg && tg.initData) ? tg.initData : ""); };
+var fileUrl = function(fileId) { return API_BASE + "/api/file?file_id=" + encodeURIComponent(fileId) + "&init_data=" + encodeURIComponent((tg && tg.initData) ? tg.initData : "") + "&v=" + encodeURIComponent(Date.now()); };
 
 var accessUser = null;
 var accessDenied = false;
@@ -756,10 +785,15 @@ function showReaderWatermark(){
   if (u.username) parts.push(u.username);
   $("readerWatermarkUser").textContent = parts.join(" | ");
   $("readerWatermark").classList.remove("hidden");
+  var layer = $("readerSecurityLayer");
+  if (layer) layer.classList.remove("hidden");
 }
 
 function hideReaderWatermark(){
   $("readerWatermark").classList.add("hidden");
+  var layer = $("readerSecurityLayer");
+  if (layer) layer.classList.add("hidden");
+  document.body.classList.remove("screenshot-guard");
 }
 
 function chapterIndex(projectId, chapterName, decensored){
@@ -940,6 +974,8 @@ async function openReader(projectId, chapterName, decensored){
       img.className = "readerpage";
       img.alt = p.title + " Chapter " + chapterName + " Page " + (i+1);
       img.loading = i < 2 ? "eager" : "lazy";
+      img.referrerPolicy = "no-referrer";
+      img.draggable = false;
       img.src = fileUrl(fid);
       img.onerror = function() {
         var err = document.createElement("div");
@@ -1009,6 +1045,53 @@ function toggleTheme(){
   try{theme = localStorage.getItem("mvp_theme") || "dark"}catch(e){}
   applyTheme(theme);
 })(); 
+
+
+// SCREENSHOT / CAPTURE DETERRENCE
+// NOTE: Mini Apps cannot reliably block the OS screenshot facility.
+// This layer minimizes casual capture and hides the reader when the
+// WebView loses focus, while the per-user watermark remains visible.
+(function installReaderSecurity(){
+  document.addEventListener("visibilitychange", function(){
+    if(document.hidden && !$("reader").classList.contains("hidden")){
+      document.body.classList.add("screenshot-guard");
+    } else {
+      document.body.classList.remove("screenshot-guard");
+    }
+  });
+
+  window.addEventListener("blur", function(){
+    if(!$("reader").classList.contains("hidden")){
+      document.body.classList.add("screenshot-guard");
+    }
+  });
+
+  window.addEventListener("focus", function(){
+    document.body.classList.remove("screenshot-guard");
+  });
+
+  window.addEventListener("beforeprint", function(){
+    document.body.classList.add("screenshot-guard");
+  });
+
+  window.addEventListener("afterprint", function(){
+    document.body.classList.remove("screenshot-guard");
+  });
+
+  document.addEventListener("keydown", function(e){
+    // Common save/print shortcuts.
+    if((e.ctrlKey || e.metaKey) && ["s","p","u"].includes(String(e.key).toLowerCase())){
+      e.preventDefault();
+    }
+  }, {capture:true});
+
+  // Keep the reader watermark current if Telegram identity is available.
+  setInterval(function(){
+    if(!$("reader").classList.contains("hidden")){
+      showReaderWatermark();
+    }
+  }, 5000);
+})();
 
 // FUNGSI INIT GLOBAL
 (async function(){
