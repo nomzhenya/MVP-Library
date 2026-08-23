@@ -295,15 +295,7 @@ html,body{background:var(--bg)}
 
 
 /* v6 translator identity */
-.mvp-detail-translator{
-  width:100%;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  margin:8px 0 4px;
-  text-align:center;
-  min-height:24px;
-}
+
 .guest-translator-link{
   border:0;
   background:transparent;
@@ -407,6 +399,56 @@ html,body{background:var(--bg)}
 }
 .chapter-item .chapter-translator .mvp-translator{
   font-size:13px;
+}
+
+
+/* FINAL CHAPTER CARD REVISION */
+.chapter-item{
+  display:block !important;
+  width:100%;
+  box-sizing:border-box;
+  text-align:initial;
+}
+.chapter-item .chapter-head{
+  display:flex !important;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  width:100%;
+  min-width:0;
+}
+.chapter-item .chapter-title{
+  flex:1 1 auto;
+  min-width:0;
+  text-align:left;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.chapter-item .chapter-age{
+  flex:0 0 auto;
+  white-space:nowrap;
+  text-align:right;
+}
+.chapter-item .chapter-translator{
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center;
+  width:100%;
+  min-height:20px;
+  margin:4px 0 0;
+  text-align:center !important;
+  font-size:12px;
+  font-weight:700;
+}
+.chapter-item .chapter-translator .mvp-translator{
+  display:inline-block;
+  font-size:13px;
+  font-weight:900;
+  background:linear-gradient(90deg,#ff9fcf,#c9a7ff,#9ee7ff);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
 }
 
 </style>
@@ -853,7 +895,12 @@ function toggleSec(id, btn) {
 
 // FORMAT BATO LIST DENGAN STATS DARI DATABASE
 function chapterDisplayTitle(ch){return String(ch&&(ch.chapter_title||ch.title||ch.name)||"").trim();}
-function chapterTranslator(p,ch){var t=String(ch&&ch.translator||"").trim();if(t)return t;var pt=String(p&&p.translator||"").trim();return pt||"MVP";}
+function chapterTranslator(p,ch){
+  var t=String((ch&&ch.translator)||"").trim();
+  if(t) return t;
+  var pt=String((p&&p.translator)||"").trim();
+  return pt || "MVP";
+}
 function renderBatoItem(p,chaptersToShow,homeContext){
   var cover=p.cover_file_id?`<img class="b-cover" src="${fileUrl(p.cover_file_id)}" loading="lazy">`:`<div class="b-cover"></div>`;
   var pRating=(p.rating!=null?Number(p.rating).toFixed(1):"0.0"),pBookmarks=p.bookmarks||"0";
