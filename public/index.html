@@ -271,6 +271,88 @@ html,body{background:var(--bg)}
 .mvp-lapak-item{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--text);padding:14px 4px;text-align:left;font-size:15px;font-weight:750;cursor:pointer}
 .mvp-lapak-item:active{background:var(--panel2)}
 .mvp-lapak-arrow{color:var(--accent);font-size:18px}
+
+/* v5 translator identity */
+.guest-translator-link{
+  border:0;background:none;padding:0;margin:0;
+  color:inherit;font:inherit;font-weight:700;
+  cursor:pointer;text-align:center;
+}
+.mvp-translator{
+  display:inline-block;
+  font-weight:800;
+  background:linear-gradient(90deg,#ff9fcf,#c9a7ff,#9ee7ff);
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;
+}
+.translator-card{
+  text-align:center;
+}
+.translator-card .translator-name{
+  display:flex;justify-content:center;align-items:center;
+  min-height:28px;
+}
+
+
+/* v6 translator identity */
+.mvp-detail-translator{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin:8px 0 4px;
+  text-align:center;
+  min-height:24px;
+}
+.guest-translator-link{
+  border:0;
+  background:transparent;
+  padding:0;
+  margin:0;
+  color:var(--accent);
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
+  text-align:center;
+  text-decoration:none;
+}
+.mvp-translator{
+  display:inline-block;
+  font-weight:900;
+  background:linear-gradient(90deg,#ff9fcf,#c9a7ff,#9ee7ff);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+
+/* v6 translator profile */
+
+.mvp-guest-profile-card{
+  text-align:center;
+  padding:24px 18px;
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:16px;
+  margin-bottom:18px;
+}
+.mvp-guest-avatar{font-size:42px;margin-bottom:6px}
+.mvp-guest-profile-name{margin:0;font-size:22px}
+.mvp-guest-profile-count{margin-top:5px;color:var(--muted);font-size:13px;font-weight:700}
+.mvp-guest-profile-card .mvp-support-btn{margin-top:14px}
+.mvp-guest-project-list{display:flex;flex-direction:column;gap:8px}
+.mvp-guest-project{
+  width:100%;
+  text-align:left;
+  border:1px solid var(--border);
+  background:var(--panel);
+  color:var(--text);
+  border-radius:10px;
+  padding:12px 14px;
+  font:inherit;
+  font-weight:700;
+  cursor:pointer;
+}
+
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -327,7 +409,7 @@ html,body{background:var(--bg)}
       <button class="btn primary" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="showHome()">Home</button>
       <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="openBrowse()">Browse</button>
       <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="openLapakList()">List</button>
-      <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="openGuestPage()">Guest</button>
+      <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="openGuestPage()">Semua project</button>
     </div>
   </header>
 
@@ -412,7 +494,7 @@ html,body{background:var(--bg)}
     </button>
     <div>
       <div class="mvp-browse-title">List</div>
-      <div class="mvp-browse-sub">Lapak semua project</div>
+      <div class="mvp-browse-sub">Semua project</div>
     </div>
   </div>
   <div id="lapakListContent" class="mvp-lapak-list"></div>
@@ -425,7 +507,7 @@ html,body{background:var(--bg)}
     </button>
     <div>
       <div class="mvp-browse-title">Guest</div>
-      <div class="mvp-browse-sub">Translator yang bukan staff MVP</div>
+      <div class="mvp-browse-sub">Translator yg up project di MVP</div>
     </div>
   </div>
   <div id="guestListContent" class="mvp-translator-list"></div>
@@ -659,9 +741,13 @@ function guestTranslatorMap(){
   });
 }
 function openGuestPage(){
-  hideHomeForPage();
-  $("guestLayer").classList.remove("hidden");
-  $("guestLayer").classList.add("active");
+  $("home").classList.add("hidden");
+  $("detail").classList.add("hidden");
+  $("reader").classList.add("hidden");
+  $("browseLayer").classList.remove("active"); $("browseLayer").classList.add("hidden");
+  $("catalogLayer").classList.remove("active"); $("catalogLayer").classList.add("hidden");
+  $("lapakLayer").classList.remove("active"); $("lapakLayer").classList.add("hidden");
+  $("guestLayer").classList.remove("hidden"); $("guestLayer").classList.add("active");
   renderGuestPage();
   window.scrollTo(0,0);
 }
@@ -711,7 +797,7 @@ function toggleSec(id, btn) {
 
 // FORMAT BATO LIST DENGAN STATS DARI DATABASE
 function chapterDisplayTitle(ch){return String(ch&&(ch.chapter_title||ch.title||ch.name)||"").trim();}
-function chapterTranslator(p,ch){var t=String(ch&&ch.translator||"").trim();return t||String(p&&p.translator||"").trim();}
+function chapterTranslator(p,ch){var t=String(ch&&ch.translator||"").trim();if(t)return t;var pt=String(p&&p.translator||"").trim();return pt||"MVP";}
 function renderBatoItem(p,chaptersToShow,homeContext){
   var cover=p.cover_file_id?`<img class="b-cover" src="${fileUrl(p.cover_file_id)}" loading="lazy">`:`<div class="b-cover"></div>`;
   var pRating=(p.rating!=null?Number(p.rating).toFixed(1):"0.0"),pBookmarks=p.bookmarks||"0";
@@ -722,6 +808,14 @@ function renderBatoItem(p,chaptersToShow,homeContext){
   var homeLines=homeContext?`<div class="mvp-home-history">${homeContext.history?`<div class="mvp-home-line history"><span class="label">↻ Terakhir dibaca</span><button onclick="event.stopPropagation();openReader('${esc(p.id)}','${esc(homeContext.history.chapter)}',${Number(homeContext.history.decensored||0)})">Ch. ${esc(homeContext.history.chapter)}${chapterDisplayTitle(homeContext.history)?` · ${esc(chapterDisplayTitle(homeContext.history))}`:""} · ${timeAgo(Math.floor(Number(homeContext.history.ts||0)/1000))}</button></div>`:""}${homeContext.latest?`<div class="mvp-home-line latest"><span class="label">✦ Chapter terbaru</span><button onclick="event.stopPropagation();openReader('${esc(p.id)}','${esc(homeContext.latest.chapter)}',${Number(homeContext.latest.decensored||0)})">Ch. ${esc(homeContext.latest.chapter)}${chapterDisplayTitle(homeContext.latest)?` · ${esc(chapterDisplayTitle(homeContext.latest))}`:""} · ${timeAgo(Number(homeContext.latest.updated_at||0))}</button></div>`:""}</div>`:`<div class="b-chaps">${chHtml}</div>`;
   return `<div class="b-item" onclick="openProject('${esc(p.id)}')">${cover}<div class="b-info"><div class="b-item-title"><span class="txt">${esc(p.title)}</span></div><div class="b-stats"><span><span style="color:var(--bato-star)">⭐</span> ${pRating}</span><span class="bookmark-stat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>${pBookmarks}</span></div><div class="b-tags">${getTags(p)}</div>${homeLines}</div></div>`;
 }
+function translatorName(project){
+  var name = String((project && (project.translator || project.TRANSLATOR)) || "").trim();
+  if(!name){
+    return "<span class='mvp-translator'>MVP</span>";
+  }
+  return "<button type='button' class='guest-translator-link' data-guest='"+esc(name)+"'>"+esc(name)+"</button>";
+}
+
 function renderHome(){
   var all=getSortedProjects(), histObj=getHistory();
   var myUpdates=all.filter(function(item){return isBookmark(item.p.id);}).slice(0,10);
@@ -867,44 +961,51 @@ document.addEventListener("click", function(e) {
 });
 
 // TRANSLATOR PROFILE (Semua Project List Bato)
-function openTranslatorProfile(name) {
-  var list = catalog.filter(function(p) {
-    var t = (p.translator && p.translator.trim() !== "") ? p.translator : "MVP";
-    return t.toLowerCase() === name.toLowerCase();
-  });
-  if (!list.length) return;
-  
-  var targetP = list.find(function(p){ return p.trakteer; }) || {};
-  var tTrakteer = targetP.trakteer || "";
-  var trakteerBtn = tTrakteer ? "<a href='"+esc(tTrakteer)+"' target='_blank' class='btn primary' style='margin-top:16px;'>☕ "+esc(targetP.trakteer_label || "Traktir Kopi")+"</a>" : "";
-  
-  $("home").classList.add("hidden"); 
-  $("reader").classList.add("hidden");
-  $("detail").classList.remove("hidden");
-  
-  var roleLabel = name.toLowerCase() === "mvp" ? "MVP Core" : "Fan Translator";
+function openTranslatorProfile(name){
+  var guest = String(name || "").trim();
+  if(!guest || guest.toLowerCase()==="mvp") return;
 
-  var listHtml = list.map(function(p) {
-    var latest = projectLatestChapter(p);
-    var chs = latest && latest.chapter ? [latest.chapter] : [];
-    return renderBatoItem(p, chs);
-  }).join('');
-  
-  $("detailContent").innerHTML = 
-    "<div style='display:flex; justify-content:flex-start; align-items:center; margin-bottom:24px;'>" +
-      "<button class='back' onclick=\"$('detail').classList.add('hidden');$('home').classList.remove('hidden');\">" +
-        "<svg width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><line x1='19' y1='12' x2='5' y2='12'></line><polyline points='12 19 5 12 12 5'></polyline></svg>" +
-      "</button>" +
-    "</div>" +
-    "<div style='text-align:center; padding:32px 20px; background:var(--panel2); border-radius:16px; border:1px solid var(--border); margin-bottom:32px; box-shadow:0 4px 12px rgba(0,0,0,0.1);'>" +
-      "<div style='font-size:48px; margin-bottom:8px;'>👤</div>" +
-      "<h2 style='margin:0; font-size:22px;'>"+esc(name)+"</h2>" +
-      "<div style='color:var(--muted); font-size:14px; margin-top:4px; font-weight:500;'>"+roleLabel+"</div>" +
-      trakteerBtn +
-      "<div style='margin-top:16px;'><span style='font-weight:bold; background:var(--panel); padding:6px 12px; border-radius:8px; border:1px solid var(--border); font-size:14px;'>📚 "+list.length+" Project</span></div>" +
-    "</div>" +
-    "<h3 style='margin-bottom:14px; display:flex; align-items:center; gap:6px;'>Semua Project</h3>" +
-    "<div class='b-list'>" + listHtml + "</div>";
+  var list = catalog.filter(function(p){
+    var t=String(p.translator||"").trim();
+    return t && t.toLowerCase()===guest.toLowerCase();
+  });
+  if(!list.length) return;
+
+  $("home").classList.add("hidden");
+  $("detail").classList.add("hidden");
+  $("reader").classList.add("hidden");
+  $("browseLayer").classList.remove("active"); $("browseLayer").classList.add("hidden");
+  $("catalogLayer").classList.remove("active"); $("catalogLayer").classList.add("hidden");
+  $("lapakLayer").classList.remove("active"); $("lapakLayer").classList.add("hidden");
+  $("guestLayer").classList.remove("hidden"); $("guestLayer").classList.add("active");
+
+  var targetP=list.find(function(p){return p.trakteer;}) || {};
+  var support=targetP.trakteer
+    ? "<a class='mvp-support-btn' href='"+esc(targetP.trakteer)+"' target='_blank' rel='noopener'>☕ "+esc(targetP.trakteer_label||"Traktir Kopi")+"</a>"
+    : "";
+
+  var projects=list.slice().sort(function(a,b){
+    return String(a.title||"").localeCompare(String(b.title||""),undefined,{sensitivity:"base"});
+  }).map(function(p){
+    return "<button type='button' class='mvp-guest-project' onclick=\"openProject('"+esc(p.id)+"')\">"+esc(p.title)+"</button>";
+  }).join("");
+
+  $("guestListContent").innerHTML=
+    "<div class='mvp-guest-profile'>"+
+      "<button type='button' class='back' onclick='openGuestPage()' style='margin-bottom:18px;'>← Guest</button>"+
+      "<div class='mvp-guest-profile-card'>"+
+        "<div class='mvp-guest-avatar'>👤</div>"+
+        "<h2 class='mvp-guest-profile-name'>"+esc(guest)+"</h2>"+
+        "<div class='mvp-guest-profile-count'>"+list.length+" project"+(list.length===1?"":"s")+"</div>"+
+        support+
+      "</div>"+
+      "<div class='mvp-detail-part'>"+
+        "<div class='mvp-detail-part-title'>Project</div>"+
+        "<div class='mvp-guest-project-list'>"+projects+"</div>"+
+      "</div>"+
+    "</div>";
+
+  window.scrollTo(0,0);
 }
 
 // DETAIL PROJECT (COVER KIRI, INFO KANAN - UI ATAS LAMA)
@@ -914,6 +1015,7 @@ async function openProject(id){
   if(!p) return;
 
   $("home").classList.add("hidden");
+  $("guestLayer").classList.remove("active"); $("guestLayer").classList.add("hidden");
   $("browseLayer").classList.remove("active");
   $("browseLayer").classList.add("hidden");
   $("catalogLayer").classList.remove("active");
@@ -973,6 +1075,7 @@ async function openProject(id){
           "<h1 class='mvp-detail-title' style='margin:0;'>"+esc(p.title)+"</h1>"+
           altHtml+
           authorHtml+
+          "<div class='mvp-detail-translator'>" + translatorName(p) + "</div>"+
           "<div class='mvp-detail-stats'>"+
             "<span class='mvp-detail-stat'><span style='color:var(--bato-star)'>★</span> "+pRating+"</span>"+
             "<button type='button' class='mvp-detail-stat mvp-detail-stat-btn "+(isBm?"bookmark-on":"")+"' onclick=\"toggleBookmark('"+esc(p.id)+"')\">"+
@@ -1034,7 +1137,7 @@ async function openProject(id){
   var part3=
     "<section class='mvp-detail-part'>"+
       "<div class='mvp-detail-part-title'>Deskripsi</div>"+
-      "<div class='mvp-description'>"+esc(p.description||"Belum ada deskripsi.")+"</div>"+
+      "<div class='mvp-description'>"+esc(p.description||"")+"</div>"+
       trakteerDetail+
     "</section>";
 
@@ -1394,6 +1497,19 @@ function toggleTheme(){
     $("grid").innerHTML="<p class='muted'>Library belum tersambung ke katalog.</p>";
   }
 })();
+</script>
+<!-- v5 guest navigation -->
+<script>
+
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('.guest-translator-link');
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const name = btn.getAttribute('data-guest') || '';
+  if (name && name.toUpperCase() !== 'MVP') openGuestProfile(name);
+});
+
 </script>
 </body>
 </html>
