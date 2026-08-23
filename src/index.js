@@ -133,8 +133,8 @@ function summarizeInteraction(data, userId, fallbackComments=0) {
   // 5★ = 9-10, 4★ = 7-8, 3★ = 5-6, 2★ = 3-4, 1★ = 1-2.
   const vote_distribution = [0,0,0,0,0];
   values.forEach(v => {
-    const band = Math.min(4, Math.floor((v - 1) / 2));
-    vote_distribution[band]++;
+    const band = 5 - Math.ceil(v / 2); // 10/9=>0 (5★), ... 2/1=>4 (1★)
+    vote_distribution[Math.max(0, Math.min(4, band))]++;
   });
 
   return {
