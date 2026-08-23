@@ -1,332 +1,689 @@
+import logging
+import os
+import re
+import sqlite3
+import time
+import zipfile
+import xml.etree.ElementTree as ET
+import aiohttp
+import io
+import asyncio
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
-async function getStats(env, projectId) {
-  const key = `stats:${String(projectId || "").toLowerCase()}`;
-  return (await env.LIBRARY.get(key, "json")) || {rating: 0, votes: 0, bookmarks: 0, comments: 0};
-}
+from dotenv import load_dotenv
+from pathlib import Path
+# Menambahkan ReplyKeyboardMarkup dan KeyboardButton
+from telegram import BotCommand, BotCommandScopeChat, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton, Update, WebAppInfo, MenuButtonDefault
+from telegram.constants import ChatMemberStatus
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, CallbackQueryHandler
 
-async function putStats(env, projectId, stats) {
-  const key = `stats:${String(projectId || "").toLowerCase()}`;
-  await env.LIBRARY.put(key, JSON.stringify({
-    rating: Number(stats.rating || 0),
-    votes: Number(stats.votes || 0),
-    bookmarks: Number(stats.bookmarks || 0),
-    comments: Number(stats.comments || 0)
-  }));
-}
-const json = (data, status = 200) =>
-  new Response(JSON.stringify(data), {
-    status,
-    headers: {"content-type": "application/json; charset=utf-8"}
-  });
+ROOT_DIR = Path(__file__).resolve().parent.parent
+ENV_FILE = ROOT_DIR / ".env"
+load_dotenv(ENV_FILE, override=True)
+TOKEN = os.getenv("Zhenya_BOT_TOKEN")
+LIBRARY_URL = "https://mvp-library.vissarionova91.workers.dev"
+CHANNEL_ID = int(os.environ["MVP_CHANNEL_ID"])
+DISCUSSION_ID = int(os.environ["MVP_DISCUSSION_ID"])
+MVP_CORE_ID = int(os.environ["MVP_CORE_ID"])
+LIBRARY_SYNC_URL = os.getenv("LIBRARY_SYNC_URL", "").rstrip("/")
+LIBRARY_SYNC_SECRET = os.getenv("LIBRARY_SYNC_SECRET", "")
+LIBRARY_DB = os.getenv("ZHENYA_LIBRARY_DB", str(ROOT_DIR / "zhenya_library.db"))
+if not os.path.isabs(LIBRARY_DB):
+    LIBRARY_DB = str(ROOT_DIR / LIBRARY_DB)
 
-function cors(headers = {}) {
-  return {
-    ...headers,
-    "access-control-allow-origin": "*",
-    "access-control-allow-methods": "GET,POST,PUT,OPTIONS",
-    "access-control-allow-headers": "Content-Type,X-Library-Secret,X-Telegram-Init-Data"
-  };
-}
+db=sqlite3.connect(LIBRARY_DB,check_same_thread=False)
 
-async function verifyTelegramInitData(initData, botToken) {
-  if (!initData || !botToken) return null;
+db.execute("""CREATE TABLE IF NOT EXISTS projects(
+project_id TEXT PRIMARY KEY,title TEXT NOT NULL,project_type TEXT NOT NULL DEFAULT 'comic',
+description TEXT NOT NULL DEFAULT '',cover_file_id TEXT,comment_link TEXT,tags TEXT NOT NULL DEFAULT '',author TEXT NOT NULL DEFAULT '',translator TEXT NOT NULL DEFAULT '',trakteer TEXT NOT NULL DEFAULT '',status TEXT NOT NULL DEFAULT 'Ongoing',updated_at INTEGER NOT NULL,source_message_id INTEGER)""")
 
-  const params = new URLSearchParams(initData);
-  const receivedHash = params.get("hash");
-  if (!receivedHash) return null;
+db.execute("""CREATE TABLE IF NOT EXISTS chapters(
+id INTEGER PRIMARY KEY AUTOINCREMENT,project_id TEXT NOT NULL,chapter TEXT NOT NULL,
+decensored INTEGER NOT NULL DEFAULT 0,file_id TEXT NOT NULL,message_id INTEGER NOT NULL UNIQUE,updated_at INTEGER NOT NULL DEFAULT 0,content_type TEXT NOT NULL DEFAULT 'image',file_name TEXT NOT NULL DEFAULT '')""")
 
-  const authDate = Number(params.get("auth_date") || 0);
-  if (!authDate || Math.abs(Math.floor(Date.now() / 1000) - authDate) > 86400) return null;
+# TABEL BARU UNTUK MEMORI ZHENYA (PANGGILAN HYUNG/NOONA)
+db.execute("""CREATE TABLE IF NOT EXISTS user_prefs(
+user_id INTEGER PRIMARY KEY, honorific TEXT NOT NULL)""")
 
-  params.delete("hash");
-  const dataCheckString = [...params.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${k}=${v}`)
-    .join("\n");
+db.commit()
 
-  const webAppKey = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode("WebAppData"),
-    {name: "HMAC", hash: "SHA-256"},
-    false,
-    ["sign"]
-  );
-  const secretKeyBytes = new Uint8Array(
-    await crypto.subtle.sign("HMAC", webAppKey, new TextEncoder().encode(botToken))
-  );
-  const secretKey = await crypto.subtle.importKey(
-    "raw",
-    secretKeyBytes,
-    {name: "HMAC", hash: "SHA-256"},
-    false,
-    ["sign"]
-  );
+# Migrations untuk database Zhenya versi lama.
+for migration in [
+    "ALTER TABLE projects ADD COLUMN source_message_id INTEGER",
+    "ALTER TABLE projects ADD COLUMN comment_count INTEGER NOT NULL DEFAULT 0",
+]:
+    try:
+        db.execute(migration)
+        db.commit()
+    except sqlite3.OperationalError:
+        pass
 
-  const signature = new Uint8Array(
-    await crypto.subtle.sign("HMAC", secretKey, new TextEncoder().encode(dataCheckString))
-  );
+db.execute("""CREATE TABLE IF NOT EXISTS discussion_comments(
+    message_id INTEGER PRIMARY KEY,
+    project_id TEXT NOT NULL
+)""")
+db.commit()
 
-  const expectedHash = [...signature].map(b => b.toString(16).padStart(2, "0")).join("");
-  if (expectedHash !== receivedHash) return null;
+# Update otomatis jika ada kolom baru
+for col in ["tags TEXT NOT NULL DEFAULT ''", "author TEXT NOT NULL DEFAULT ''", "translator TEXT NOT NULL DEFAULT ''", "trakteer TEXT NOT NULL DEFAULT ''", "status TEXT NOT NULL DEFAULT 'Ongoing'"]:
+    try:
+        db.execute(f"ALTER TABLE projects ADD COLUMN {col}")
+        db.commit()
+    except sqlite3.OperationalError:
+        pass
 
-  try {
-    return JSON.parse(params.get("user") || "null");
-  } catch {
-    return null;
-  }
-}
+for col in ["updated_at INTEGER NOT NULL DEFAULT 0", "content_type TEXT NOT NULL DEFAULT 'image'", "file_name TEXT NOT NULL DEFAULT ''"]:
+    try:
+        db.execute(f"ALTER TABLE chapters ADD COLUMN {col}")
+        db.commit()
+    except sqlite3.OperationalError:
+        pass
 
-async function telegramMemberStatus(env, chatId, userId) {
-  const r = await fetch(
-    `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getChatMember?chat_id=${encodeURIComponent(chatId)}&user_id=${encodeURIComponent(userId)}`
-  );
-  if (!r.ok) return null;
-  const data = await r.json();
-  if (!data.ok) return null;
+MEDIA_GROUP_CACHE = {}
+MEDIA_GROUP_PENDING = {}
 
-  const status = data.result?.status;
-  return ["creator", "administrator", "member"].includes(status);
-}
-
-async function checkAccess(request, env) {
-  const initData = request.headers.get("X-Telegram-Init-Data") || new URL(request.url).searchParams.get("init_data") || "";
-  const user = await verifyTelegramInitData(initData, env.TELEGRAM_BOT_TOKEN);
-  if (!user?.id) return {ok: false, code: 401};
-
-  const CHANNEL_ID = env.MVP_CHANNEL_ID || "-1004459399775";
-  const DISCUSSION_ID = env.MVP_DISCUSSION_ID || "-1003923062839";
-
-  if (!CHANNEL_ID || !DISCUSSION_ID) {
-    return {ok: false, code: 503};
-  }
-
-  const [mvp, discussion] = await Promise.all([
-    telegramMemberStatus(env, CHANNEL_ID, user.id),
-    telegramMemberStatus(env, DISCUSSION_ID, user.id)
-  ]);
-
-  if (mvp !== true || discussion !== true) {
-    return {ok: false, code: 403};
-  }
-
-  return {ok: true, user};
-}
-
-
-async function getInteraction(env, projectId) {
-  const data = await env.LIBRARY.get(`interaction:${projectId}`, "json");
-  if (!data || typeof data !== "object") return {votes:{}, bookmarks:{}, comments:0};
-  return {
-    votes: data.votes && typeof data.votes === "object" ? data.votes : {},
-    bookmarks: data.bookmarks && typeof data.bookmarks === "object" ? data.bookmarks : {},
-    comments: Number(data.comments || 0)
-  };
-}
-
-function summarizeInteraction(data, userId, fallbackComments=0) {
-  const votes = data.votes || {};
-  const bookmarks = data.bookmarks || {};
-  const values = Object.values(votes).map(Number).filter(v => v >= 1 && v <= 10);
-  const rating = values.length ? (values.reduce((a,b)=>a+b,0) / values.length).toFixed(1) : "0.0";
-  return {
-    rating,
-    bookmarks: Object.keys(bookmarks).length,
-    comments: Number(data.comments || fallbackComments || 0),
-    user_vote: Number(votes[String(userId)] || 0),
-    bookmarked: Object.prototype.hasOwnProperty.call(bookmarks, String(userId))
-  };
-}
-
-async function saveInteraction(env, projectId, data) {
-  await env.LIBRARY.put(`interaction:${projectId}`, JSON.stringify(data));
-}
-
-async function enrichCatalog(env, catalog, userId) {
-  if (!Array.isArray(catalog)) return [];
-  return Promise.all(catalog.map(async p => {
-    const data = await getInteraction(env, p.id);
-    return {...p, ...summarizeInteraction(data, userId, p.comments || 0)};
-  }));
-}
-
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-
-    if (request.method === "OPTIONS") {
-      return new Response(null, {headers: cors()});
-    }
-
-    if (url.pathname === "/api/access" && request.method === "GET") {
-      const access = await checkAccess(request, env);
-      if (!access.ok) {
-        return json(
-          {ok: false, code: access.code},
-          access.code === 403 ? 403 : access.code === 401 ? 401 : 503
-        );
-      }
-      return new Response(JSON.stringify({
-        ok: true,
-        user: {
-          id: String(access.user.id),
-          username: access.user.username || ""
-        }
-      }), {
-        headers: cors({"content-type": "application/json; charset=utf-8"})
-      });
-    }
-
-    if (url.pathname === "/api/catalog" && request.method === "GET") {
-      const access = await checkAccess(request, env);
-      if (!access.ok) {
-        return json({ok: false, code: access.code}, access.code);
-      }
-
-      const catalog = await env.LIBRARY.get("catalog", "json");
-      const enriched = await enrichCatalog(env, catalog || [], access.user.id);
-      return new Response(JSON.stringify(enriched), {
-        headers: cors({"content-type": "application/json; charset=utf-8"})
-      });
-    }
-
-
-    if (url.pathname === "/api/vote" && request.method === "POST") {
-      const access = await checkAccess(request, env);
-      if (!access.ok) return json({ok:false, code:access.code}, access.code);
-      const body = await request.json().catch(() => ({}));
-      const projectId = String(body.project_id || "").trim();
-      const score = Number(body.score);
-      if (!projectId || !Number.isInteger(score) || score < 1 || score > 10) return json({error:"invalid vote"},400);
-      const catalog = await env.LIBRARY.get("catalog","json");
-      if (!Array.isArray(catalog) || !catalog.some(p => String(p.id) === projectId)) return json({error:"project not found"},404);
-      const data = await getInteraction(env, projectId);
-      data.votes[String(access.user.id)] = score;
-      await saveInteraction(env, projectId, data);
-      return json({ok:true, ...summarizeInteraction(data, access.user.id, catalog.find(p=>String(p.id)===projectId)?.comments || 0)});
-    }
-
-    if (url.pathname === "/api/bookmark" && request.method === "POST") {
-      const access = await checkAccess(request, env);
-      if (!access.ok) return json({ok:false, code:access.code}, access.code);
-      const body = await request.json().catch(() => ({}));
-      const projectId = String(body.project_id || "").trim();
-      const bookmarked = Boolean(body.bookmarked);
-      if (!projectId) return json({error:"missing project_id"},400);
-      const catalog = await env.LIBRARY.get("catalog","json");
-      if (!Array.isArray(catalog) || !catalog.some(p => String(p.id) === projectId)) return json({error:"project not found"},404);
-      const data = await getInteraction(env, projectId);
-      const uid = String(access.user.id);
-      if (bookmarked) data.bookmarks[uid] = true; else delete data.bookmarks[uid];
-      await saveInteraction(env, projectId, data);
-      return json({ok:true, ...summarizeInteraction(data, access.user.id, catalog.find(p=>String(p.id)===projectId)?.comments || 0)});
-    }
-
+def parse_project(text):
+    m=re.search(r"\[PROJECT\](.*?)\[/PROJECT\]",text or "",re.I|re.S)
+    if not m:return None
     
-    if (url.pathname === "/api/admin/comment-stats" && request.method === "PUT") {
-      const secret = request.headers.get("X-Library-Secret") || "";
-      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
-        return json({ok:false, reason:"unauthorized"}, 401);
-      }
-      const body = await request.json().catch(() => null);
-      if (!body || !Array.isArray(body.projects)) {
-        return json({ok:false, reason:"invalid_payload"}, 400);
-      }
-      for (const item of body.projects) {
-        if (!item?.id) continue;
-        const current = await getStats(env, item.id);
-        await putStats(env, item.id, {
-          ...current,
-          comments: Number(item.comments || 0)
-        });
-      }
-      return json({ok:true, updated: body.projects.length});
-    }
+    raw_content = m.group(1).strip()
+    d={}
+    
+    desc_match = re.search(r"DESCRIPTION:\s*(.*)", raw_content, re.I | re.S)
+    if desc_match:
+        d["DESCRIPTION"] = desc_match.group(1).strip()
+        raw_content = re.sub(r"DESCRIPTION:\s*.*", "", raw_content, flags=re.I | re.S).strip()
+    
+    for line in raw_content.splitlines():
+        if ":" in line:
+            k,v = line.split(":",1)
+            k = k.strip().upper()
+            if k != "DESCRIPTION": 
+                d[k] = v.strip()
+            
+    if not d.get("ID") or not d.get("TITLE"):return None
+    return d
 
-if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
-      const secret = request.headers.get("x-library-secret");
-      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
-        return json({error: "unauthorized"}, 401);
-      }
+def docx_to_html(file_bytes):
+    with zipfile.ZipFile(file_bytes) as docx:
+        xml_data = docx.read("word/document.xml")
+    root = ET.fromstring(xml_data)
+    ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+    parts = []
+    
+    for p in root.findall(".//w:p", ns):
+        align_style = ""
+        pPr = p.find(".//w:pPr", ns)
+        if pPr is not None:
+            jc = pPr.find(".//w:jc", ns)
+            if jc is not None:
+                val = jc.get(f"{{{ns['w']}}}val")
+                if val == "both":
+                    align_style = ' style="text-align: justify;"'
+                elif val in ["center", "right"]:
+                    align_style = f' style="text-align: {val};"'
 
-      const body = await request.json();
-      if (!Array.isArray(body)) {
-        return json({error: "catalog must be an array"}, 400);
-      }
+        runs = []
+        for r in p.findall(".//w:r", ns):
+            t_nodes = r.findall(".//w:t", ns)
+            if not t_nodes:
+                continue
+            text = "".join(t.text or "" for t in t_nodes)
+            if not text:
+                continue
+            text = esc_html(text)
+            rPr = r.find(".//w:rPr", ns)
+            if rPr is not None:
+                if rPr.find(".//w:b", ns) is not None:
+                    text = f"<strong>{text}</strong>"
+                if rPr.find(".//w:i", ns) is not None:
+                    text = f"<em>{text}</em>"
+            runs.append(text)
 
-      await env.LIBRARY.put("catalog", JSON.stringify(body));
-      return json({ok: true, count: body.length});
-    }
+        para_html = "".join(runs).strip()
+        if para_html:
+            parts.append(f"<p{align_style}>{para_html}</p>")
+    return "".join(parts)
 
-    // TAMBAHAN: Endpoint Menerima Text HTML Novel dari Bot
-    if (url.pathname === "/api/admin/novel" && request.method === "PUT") {
-      const secret = request.headers.get("x-library-secret");
-      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
-        return json({error: "unauthorized"}, 401);
-      }
+def esc_html(value):
+    return (str(value or "")
+            .replace("&","&amp;")
+            .replace("<","&lt;")
+            .replace(">","&gt;")
+            .replace('"',"&quot;")
+            .replace("'","&#39;"))
 
-      const body = await request.json();
-      const key = `novel_${body.project_id}_${body.chapter}_${body.decensored}`;
-      await env.LIBRARY.put(key, JSON.stringify({html: body.html}));
-      return json({ok: true});
-    }
 
-    // TAMBAHAN: Endpoint Mengirim Text HTML Novel ke Mini Web Reader
-    if (url.pathname === "/api/novel" && request.method === "GET") {
-      const access = await checkAccess(request, env);
-      if (!access.ok) {
-        return json({ok: false, code: access.code}, access.code);
-      }
+async def sync_comment_counts():
+    if not LIBRARY_SYNC_URL or not LIBRARY_SYNC_SECRET:
+        return
+    rows = db.execute(
+        "SELECT project_id, comment_count FROM projects ORDER BY project_id"
+    ).fetchall()
+    payload = {"projects": [
+        {"id": pid, "comments": int(count or 0)}
+        for pid, count in rows
+    ]}
+    try:
+        async with aiohttp.ClientSession() as s:
+            async with s.put(
+                LIBRARY_SYNC_URL + "/api/admin/comment-stats",
+                headers={"X-Library-Secret": LIBRARY_SYNC_SECRET},
+                json=payload,
+                timeout=20
+            ) as r:
+                if r.status >= 300:
+                    log.error("Comment stats sync failed: %s %s", r.status, await r.text())
+    except Exception:
+        log.exception("Comment stats sync error")
 
-      const pid = url.searchParams.get("project_id");
-      const ch = url.searchParams.get("chapter");
-      const dec = url.searchParams.get("decensored");
-      
-      const key = `novel_${pid}_${ch}_${dec}`;
-      const data = await env.LIBRARY.get(key, "json");
-      
-      if (!data) return json({error: "not found"}, 404);
 
-      return new Response(JSON.stringify(data), {
-        headers: cors({"content-type": "application/json; charset=utf-8"})
-      });
-    }
+async def sync_catalog():
+    if not LIBRARY_SYNC_URL or not LIBRARY_SYNC_SECRET:
+        log.warning("Library sync is not configured.")
+        return
+    projects=[]
+    for row in db.execute("SELECT project_id,title,project_type,description,cover_file_id,comment_link,tags,author,translator,trakteer,status FROM projects ORDER BY title COLLATE NOCASE"):
+        pid,title,ptype,desc,cover,comment,tags,author,translator,trakteer,status=row
+        
+        chapter_rows = db.execute("""
+            SELECT chapter, decensored, file_id, updated_at, content_type
+            FROM chapters WHERE project_id=? ORDER BY file_name ASC, id ASC
+        """, (pid,)).fetchall()
+        
+        grouped = {}
+        for ch, dec, fid, updated_at, content_type in chapter_rows:
+            key = (ch, int(dec))
+            grouped.setdefault(key, []).append((fid, updated_at, content_type))
+        chapters = [
+            {
+                "chapter": ch,
+                "decensored": dec,
+                "pages": len(items),
+                "file_ids": [fid for fid, _, _ in items],
+                "updated_at": max([ts for _, ts, _ in items] or [0]),
+                "content_type": items[0][2] if items else "image",
+            }
+            for (ch, dec), items in grouped.items()
+        ]
+        comment_count = db.execute("SELECT COUNT(*) FROM discussion_comments WHERE project_id=?", (pid,)).fetchone()[0]
+        projects.append({"id":pid,"title":title,"type":ptype,"description":desc,
+                         "cover_file_id":cover,"comment_link":comment,
+                         "tags":[t.strip() for t in (tags or "").split(",") if t.strip()],
+                         "author":author, "translator":translator, "trakteer":trakteer,
+                         "status":status, "comments":int(comment_count), "chapters":chapters})
+    try:
+        async with aiohttp.ClientSession() as s:
+            async with s.put(LIBRARY_SYNC_URL+"/api/admin/catalog",
+                headers={"X-Library-Secret":LIBRARY_SYNC_SECRET},
+                json=projects,timeout=20) as r:
+                if r.status >= 300:
+                    log.error("Library sync failed: %s %s",r.status,await r.text())
+                else:
+                    log.info("Library catalog synced: %s projects",len(projects))
+    except Exception:
+        log.exception("Library catalog sync error")
 
-    if (url.pathname === "/api/file" && request.method === "GET") {
-      const access = await checkAccess(request, env);
-      if (!access.ok) {
-        return json({ok: false, code: access.code}, access.code);
-      }
-      const fileId = url.searchParams.get("file_id");
-      if (!fileId) return new Response("Missing file_id", {status: 400});
+async def index_core(update,context):
+    msg=update.channel_post
+    if not msg or msg.chat.id != MVP_CORE_ID:return
+    cap=msg.caption or ""
+    body=msg.text or cap
+    mg_id = msg.media_group_id
+    
+    if body.strip().lower() == "/info":
+        info_text = """👑 <b>PANDUAN KONTROL MVP MINIWEB</b> 👑
 
-      if (!env.TELEGRAM_BOT_TOKEN) {
-        return new Response("Telegram file proxy is not configured", {status: 503});
-      }
+<b>1. Tambah / Edit Project</b>
+<code>[PROJECT]
+ID: solo_leveling
+TITLE: Solo Leveling
+TYPE: comic
+AUTHOR: Chugong, Dubu
+TRANSLATOR: Nama Kamu / Temanmu
+TAGS: Action, Fantasy
+STATUS: Ongoing (atau Tamat)
+COMMENT: https://t.me/MVP_Lounge/123
+TRAKTEER: https://trakteer.id/namaakun
+DESCRIPTION: Sinopsis cerita di sini...
+[/PROJECT]</code>
 
-      const tg = await fetch(
-        `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getFile?file_id=${encodeURIComponent(fileId)}`
-      );
-      const info = await tg.json();
+<b>2. Ganti Cover</b> (Kirim File dgn caption)
+<code>COVER: solo_leveling</code>
 
-      if (!info.ok || !info.result?.file_path) {
-        return new Response("Telegram file not found", {status: 404});
-      }
+<b>3. Chapter Normal</b> (Kirim File dgn caption)
+<code>PJ: solo_leveling
+CHAPTER: 1
+DECENSORED: 0</code>
 
-      const file = await fetch(
-        `https://api.telegram.org/file/bot${env.TELEGRAM_BOT_TOKEN}/${info.result.file_path}`
-      );
+<b>4. Chapter Khusus</b> (Kirim File dgn caption)
+<code>PJ: solo_leveling
+CHAPTER: 1
+DECENSORED: 1 ATAU UNCENSORED: 1</code>
 
-      if (!file.ok) {
-        return new Response("Unable to fetch Telegram file", {status: 502});
-      }
+<b>5. Hapus Keseluruhan Project</b>
+<code>DELETE_PJ: solo_leveling</code>
 
-      const headers = new Headers(cors({
-        "cache-control": "public, max-age=3600",
-        "content-type": file.headers.get("content-type") || "image/jpeg"
-      }));
-      return new Response(file.body, {status: 200, headers});
-    }
+<b>6. Hapus 1 Chapter Spesifik</b>
+<code>DELETE_CH: solo_leveling | 1</code>
 
-    return env.ASSETS.fetch(request);
-  }
-};
+<b>7. Cek Daftar Project & ID-nya</b>
+<code>/listpj</code>"""
+        await msg.reply_text(info_text, parse_mode="HTML")
+        return
+
+    if body.strip().lower() == "/listpj":
+        rows = db.execute("SELECT title, project_id, project_type FROM projects ORDER BY title COLLATE NOCASE").fetchall()
+        if not rows:
+            await msg.reply_text("Belum ada project yang terdaftar di database.")
+            return
+        
+        messages = []
+        current_msg = "📚 <b>DAFTAR PROJECT & ID</b>\n\n"
+        for title, pid, ptype in rows:
+            icon = "📖" if ptype.lower() == "novel" else "🖼️"
+            entry = f"{icon} <b>{esc_html(title)}</b>\n└ ID: <code>{pid}</code>\n\n"
+            
+            if len(current_msg) + len(entry) > 3800:
+                messages.append(current_msg)
+                current_msg = entry
+            else:
+                current_msg += entry
+                
+        if current_msg:
+            messages.append(current_msg)
+            
+        for m in messages:
+            try:
+                await msg.reply_text(m, parse_mode="HTML")
+            except Exception as e:
+                log.error(f"Gagal mengirim list pj: {e}")
+        return
+    
+    m_del_pj = re.match(r"^DELETE_PJ\s*[:=]\s*([A-Za-z0-9_.-]+)", body.strip(), re.I)
+    if m_del_pj:
+        pid = m_del_pj.group(1).lower()
+        cur = db.execute("DELETE FROM projects WHERE project_id=?", (pid,))
+        db.execute("DELETE FROM chapters WHERE project_id=?", (pid,))
+        db.execute("DELETE FROM discussion_comments WHERE project_id=?", (pid,))
+        db.commit()
+        if cur.rowcount > 0:
+            log.info(f"Project dihapus: {pid}")
+            await sync_catalog()
+            await sync_comment_counts()
+            try: await msg.reply_text(f"✅ Berhasil!\nProject '{pid}' telah dihapus.")
+            except: pass
+        else:
+            try: await msg.reply_text(f"⚠️ Gagal!\nProject '{pid}' tidak ditemukan.")
+            except: pass
+        return
+
+    m_del_ch = re.match(r"^DELETE_CH\s*[:=]\s*([A-Za-z0-9_.-]+)\s*\|\s*([^\s|]+)", body.strip(), re.I)
+    if m_del_ch:
+        pid = m_del_ch.group(1).lower()
+        ch = m_del_ch.group(2)
+        cur = db.execute("DELETE FROM chapters WHERE project_id=? AND chapter=?", (pid, ch))
+        db.commit()
+        if cur.rowcount > 0:
+            log.info(f"Chapter dihapus: {pid} | {ch}")
+            await sync_catalog()
+            try: await msg.reply_text(f"✅ Berhasil!\nChapter {ch} dari project '{pid}' telah dihapus.")
+            except: pass
+        else:
+            try: await msg.reply_text(f"⚠️ Gagal!\nChapter {ch} untuk project '{pid}' tidak ditemukan.")
+            except: pass
+        return
+    
+    p=parse_project(body)
+    if p:
+        db.execute("""INSERT INTO projects(
+            project_id, title, project_type, description, cover_file_id, 
+            comment_link, tags, author, translator, trakteer, status, updated_at, source_message_id
+        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ON CONFLICT(project_id) DO UPDATE SET 
+            title=excluded.title,
+            project_type=excluded.project_type,
+            description=excluded.description,
+            comment_link=excluded.comment_link,
+            tags=excluded.tags,
+            author=excluded.author,
+            translator=excluded.translator,
+            trakteer=excluded.trakteer,
+            status=excluded.status,
+            updated_at=excluded.updated_at,
+            source_message_id=excluded.source_message_id""",
+        (p["ID"].lower(),p["TITLE"],p.get("TYPE","comic"),p.get("DESCRIPTION",""),
+         None,p.get("COMMENT",""),p.get("TAGS",""),p.get("AUTHOR",""),p.get("TRANSLATOR",""),p.get("TRAKTEER",""),p.get("STATUS","Ongoing"),int(time.time()),msg.message_id))
+        db.commit();await sync_catalog();await sync_comment_counts();return
+        
+    m=re.match(r"^COVER:\s*([A-Za-z0-9_.-]+)$",cap,re.I)
+    if m:
+        fid = None
+        if msg.photo:
+            fid = msg.photo[-1].file_id
+        elif msg.document and (msg.document.mime_type or "").startswith("image/"):
+            fid = msg.document.file_id
+            
+        if fid:
+            db.execute("UPDATE projects SET cover_file_id=?,updated_at=? WHERE project_id=?",
+                       (fid,int(time.time()),m.group(1).lower()))
+            db.commit();await sync_catalog();await sync_comment_counts();return
+    
+    m = re.search(
+        r"PJ:\s*([A-Za-z0-9_.-]+).*?"
+        r"CHAPTER:\s*([^\s|]+).*?"
+        r"(DECENSORED|UNCENSORED):\s*([01])",
+        cap,
+        re.I | re.S
+    )
+
+    pid = None
+    ch = None
+    dec = 0
+
+    if m:
+        pid = m.group(1).lower()
+        ch = m.group(2)
+        c_type_meta = m.group(3).upper()
+        val = int(m.group(4))
+
+        if val == 1:
+            dec = 1 if c_type_meta == "DECENSORED" else 2
+
+        if mg_id:
+            MEDIA_GROUP_CACHE[mg_id] = {
+                "pid": pid,
+                "ch": ch,
+                "dec": dec
+            }
+
+    elif mg_id and mg_id in MEDIA_GROUP_CACHE:
+        cached = MEDIA_GROUP_CACHE[mg_id]
+        pid = cached["pid"]
+        ch = cached["ch"]
+        dec = cached["dec"]
+
+
+    fid = None
+    content_type = "image"
+    file_name_attr = ""
+
+    if msg.photo:
+        fid = msg.photo[-1].file_id
+        content_type = "image"
+        file_name_attr = msg.photo[-1].file_unique_id
+
+    elif msg.document:
+        fid = msg.document.file_id
+        if (msg.document.file_name or "").lower().endswith(".docx"):
+            content_type = "docx"
+        else:
+            content_type = "image"
+        file_name_attr = msg.document.file_name or ""
+
+
+    if not fid:
+        return
+
+    if mg_id:
+        if not pid or not ch:
+            MEDIA_GROUP_PENDING.setdefault(mg_id, []).append({
+                "fid": fid,
+                "message_id": msg.message_id,
+                "updated_at": int(msg.date.timestamp()) if msg.date else int(time.time()),
+                "content_type": content_type,
+                "file_name": file_name_attr
+            })
+            return
+
+        pending = MEDIA_GROUP_PENDING.pop(mg_id, [])
+        items = pending + [{
+            "fid": fid,
+            "message_id": msg.message_id,
+            "updated_at": int(msg.date.timestamp()) if msg.date else int(time.time()),
+            "content_type": content_type,
+            "file_name": file_name_attr
+        }]
+    else:
+        items = [{
+            "fid": fid,
+            "message_id": msg.message_id,
+            "updated_at": int(msg.date.timestamp()) if msg.date else int(time.time()),
+            "content_type": content_type,
+            "file_name": file_name_attr
+        }]
+
+    inserted = 0
+
+    for item in items:
+        item_fid = item["fid"]
+        item_type = item["content_type"]
+
+        if item_type == "docx":
+            try:
+                file = await context.bot.get_file(item_fid)
+                byte_array = await file.download_as_bytearray()
+                html_content = docx_to_html(io.BytesIO(byte_array))
+
+                async with aiohttp.ClientSession() as s:
+                    async with s.put(
+                        LIBRARY_SYNC_URL + "/api/admin/novel",
+                        headers={"X-Library-Secret": LIBRARY_SYNC_SECRET},
+                        json={"project_id": pid, "chapter": ch, "decensored": dec, "html": html_content},
+                        timeout=30
+                    ) as r:
+                        if r.status >= 300:
+                            continue
+            except Exception:
+                continue
+
+        db.execute(
+            """INSERT OR IGNORE INTO chapters(
+                project_id, chapter, decensored, file_id, message_id, updated_at, content_type, file_name
+            ) VALUES(?,?,?,?,?,?,?,?)""",
+            (pid, ch, dec, item_fid, item["message_id"], item["updated_at"], item_type, item["file_name"])
+        )
+        inserted += 1
+
+    db.commit()
+    await sync_catalog()
+    return
+
+
+async def resolve_project_from_discussion_reply(msg):
+    reply = getattr(msg, "reply_to_message", None)
+    if not reply:
+        return None
+
+    origin = getattr(reply, "forward_origin", None)
+    origin_id = getattr(origin, "message_id", None)
+    if origin_id:
+        row = db.execute(
+            "SELECT project_id FROM projects WHERE source_message_id=?",
+            (origin_id,)
+        ).fetchone()
+        if row:
+            return row[0]
+
+    row = db.execute(
+        "SELECT project_id FROM discussion_comments WHERE message_id=?",
+        (reply.message_id,)
+    ).fetchone()
+    if row:
+        return row[0]
+
+    forwarded_id = getattr(reply, "forward_from_message_id", None)
+    if forwarded_id:
+        row = db.execute(
+            "SELECT project_id FROM projects WHERE source_message_id=?",
+            (forwarded_id,)
+        ).fetchone()
+        if row:
+            return row[0]
+
+    return None
+
+
+async def index_discussion(update, context):
+    msg = update.effective_message
+    if not msg or msg.chat_id != DISCUSSION_ID or not msg.from_user or msg.from_user.is_bot:
+        return
+
+    project_id = await resolve_project_from_discussion_reply(msg)
+
+    if not project_id:
+        text = (msg.text or msg.caption or "").strip()
+        m = re.search(r"(?:PJ|PROJECT)\s*[:#]\s*([A-Za-z0-9_.-]+)", text, re.I)
+        if m:
+            candidate = m.group(1).lower()
+            row = db.execute(
+                "SELECT project_id FROM projects WHERE project_id=?",
+                (candidate,)
+            ).fetchone()
+            if row:
+                project_id = row[0]
+
+    if not project_id:
+        return
+
+    cur = db.execute(
+        "INSERT OR IGNORE INTO discussion_comments(message_id,project_id) VALUES(?,?)",
+        (msg.message_id, project_id)
+    )
+    db.commit()
+
+    if cur.rowcount:
+        await sync_catalog()
+        await sync_comment_counts()
+
+
+logging.basicConfig(
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    level=logging.INFO,
+)
+log = logging.getLogger("MVP_Zhenya")
+
+async def is_mvp_member(bot, user_id: int) -> bool:
+    valid = {ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER}
+    try:
+        channel = await bot.get_chat_member(CHANNEL_ID, user_id)
+        lounge = await bot.get_chat_member(DISCUSSION_ID, user_id)
+        return (channel.status in valid and lounge.status in valid)
+    except Exception:
+        log.exception("Membership check failed for user %s", user_id)
+        return False
+
+
+# FUNGSI UNTUK MENGIRIM SAPAAN (DENGAN REPLY KEYBOARD)
+async def send_greeting(message, honorific, is_edit=False):
+    tz = ZoneInfo("Asia/Jakarta")
+    hour = datetime.now(tz).hour
+    
+    if 4 <= hour < 11:
+        waktu = "pagi"
+    elif 11 <= hour < 15:
+        waktu = "siang"
+    elif 15 <= hour < 18:
+        waktu = "sore"
+    else:
+        waktu = "malam"
+        
+    pesan_sapaan = (
+        f"Selamat {waktu} {honorific}, tap tombol di bawah untuk membuka miniweb\n\n"
+        f"semangat rebahan, and enjoy the ride~"
+    )
+        
+    # KUNCI UTAMA: Kita pakai Custom Keyboard (ReplyKeyboardMarkup).
+    # Tombol ini akan nempel terus di bawah seukuran layar, TAPI tetap di-protect!
+    keyboard = ReplyKeyboardMarkup(
+        [[KeyboardButton(text="👑 Buka MVP Miniweb", web_app=WebAppInfo(url=LIBRARY_URL))]],
+        resize_keyboard=True
+    )
+        
+    if is_edit:
+        # Hapus pesan (Inline Keyboard) lama
+        await message.delete()
+        # Kirim ulang pesan baru beserta ReplyKeyboard raksasa di bawah + PROTECT
+        await message.chat.send_message(pesan_sapaan, parse_mode="HTML", reply_markup=keyboard, protect_content=True)
+    else:
+        await message.reply_text(pesan_sapaan, parse_mode="HTML", reply_markup=keyboard, protect_content=True)
+
+
+async def set_menu(context: ContextTypes.DEFAULT_TYPE, chat_id: int, member: bool):
+    commands = ([BotCommand("start", "Buka Library")] if member else [BotCommand("start", "Mulai")])
+    await context.bot.set_my_commands(commands, scope=BotCommandScopeChat(chat_id=chat_id))
+    
+    # WAJIB DEFAULT! Menu Button bawaan API TIDAK BISA dipasang protect_content.
+    # Maka kita matikan, dan posisinya akan digantikan oleh Custom Keyboard di atas.
+    await context.bot.set_chat_menu_button(
+        chat_id=chat_id,
+        menu_button=MenuButtonDefault()
+    )
+
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.effective_user or not update.effective_chat:
+        return
+    user = update.effective_user
+    chat_id = update.effective_chat.id
+    log.info("/start from user=%s chat=%s", user.id, chat_id)
+    if update.effective_chat.type != "private":
+        return
+        
+    member = await is_mvp_member(context.bot, user.id)
+    await set_menu(context, chat_id, member)
+    
+    if not member:
+        await update.effective_message.reply_text("Anda bukan bagian dari MVP.", protect_content=True)
+        return
+
+    cur = db.execute("SELECT honorific FROM user_prefs WHERE user_id=?", (user.id,))
+    row = cur.fetchone()
+
+    if row:
+        honorific = row[0]
+        await send_greeting(update.effective_message, honorific)
+    else:
+        # Jika belum ingat, tanya dulu pakai Inline (Wajib terproteksi juga)
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("Hyung", callback_data="set_Hyung"),
+             InlineKeyboardButton("Noona", callback_data="set_Noona")]
+        ])
+        await update.effective_message.reply_text("Bagaimana aku harus memanggilmu?", reply_markup=keyboard, protect_content=True)
+
+
+async def handle_preference(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    user_id = q.from_user.id
+    data = q.data
+
+    if data in ["set_Hyung", "set_Noona"]:
+        honorific = data.split("_")[1]
+        
+        # Simpan ke ingatan Zhenya
+        db.execute("INSERT OR REPLACE INTO user_prefs(user_id, honorific) VALUES(?,?)", (user_id, honorific))
+        db.commit()
+
+        # Panggil fungsi send_greeting yang akan men-delete pesan inline ini
+        # lalu memunculkan Custom Keyboard di layar bawah.
+        await send_greeting(q.message, honorific, is_edit=True)
+
+async def post_init(application: Application):
+    await application.bot.set_my_commands([BotCommand("start", "Mulai")])
+
+def main():
+    if not TOKEN: raise RuntimeError("Zhenya_BOT_TOKEN tidak ditemukan di .env")
+    log.info("MVP_Zhenya starting...")
+    app = Application.builder().token(TOKEN).post_init(post_init).build()
+    
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST, index_core))
+    app.add_handler(MessageHandler(filters.Chat(DISCUSSION_ID) & ~filters.COMMAND, index_discussion))
+    app.add_handler(CallbackQueryHandler(handle_preference, pattern="^set_"))
+    
+    log.info("MVP_Zhenya polling...")
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
