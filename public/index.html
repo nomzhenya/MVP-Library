@@ -1253,11 +1253,10 @@ async function openProject(id){
   var chaptersHtml=mappedChaps.map(function(item){
     var timeStr=item.c.updated_at?timeAgo(item.c.updated_at):"Just now";
     var chTitle=chapterDisplayTitle(item.c);
-
+    var chTranslator=chapterTranslator(p,item.c);
     return "<div class='chapter-bato' onclick=\"openReader('"+esc(p.id)+"','"+esc(item.c.chapter)+"',"+Number(item.c.decensored||0)+")\">"+
       "<div class='mvp-chapter-bato-body'><div style='font-weight:800;font-size:14px;color:var(--accent);'>Chapter "+esc(item.c.chapter)+decBadge(item.c.decensored)+"</div>"+
-      (chTitle?"<div class='mvp-chapter-title'>"+esc(chTitle)+"</div>":"")+""+
-+"</div>"+
+      (chTitle?"<div class='mvp-chapter-title'>"+esc(chTitle)+"</div>":"")+"</div>"+
       "<div class='mvp-chapter-bato-meta'>🕒 "+timeStr+"</div>"+
     "</div>";
   }).join("");
