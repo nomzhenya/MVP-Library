@@ -440,6 +440,15 @@ html,body{background:var(--bg)}
 
 
 .mvp-detail-translator{margin-top:8px;margin-bottom:20px;text-align:left;font-size:13px;font-weight:900;letter-spacing:.2px}
+
+.translator-gradient-all{
+  background:linear-gradient(90deg,#ff9fcf,#c9a7ff,#9ee7ff);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  color:transparent;
+  font-weight:900;
+}
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -905,7 +914,7 @@ function translatorName(project){
   if(!name){
     return "<span class='mvp-translator'>MVP</span>";
   }
-  return "<button type='button' class='guest-translator-link mvp-translator' data-guest='"+esc(name)+"'>"+esc(name)+"</button>;
+  return "<button type='button' class='guest-translator-link translator-gradient-all' data-guest='"+esc(name)+"'>"+esc(name)+"</button>";
 }
 
 function renderHome(){
@@ -1228,7 +1237,7 @@ async function openProject(id){
   var detailTranslator=String(p.translator||"").trim() || "MVP";
   var translatorHtml=detailTranslator.toUpperCase()==="MVP"
     ? "<div class='mvp-detail-translator'>DITERJEMAHKAN OLEH : <span class='mvp-translator'>MVP</span></div>"
-    : "<div class='mvp-detail-translator'>DITERJEMAHKAN OLEH : <button type='button' class='guest-translator-link mvp-translator' data-guest='"+esc(detailTranslator)+"'>"+esc(detailTranslator)+"</button></div>";
+    : "<div class='mvp-detail-translator'>DITERJEMAHKAN OLEH : <button type='button' class='guest-translator-link translator-gradient-all' data-guest='"+esc(detailTranslator)+"'>"+esc(detailTranslator)+"</button></div>";
   var part3=
     "<section class='mvp-detail-part'>"+
       translatorHtml+
