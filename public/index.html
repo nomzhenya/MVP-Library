@@ -440,6 +440,15 @@ html,body{background:var(--bg)}
 
 
 .mvp-detail-translator{margin-top:8px;margin-bottom:20px;text-align:left;font-size:13px;font-weight:900;letter-spacing:.2px}
+
+/* Translator visual revision: pastel gradient for EVERY translator */
+.guest-translator-link.mvp-translator{
+  color:transparent !important;
+  -webkit-text-fill-color:transparent !important;
+  background:linear-gradient(90deg,#ff9fcf,#c9a7ff,#9ee7ff) !important;
+  -webkit-background-clip:text !important;
+  background-clip:text !important;
+}
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -1228,7 +1237,7 @@ async function openProject(id){
   var detailTranslator=String(p.translator||"").trim() || "MVP";
   var translatorHtml=detailTranslator.toUpperCase()==="MVP"
     ? "<div class='mvp-detail-translator'>DITERJEMAHKAN OLEH : <span class='mvp-translator'>MVP</span></div>"
-    : "<div class='mvp-detail-translator'>DITERJEMAHKAN OLEH : <button type='button' class='guest-translator-link' data-guest='"+esc(detailTranslator)+"'>"+esc(detailTranslator)+"</button></div>";
+    : "<div class='mvp-detail-translator'>DITERJEMAHKAN OLEH : <button type='button' class='guest-translator-link mvp-translator' data-guest='"+esc(detailTranslator)+"'>"+esc(detailTranslator)+"</button></div>";
   var part3=
     "<section class='mvp-detail-part'>"+
       translatorHtml+
@@ -1248,7 +1257,7 @@ async function openProject(id){
     return "<div class='chapter-bato' onclick=\"openReader('"+esc(p.id)+"','"+esc(item.c.chapter)+"',"+Number(item.c.decensored||0)+")\">"+
       "<div class='mvp-chapter-bato-body'><div style='font-weight:800;font-size:14px;color:var(--accent);'>Chapter "+esc(item.c.chapter)+decBadge(item.c.decensored)+"</div>"+
       (chTitle?"<div class='mvp-chapter-title'>"+esc(chTitle)+"</div>":"")+""+
-      (chTranslator?"<div class='mvp-chapter-translator'>"+esc(chTranslator)+"</div>":"")+"</div>"+
++"</div>"+
       "<div class='mvp-chapter-bato-meta'>🕒 "+timeStr+"</div>"+
     "</div>";
   }).join("");
@@ -1392,7 +1401,7 @@ async function openReader(projectId, chapterName, decensored){
 
   var chapterOptions = chaptersArr.map(function(ch, i) {
     var isCur = i === idx ? "current" : "";
-    return "<button class='reader-chapter-option "+isCur+"' onclick=\"selectReaderChapter('"+esc(p.id)+"',"+i+")\">Chapter "+esc(ch.chapter)+decBadge(ch.decensored)+(chapterDisplayTitle(ch)?" · "+esc(chapterDisplayTitle(ch)):"")+(chapterTranslator(p,ch)?" — "+esc(chapterTranslator(p,ch)):"")+"</button>";
+    return "<button class='reader-chapter-option "+isCur+"' onclick=\"selectReaderChapter('"+esc(p.id)+"',"+i+")\">Chapter "+esc(ch.chapter)+decBadge(ch.decensored)+(chapterDisplayTitle(ch)?" · "+esc(chapterDisplayTitle(ch)):"")+"</button>";
   }).join("");
 
   var isLast = idx >= chaptersArr.length - 1;
