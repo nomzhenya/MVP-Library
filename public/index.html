@@ -890,13 +890,13 @@ function chapterTranslator(p,ch){
 }
 function renderBatoItem(p,chaptersToShow,homeContext){
   var cover=p.cover_file_id?`<img class="b-cover" src="${fileUrl(p.cover_file_id)}" loading="lazy">`:`<div class="b-cover"></div>`;
-  var pRating=(p.rating!=null?Number(p.rating).toFixed(1):"0.0"),pBookmarks=p.bookmarks||"0";
+  var pRating=(p.rating!=null?Number(p.rating).toFixed(1):"0.0"),pBookmarks=p.bookmarks||"0",pComments=Number(p.comments||0);
   var chHtml=(chaptersToShow||[]).map(function(ch){
     var timeStr=ch.updated_at?timeAgo(ch.updated_at):(ch.ts?timeAgo(Math.floor(ch.ts/1000)):"Just now"),title=chapterDisplayTitle(ch),trans=chapterTranslator(p,ch);
     return `<div class="b-chap" onclick="event.stopPropagation();openReader('${esc(p.id)}','${esc(ch.chapter)}',${Number(ch.decensored||0)})"><div style="min-width:0;flex:1"><div class="b-chap-name">Chapter ${esc(ch.chapter)}${decBadge(ch.decensored)}</div>${title?`<div class="mvp-chapter-title">${esc(title)}</div>`:""}${trans?`<div class="mvp-chapter-translator">${esc(trans)}</div>`:""}</div><div class="b-chap-meta">${timeStr}</div></div>`;
   }).join("");
   var homeLines=homeContext?`<div class="mvp-home-history">${homeContext.history?`<div class="mvp-home-line history"><span class="label">↻ Terakhir dibaca</span><button onclick="event.stopPropagation();openReader('${esc(p.id)}','${esc(homeContext.history.chapter)}',${Number(homeContext.history.decensored||0)})">Ch. ${esc(homeContext.history.chapter)}${chapterDisplayTitle(homeContext.history)?` · ${esc(chapterDisplayTitle(homeContext.history))}`:""} · ${timeAgo(Math.floor(Number(homeContext.history.ts||0)/1000))}</button></div>`:""}${homeContext.latest?`<div class="mvp-home-line latest"><span class="label">✦ Chapter terbaru</span><button onclick="event.stopPropagation();openReader('${esc(p.id)}','${esc(homeContext.latest.chapter)}',${Number(homeContext.latest.decensored||0)})">Ch. ${esc(homeContext.latest.chapter)}${chapterDisplayTitle(homeContext.latest)?` · ${esc(chapterDisplayTitle(homeContext.latest))}`:""} · ${timeAgo(Number(homeContext.latest.updated_at||0))}</button></div>`:""}</div>`:`<div class="b-chaps">${chHtml}</div>`;
-  return `<div class="b-item" onclick="openProject('${esc(p.id)}')">${cover}<div class="b-info"><div class="b-item-title"><span class="txt">${esc(p.title)}</span></div><div class="b-stats"><span><span style="color:var(--bato-star)">⭐</span> ${pRating}</span><span class="bookmark-stat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>${pBookmarks}</span></div><div class="b-tags">${getTags(p)}</div>${homeLines}</div></div>`;
+  return `<div class="b-item" onclick="openProject('${esc(p.id)}')">${cover}<div class="b-info"><div class="b-item-title"><span class="txt">${esc(p.title)}</span></div><div class="b-stats"><span><span style="color:var(--bato-star)">⭐</span> ${pRating}</span><span class="bookmark-stat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>${pBookmarks}</span><span>💬 ${pComments}</span></div><div class="b-tags">${getTags(p)}</div>${homeLines}</div></div>`;
 }
 function translatorName(project){
   var name = String((project && (project.translator || project.TRANSLATOR)) || "").trim();
@@ -1120,6 +1120,7 @@ async function openProject(id){
   var pRating=(p.rating!=null?Number(p.rating).toFixed(1):"0.0");
   var pVotes=Number(p.votes||0);
   var pBookmarks=p.bookmarks||"0";
+  var pComments=Number(p.comments||0);
 
   // PART 1 — cover + title + alternative title + author + rating/bookmark.
   var altTitle=p.alternative_title||p.alt_title||p.altTitle||p.alternatif_title||"";
@@ -1171,6 +1172,7 @@ async function openProject(id){
             "<button type='button' class='mvp-detail-stat mvp-detail-stat-btn "+(isBm?"bookmark-on":"")+"' onclick=\"toggleBookmark('"+esc(p.id)+"')\">"+
               "<svg width='14' height='14' viewBox='0 0 24 24' fill='"+favIconColor+"' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 0-2 2z'></path></svg>"+pBookmarks+
             "</button>"+
+            "<span class='mvp-detail-stat'>💬 "+pComments+"</span>"+
           "</div>"+
           detailStatus+
         "</div>"+
