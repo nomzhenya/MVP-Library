@@ -440,15 +440,6 @@ html,body{background:var(--bg)}
 
 
 .mvp-detail-translator{margin-top:8px;margin-bottom:20px;text-align:left;font-size:13px;font-weight:900;letter-spacing:.2px}
-
-/* Translator visual revision: pastel gradient for EVERY translator */
-.guest-translator-link.mvp-translator{
-  color:transparent !important;
-  -webkit-text-fill-color:transparent !important;
-  background:linear-gradient(90deg,#ff9fcf,#c9a7ff,#9ee7ff) !important;
-  -webkit-background-clip:text !important;
-  background-clip:text !important;
-}
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -914,7 +905,7 @@ function translatorName(project){
   if(!name){
     return "<span class='mvp-translator'>MVP</span>";
   }
-  return "<button type='button' class='guest-translator-link' data-guest='"+esc(name)+"'>"+esc(name)+"</button>";
+  return "<button type='button' class='guest-translator-link mvp-translator' data-guest='"+esc(name)+"'>"+esc(name)+"</button>;
 }
 
 function renderHome(){
@@ -923,7 +914,7 @@ function renderHome(){
   var updatesTarget=$("secUpdates");
   if(updatesTarget){
     updatesTarget.innerHTML=myUpdates.length
-      ?myUpdates.map(function(item){return renderBatoItem(item.p,[],{history:histObj[item.p.id]||null,latest:item.latest.chapter});}).join("")
+      ?myUpdates.map(function(item){return renderBatoItem(item.p,[],{history:histObj[item.p.id]||null,latest:item.latest});}).join("")
       :"<p class='muted' style='font-size:14px;text-align:center;padding:20px 0;'>Belum ada update bookmark.</p>";
   }
 
@@ -1257,7 +1248,7 @@ async function openProject(id){
     return "<div class='chapter-bato' onclick=\"openReader('"+esc(p.id)+"','"+esc(item.c.chapter)+"',"+Number(item.c.decensored||0)+")\">"+
       "<div class='mvp-chapter-bato-body'><div style='font-weight:800;font-size:14px;color:var(--accent);'>Chapter "+esc(item.c.chapter)+decBadge(item.c.decensored)+"</div>"+
       (chTitle?"<div class='mvp-chapter-title'>"+esc(chTitle)+"</div>":"")+""+
-+"</div>"+
+      (chTranslator?"<div class='mvp-chapter-translator'>"+esc(chTranslator)+"</div>":"")+"</div>"+
       "<div class='mvp-chapter-bato-meta'>🕒 "+timeStr+"</div>"+
     "</div>";
   }).join("");
