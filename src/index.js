@@ -92,6 +92,9 @@ async function checkAccess(request, env) {
   const initData = request.headers.get("X-Telegram-Init-Data") || new URL(request.url).searchParams.get("init_data") || "";
   const user = await verifyTelegramInitData(initData, env.TELEGRAM_BOT_TOKEN);
   if (!user?.id) return {ok: false, code: 401};
+  if (!user.username || user.username.trim() === "") {
+    return {ok: false, code: 403};
+  }
 
   const CHANNEL_ID = env.MVP_CHANNEL_ID || "-1004459399775";
   const DISCUSSION_ID = env.MVP_DISCUSSION_ID || "-1003923062839";
