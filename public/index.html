@@ -3,32 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5.0,user-scalable=yes,viewport-fit=cover">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#121215">
 <title>MVP Miniweb</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{box-sizing:border-box}
 
-/* THEME: OLED DARK & NEON (App-like Feel) */
+/* CSS VARIABEL UNTUK TEMA DINAMIS */
 :root{
-  --bg:#000000; --text:#ffffff; --muted:#a1a1aa; 
-  --panel:#121212; --panel2:#1e1e1e; --border:#27272a; --border2:#3f3f46; --input:#18181b;
-  --btn-bg: #27272a; --btn-text: #ffffff; 
-  --overlay-bg: rgba(0, 0, 0, 0.6); 
-  --accent: #d946ef; /* Neon Fuchsia/Purple */
-  --accent-hover: #c026d3;
-  --accent2: #8b5cf6; /* Violet */
+  --bg:#121215; --text:#e0e0e0; --muted:#8a8a99; 
+  --panel:#1c1c21; --panel2:#26262e; --border:#32323a; --border2:#42424b; --input:#1c1c21;
+  --btn-bg: #3d3d4a; --btn-text: #ffffff; 
+  --overlay-bg: rgba(18, 18, 21, 0.75); 
+  --accent: #5e81ff; 
+  --accent-hover: #7593ff;
   --bato-star: #fbbf24;
 }
 
 body.light{
-  --bg:#f4f4f5; --text:#09090b; --muted:#71717a; 
+  --bg:#f4f4f5; --text:#202020; --muted:#71717a; 
   --panel:#ffffff; --panel2:#e4e4e7; --border:#d4d4d8; --border2:#a1a1aa; --input:#ffffff;
-  --btn-bg: #e4e4e7; --btn-text: #09090b; 
-  --overlay-bg: rgba(255, 255, 255, 0.7); 
-  --accent: #c026d3; 
-  --accent-hover: #a21caf;
-  --accent2: #7c3aed;
+  --btn-bg: #e4e4e7; --btn-text: #202020; 
+  --overlay-bg: rgba(255, 255, 255, 0.80); 
+  --accent: #3b82f6; 
+  --accent-hover: #2563eb;
 }
 
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden;transition:background .3s,color .3s}
@@ -37,166 +35,820 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
 img{-webkit-user-drag:none;-webkit-touch-callout:none;pointer-events:auto;} 
 
-.wrap{max-width:800px;margin:auto;padding:20px 16px}
+.wrap{max-width:900px;margin:auto;padding:24px 20px}
 #reader.wrap{width:100vw;max-width:none;margin:0;padding:0;overflow-x:hidden}
 #readerContent{width:100vw;max-width:none;margin:0!important;padding:0}
-@media(max-width:800px){ #reader.wrap{width:100vw} }
+@media(max-width:900px){ #reader.wrap{width:100vw} }
 
-header{padding:10px 0 20px; display:flex; justify-content:space-between; align-items:center;}
+header{padding:8px 0 24px}
 h1,h2,h3,p{margin:0}
 .muted{color:var(--muted)}
 
-.app-title { font-size:28px!important; font-weight:900!important; letter-spacing:-1px!important; background:linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%)!important; -webkit-background-clip:text!important; -webkit-text-fill-color:transparent!important; }
-
-/* TOP NAV PILLS */
-.nav-scroll { display:flex; gap:8px; overflow-x:auto; padding:10px 0 16px; scrollbar-width:none; margin-bottom: 10px;}
-.nav-scroll::-webkit-scrollbar { display:none; }
-.btn-pill { border:none; border-radius:30px; padding:8px 16px; font-size:14px; font-weight:700; background:var(--panel2); color:var(--text); white-space:nowrap; cursor:pointer; pointer-events:auto; transition:0.2s;}
-.btn-pill.active, .btn-pill.primary { background:var(--accent); color:#fff; }
-
 /* SEARCH BAR */
-.search-container { position:relative; width:100%; margin:0 0 24px; pointer-events:auto; }
-.search { width:100%; padding:14px 20px; border:none; border-radius:16px; background:var(--panel2); color:var(--text); font-size:15px; font-weight:600; transition:0.3s; }
-.search:focus { outline:none; background:var(--panel); box-shadow:0 0 0 2px var(--accent); }
-.search-dropdown { position:absolute; top:calc(100% + 8px); left:0; width:100%; background:var(--panel); border:1px solid var(--border); border-radius:16px; max-height:45vh; overflow-y:auto; z-index:100; box-shadow:0 10px 40px rgba(0,0,0,0.5); display:none; }
+.search-container { position:relative; width:100%; margin:12px 0 24px; pointer-events:auto; }
+.search { width:100%; padding:14px 18px; border:1px solid var(--border); border-radius:24px; background:var(--input); color:var(--text); font-size:16px; transition:border 0.3s, box-shadow 0.3s; }
+.search:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(94, 129, 255, 0.2); }
+.search-dropdown { 
+  position:absolute; top:calc(100% + 8px); left:0; width:100%; 
+  background:var(--overlay-bg); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--border); border-radius:16px; 
+  max-height:45vh; overflow-y:auto; z-index:100; box-shadow:0 8px 32px rgba(0,0,0,0.4); display:none; 
+}
 .search-dropdown.active { display:block; }
-.search-item { display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid var(--border); cursor:pointer; pointer-events:auto; }
+.search-item { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.2s; pointer-events:auto; }
 .search-item:last-child { border-bottom:none; }
-.search-item img { width:50px; height:70px; object-fit:cover; border-radius:8px; background:var(--panel2); flex-shrink:0; }
+.search-item:active { background:rgba(150,150,150,0.2); } 
+.search-item img { width:45px; height:65px; object-fit:cover; border-radius:8px; background:var(--panel2); flex:0 0 auto; }
 .search-item .info { flex:1; min-width:0; }
-.search-item .title { font-size:14px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.search-item .author { font-size:12px; color:var(--muted); margin-top:4px; }
+.search-item .title { font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.search-item .author { font-size:12px; color:var(--muted); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-/* SECTIONS */
-.b-sec { margin-bottom: 36px; }
-.b-head { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:16px; cursor:pointer; pointer-events:auto; }
-.b-title { font-size:20px; font-weight:900; letter-spacing:-0.5px;}
-.b-toggle { font-size:14px; font-weight:700; color:var(--accent); background:transparent; border:none;}
+/* SWITCH BUTTON BATO STYLE */
+.mode-switch { display:flex; background:var(--panel); border-radius:20px; padding:6px; margin-bottom:24px; box-shadow:inset 0 2px 4px rgba(0,0,0,0.2); }
+.mode-btn { flex:1; padding:12px; border-radius:14px; border:none; background:transparent; color:var(--muted); font-weight:800; font-size:15px; transition:0.3s; pointer-events:auto; cursor:pointer; }
+.mode-btn.active { background:var(--panel2); color:var(--text); box-shadow:0 4px 12px rgba(0,0,0,0.3); }
 
-/* HORIZONTAL SCROLL FOR POPULAR (NEW LAYOUT) */
-.scroll-x { display:flex; overflow-x:auto; gap:16px; padding-bottom:16px; scroll-snap-type:x mandatory; scrollbar-width:none; margin: 0 -16px; padding: 0 16px 16px 16px;}
-.scroll-x::-webkit-scrollbar { display:none; }
-.card-slider-item { flex:0 0 140px; scroll-snap-align:start; position:relative; aspect-ratio:2/3; border-radius:12px; overflow:hidden; background:var(--panel2); pointer-events:auto; cursor:pointer; box-shadow:0 6px 16px rgba(0,0,0,0.3); }
-.card-slider-item img { width:100%; height:100%; object-fit:cover; }
-.card-slider-overlay { position:absolute; bottom:0; left:0; width:100%; padding:40px 10px 12px; background:linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 50%, transparent 100%); }
-.card-slider-overlay .rank-badge { position:absolute; top:6px; left:6px; background:var(--accent); color:#fff; font-size:11px; font-weight:900; padding:2px 8px; border-radius:20px; }
-.card-slider-overlay .title { font-size:13px; font-weight:800; color:#fff; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.card-slider-overlay .ch { font-size:11px; color:var(--muted); font-weight:700; margin-top:4px; }
+/* BATO UI SECTIONS */
+.b-sec { margin-bottom: 28px; }
+.b-head { display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; border-bottom:2px solid var(--panel); margin-bottom:12px; cursor:pointer; pointer-events:auto; }
+.b-title { font-size:18px; font-weight:800; display:flex; align-items:center; gap:8px; }
+.b-toggle { font-size:20px; font-weight:bold; color:var(--muted); width:32px; height:32px; display:flex; align-items:center; justify-content:center; background:var(--panel); border-radius:8px; transition: background 0.2s; }
+.b-head:active .b-toggle { background:var(--panel2); }
 
-/* LIST STYLE - MAGAZINE LAYOUT (NEW LAYOUT) */
-.b-list { display:flex; flex-direction:column; gap:20px; }
-.mag-item { display:flex; gap:16px; pointer-events:auto; cursor:pointer; }
-.mag-cover { width:100px; flex-shrink:0; aspect-ratio:2/3; object-fit:cover; border-radius:10px; background:var(--panel2); box-shadow:0 4px 12px rgba(0,0,0,0.3); }
-.mag-info { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; }
-.mag-title { font-size:16px; font-weight:800; line-height:1.3; margin-bottom:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.mag-stats { display:flex; gap:12px; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:8px; }
-.mag-stats span { display:flex; align-items:center; gap:4px; }
-.mag-tags { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
-.mag-tag { background:var(--panel2); color:var(--text); font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; text-transform:uppercase; letter-spacing:0.5px;}
-.mag-chap { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; font-size:13px; font-weight:700; }
-.mag-chap-title { color:var(--accent); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; }
-.mag-chap-time { color:var(--muted); font-size:11px; font-weight:600; flex-shrink:0; margin-left:8px;}
+/* BATO LIST STYLE (DENGAN STATISTIK DARI DATABASE) */
+.b-list { display:flex; flex-direction:column; gap:16px; }
+.b-item { display:flex; gap:12px; background:transparent; pointer-events:auto; cursor:pointer; }
+.b-cover { width:90px; flex-shrink:0; aspect-ratio:2/3; object-fit:cover; border-radius:6px; background:var(--panel2); box-shadow:0 4px 8px rgba(0,0,0,0.3); }
+.b-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; padding:2px 0; }
+.b-item-title { font-size:15px; font-weight:800; line-height:1.3; margin-bottom:4px; }
+.b-item-title .txt { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.b-stats { display:flex; gap:12px; font-size:12px; font-weight:700; color:var(--text); align-items:center; margin-bottom:4px; }
+.b-stats span { display:flex; align-items:center; gap:4px; }
+.bookmark-stat svg { flex-shrink:0; }
+.b-tags { font-size:12px; font-weight:600; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:6px; }
+.b-chaps { display:flex; flex-direction:column; gap:8px; }
+.b-chap { display:flex; justify-content:space-between; align-items:center; font-size:13px; font-weight:700; }
+.b-chap-name { color:var(--accent); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; padding-right:8px; }
+.b-chap-meta { color:var(--muted); font-size:11px; font-weight:600; flex-shrink:0; }
 
-/* BUTTONS */
-.btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; border:none; border-radius:12px; padding:12px 20px; background:var(--panel2); color:var(--text); pointer-events:auto; font-weight:800; cursor:pointer; font-size:14px; transition:0.2s;}
-.btn:active { transform:scale(0.96); }
-.btn.primary { background:var(--accent); color:#fff; }
-.back { border:none; background:rgba(0,0,0,0.5); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); color:#fff; padding:10px; border-radius:50%; pointer-events:auto; cursor:pointer; }
+/* BATO SEAMLESS GRID */
+.b-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:2px; border-radius:8px; overflow:hidden; }
+.b-grid-item { position:relative; width:100%; aspect-ratio:2/3; pointer-events:auto; cursor:pointer; background:var(--panel2); }
+.b-grid-item img { width:100%; height:100%; object-fit:cover; }
+.b-grid-overlay { position:absolute; bottom:0; left:0; right:0; padding:32px 8px 8px; background:linear-gradient(transparent, rgba(0,0,0,0.95)); }
+.b-grid-title { font-size:11px; font-weight:800; color:#fff; line-height:1.3; text-shadow:0 1px 4px rgba(0,0,0,0.9); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.b-grid-ch { font-size:10px; color:var(--accent); font-weight:800; margin-top:4px; text-shadow:0 1px 2px rgba(0,0,0,0.9); }
+.b-rank { position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.7); color:#fff; font-size:10px; font-weight:900; padding:2px 6px; border-radius:4px; backdrop-filter:blur(4px); }
 
-/* DETAIL PAGE - SPOTIFY STYLE (RADICAL LAYOUT CHANGE) */
-.detail-header-wrap { position:relative; padding-top:60px; padding-bottom:30px; text-align:center; margin:-20px -16px 20px; overflow:hidden; }
-.detail-blur-bg { position:absolute; top:-20px; left:-20px; right:-20px; bottom:0; filter:blur(40px); opacity:0.4; background-size:cover; background-position:center; z-index:0; }
-.detail-blur-bg::after { content:''; position:absolute; inset:0; background:linear-gradient(to bottom, transparent 0%, var(--bg) 100%); }
-.detail-header-content { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; padding:0 20px; }
-.detail-header-content .detailcover { width:160px; aspect-ratio:2/3; object-fit:cover; border-radius:12px; box-shadow:0 20px 40px rgba(0,0,0,0.7); margin-bottom:20px; border:1px solid rgba(255,255,255,0.1); }
-.detail-title { font-size:26px!important; font-weight:900!important; line-height:1.2!important; letter-spacing:-0.5px; margin-bottom:6px!important; }
-.detail-author { font-size:14px; color:var(--accent); font-weight:800; text-transform:uppercase; letter-spacing:1px; margin-bottom:16px;}
-.detail-action-bar { display:flex; gap:12px; justify-content:center; width:100%; max-width:300px; margin-bottom:24px;}
-.detail-action-bar .btn { flex:1; padding:14px; border-radius:30px; }
-.detail-action-bar .btn-round { flex:0 0 50px; width:50px; height:50px; border-radius:50%; padding:0; display:flex; align-items:center; justify-content:center; }
+/* Bato Badge */
+.badge-status { position:absolute; top:4px; right:4px; padding:3px 6px; border-radius:4px; font-size:9px; font-weight:800; z-index:2; color:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.5); text-transform:uppercase; }
+.badge-tamat { background:#10b981; }
 
-.detail-stats-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:1px; background:var(--border); border-radius:16px; overflow:hidden; margin-bottom:24px;}
-.stat-box { background:var(--panel); padding:16px 10px; text-align:center; display:flex; flex-direction:column; gap:4px; }
-.stat-box .val { font-size:18px; font-weight:900; color:var(--text); }
-.stat-box .lbl { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; }
-
-.detail-section { margin-bottom:30px; }
-.detail-section-title { font-size:16px; font-weight:900; margin-bottom:12px; color:var(--text); }
-.detail-tags { display:flex; flex-wrap:wrap; gap:8px; }
-.detail-tag { border:1px solid var(--border); background:transparent; color:var(--muted); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:700; pointer-events:auto; }
-
-.desc-box { font-size:14px; line-height:1.7; color:var(--muted); background:var(--panel); padding:20px; border-radius:16px; }
-.translator-box { margin-top:16px; padding:12px 16px; background:rgba(217, 70, 239, 0.1); border-left:4px solid var(--accent); border-radius:8px; font-size:13px; font-weight:800; }
-
-.chapter-list { display:flex; flex-direction:column; gap:10px; margin-top:12px; max-height:400px; overflow-y:auto; padding-right:4px; }
-.chapter-list::-webkit-scrollbar { width:4px; }
-.chapter-list::-webkit-scrollbar-thumb { background:var(--border2); border-radius:4px; }
-.ch-item { display:flex; justify-content:space-between; align-items:center; padding:16px; background:var(--panel); border-radius:12px; cursor:pointer; pointer-events:auto; transition:0.2s; }
-.ch-item:active { transform:scale(0.98); background:var(--panel2); }
-.ch-item-left { display:flex; flex-direction:column; gap:4px; }
-.ch-num { font-size:15px; font-weight:900; color:var(--text); }
-.ch-title { font-size:13px; font-weight:700; color:var(--muted); }
-.ch-date { font-size:12px; font-weight:700; color:var(--accent); background:rgba(217, 70, 239, 0.1); padding:4px 8px; border-radius:6px;}
-
-/* VOTING */
-.vote-container { background:var(--panel); padding:20px; border-radius:16px; text-align:center; margin-bottom:24px;}
-.vote-stars { display:flex; justify-content:center; gap:4px; font-size:28px; margin:12px 0; user-select:none; }
-.vote-stars span { cursor:pointer; transition:0.2s; }
-.vote-stars span:active { transform:scale(1.3); }
-
-/* READER UI - FLOATING BOTTOM PILL */
-.ui-hidden .reader-ui { opacity:0; pointer-events:none; transform:translateY(20px); }
-.reader-ui { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:calc(100% - 40px); max-width:400px; z-index:50; display:flex; flex-direction:column; gap:8px; transition:all 0.3s ease; }
-.reader-pill { background:rgba(18, 18, 18, 0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.1); border-radius:30px; padding:8px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
-.reader-btn { background:transparent; border:none; color:#fff; width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:50%; font-size:18px; cursor:pointer; pointer-events:auto; transition:0.2s; }
-.reader-btn:active { background:rgba(255,255,255,0.2); }
-.reader-center-text { flex:1; text-align:center; font-size:14px; font-weight:800; color:#fff; padding:0 10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.reader-chapter-menu { position:absolute; bottom:calc(100% + 12px); left:0; width:100%; max-height:40vh; overflow-y:auto; background:rgba(18, 18, 18, 0.95); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.1); border-radius:20px; box-shadow:0 10px 40px rgba(0,0,0,0.6); z-index:40; display:none; }
-.reader-chapter-menu.active { display:block; }
-.reader-chapter-option { display:block; width:100%; border:none; border-bottom:1px solid rgba(255,255,255,0.05); background:transparent; color:#fff; text-align:left; padding:16px 20px; font-size:14px; font-weight:600; cursor:pointer; pointer-events:auto; }
-.reader-chapter-option.current { color:var(--accent); font-weight:900; background:rgba(217,70,239,0.1); }
-
-.readerpages{ display:flex;flex-direction:column;align-items:center;gap:0;margin:0; padding-top:0; padding-bottom:100px; min-height:100vh; width:100vw;max-width:100vw;overflow-x:hidden; background:#000; }
-.readerpage{display:block;width:100vw;max-width:100vw;height:auto;margin:0;padding:0;background:#000;object-fit:contain; touch-action:pan-x pan-y pinch-zoom;}
-
-.reader-watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;pointer-events:none;text-align:center;line-height:1.2;opacity:.15;color:var(--text);text-shadow:0 2px 8px rgba(0,0,0,1);white-space:nowrap;font-weight:800}
-.reader-watermark .wm-title{font-size:36px; font-weight:900; letter-spacing: 4px; text-transform: uppercase;}
-.reader-watermark .wm-user{font-size:16px;font-weight:800;margin-top:8px;}
-
-/* NOVEL READER */
-.novel-reader{width:min(820px,100%);margin:0 auto;padding:20px 24px 40px;background:var(--bg);color:var(--text);line-height:1.8;font-size:17px;user-select:none;-webkit-user-select:none;} 
-.novel-reader p{margin:0 0 1.2em; position:relative; touch-action:pan-y; cursor:default; transition:0.2s;}
-.novel-reader p.bookmarked { background-color:rgba(217, 70, 239, 0.15)!important; border-left:4px solid var(--accent)!important; padding:8px 16px!important; border-radius:0 8px 8px 0; }
-
-/* MISC */
 .hidden{display:none !important}
 .notice{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
-.guest-translator-link{ border:0;background:transparent;padding:0;margin:0;color:inherit;font:inherit;cursor:pointer;text-decoration:underline; }
-.mvp-translator{ display:inline-block;font-weight:900;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent; }
 
-/* GUEST LIST */
-.guest-grid { display:grid; gap:16px; margin-top:20px; }
-.guest-card { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:20px; text-align:center; }
-.guest-card h3 { font-size:20px; margin:10px 0 4px; }
-.guest-card .badge { display:inline-block; background:var(--panel2); padding:4px 12px; border-radius:20px; font-size:12px; font-weight:800; color:var(--accent); margin-bottom:16px;}
-.lapak-group { margin-bottom:24px; }
-.lapak-letter { font-size:24px; font-weight:900; color:var(--accent); margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+/* DETAIL PAGE */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:6px; border:0;border-radius:12px;padding:10px 16px;background:var(--btn-bg);color:var(--btn-text);pointer-events:auto;font-weight:600; cursor:pointer; transition: 0.2s;}
+.btn:active{opacity:0.8;}
+.btn.primary { background:var(--accent); color:#fff; }
+.back{border:0;background:transparent;color:var(--text);padding:8px 12px;border-radius:8px;pointer-events:auto;font-weight:bold; cursor:pointer; background:var(--panel);}
+.detailcover { width:120px; aspect-ratio:2/3; object-fit:cover; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.3); flex-shrink:0; background:var(--panel2); }
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.tag{border:0;background:var(--panel2);color:var(--text);border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;pointer-events:auto;}
+
+/* CHAPTER SCROLL BOX */
+.chapter-scroll-box { max-height:400px; overflow-y:auto; border:1px solid var(--border); border-radius:12px; background:var(--panel); display:flex; flex-direction:column; overscroll-behavior:contain; margin-top:12px; }
+.chapter-scroll-box::-webkit-scrollbar { width: 6px; }
+.chapter-scroll-box::-webkit-scrollbar-track { background: transparent; }
+.chapter-scroll-box::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+.chapter-bato { padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer; pointer-events:auto; background:transparent; transition:background 0.2s; display:flex; justify-content:space-between; align-items:center;}
+.chapter-bato:last-child { border-bottom:none; }
+.chapter-bato:active { background:var(--panel2); }
+
+.theme-toggle{border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:var(--panel2);color:var(--text);font-size:18px;cursor:pointer; pointer-events:auto;}
+.home-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
+.home-layer{display:none}
+.home-layer.active{display:block}
+.catalog-layer{display:none}
+.catalog-layer.active{display:block}
+.catalog-head{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+
+
+/* MVP BATO VISUAL V2 — PALETTE LOCKED
+   Uses only the existing --bg/--panel/--panel2/--text/--muted/--border/--accent tokens.
+   Do not change the palette above when revising other sections. */
+.mvp-browse-layer{display:none}
+.mvp-browse-layer.active{display:block}
+.mvp-browse-top{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.mvp-browse-title{font-size:22px;font-weight:900;letter-spacing:-.3px}
+.mvp-browse-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.mvp-tag-cloud{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.mvp-tag-link{border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:9px;padding:8px 11px;font-size:12px;font-weight:650;cursor:pointer;transition:transform .12s,background .12s,border-color .12s}
+.mvp-tag-link:active{transform:scale(.97);background:var(--panel2)}
+.mvp-tag-link.major{font-weight:900;border-color:var(--accent);color:var(--accent)}
+.mvp-tag-link.secondary{font-weight:900}
+.mvp-browse-results{margin-top:24px}
+.mvp-browse-results-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:2px}
+.mvp-browse-results-title{font-size:18px;font-weight:900}
+.mvp-browse-count{font-size:11px;color:var(--muted);font-weight:700}
+.mvp-detail-part{margin-top:18px}
+.mvp-detail-part-title{font-size:13px;font-weight:900;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.mvp-detail-top{display:flex;gap:16px;align-items:flex-start;margin:8px 0 8px}
+.mvp-detail-top .detailcover{width:132px;min-width:132px}
+.mvp-detail-title{font-size:21px!important;line-height:1.25!important;letter-spacing:-.3px}
+.mvp-detail-alt{margin-top:5px;font-size:13px;line-height:1.4;color:var(--muted)}
+.mvp-detail-author{margin-top:8px;font-size:14px;line-height:1.35;color:var(--text);font-weight:700}
+.mvp-detail-stats{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}
+.mvp-detail-stat{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;background:var(--panel2);border-radius:8px;border:1px solid var(--border);font-size:12px;font-weight:800}
+.mvp-detail-stat.bookmark-on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.mvp-detail-stat-btn{border:0;cursor:pointer;color:inherit}
+.mvp-detail-tags{margin-top:0}
+.mvp-detail-tags .tag{font-weight:650;cursor:pointer}
+.mvp-detail-tags .tag.tag-major,.mvp-detail-tags .tag.tag-secondary{font-weight:900}
+.mvp-vote-panel{display:grid;gap:14px;margin-top:12px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:12px}
+.mvp-vote-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mvp-vote-label{font-size:12px;font-weight:900;letter-spacing:.4px}
+.mvp-vote-stars{display:flex;justify-content:space-between;gap:2px;font-size:22px;line-height:1;user-select:none}
+.mvp-vote-stars span{cursor:pointer;padding:3px}
+.mvp-rating-summary{display:flex;gap:16px;align-items:center}
+.mvp-rating-score{min-width:72px;text-align:center}
+.mvp-rating-score .num{font-size:30px;line-height:1;font-weight:900}
+.mvp-rating-score .stars{margin-top:5px;color:var(--bato-star);font-size:17px}
+.mvp-rating-score .votes{margin-top:3px;font-size:11px;color:var(--muted)}
+.mvp-rating-bars{flex:1;min-width:0}
+.mvp-rating-bar{display:grid;grid-template-columns:25px minmax(0,1fr) 42px;align-items:center;gap:8px;margin:5px 0}
+.mvp-rating-bar .lbl{font-size:12px;font-weight:800;text-align:right}
+.mvp-rating-bar .track{height:7px;border-radius:999px;background:var(--panel2);overflow:hidden}
+.mvp-rating-bar .fill{height:100%;background:var(--accent);border-radius:999px}
+.mvp-rating-bar .pct{font-size:11px;color:var(--muted);text-align:right}
+.mvp-description{font-size:14px;line-height:1.7;white-space:pre-line;color:var(--text)}
+.mvp-chapters-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:24px;margin-bottom:10px;border-bottom:2px solid var(--panel2);padding-bottom:8px}
+.mvp-chapters-head h3{font-size:18px}
+.mvp-detail-status{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 3px}
+.mvp-detail-chip{padding:6px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--border);font-size:11px;font-weight:800;color:var(--muted)}
+.mvp-empty-state{padding:22px 8px;text-align:center;color:var(--muted);font-size:13px}
+@media(max-width:520px){
+  .mvp-detail-top{gap:12px}
+  .mvp-detail-top .detailcover{width:112px;min-width:112px}
+  .mvp-detail-title{font-size:18px!important}
+  .mvp-detail-author{font-size:13px}
+  .mvp-rating-summary{gap:10px}
+  .mvp-rating-score{min-width:62px}
+  .mvp-vote-stars{font-size:19px}
+}
+
+/* ===== MVP VISUAL REVISION v3 — PALETTE LOCKED ===== */
+.mvp-status-filter{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.mvp-status-filter-label{width:100%;font-size:11px;font-weight:900;letter-spacing:.35px;color:var(--muted);text-transform:uppercase}
+.mvp-tag-link.status{font-weight:900;border-style:dashed}.mvp-tag-link.status.ongoing{color:#57d98a}.mvp-tag-link.status.completed{color:#f6c945}.mvp-tag-link.status.active{background:var(--panel2);border-color:currentColor}
+.mvp-list-letter{font-size:12px;font-weight:900;color:var(--muted);letter-spacing:.15em;margin:18px 0 7px}.mvp-alpha-list{display:flex;flex-direction:column;gap:0}.mvp-alpha-item{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--text);padding:13px 4px;text-align:left;font-size:15px;font-weight:750;cursor:pointer}.mvp-alpha-item:active{background:var(--panel2)}.mvp-alpha-arrow{color:var(--accent);font-size:18px}
+.mvp-translator-list{display:grid;gap:10px}.mvp-translator-card{border:1px solid var(--border);background:var(--panel);border-radius:14px;padding:14px}.mvp-translator-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.mvp-translator-name{font-size:17px;font-weight:900;letter-spacing:-.2px}.mvp-translator-count{font-size:12px;color:var(--muted);font-weight:800}.mvp-translator-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.mvp-support-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:900}.mvp-translator-projects{margin-top:10px;font-size:12px;color:var(--muted);line-height:1.5}
+.mvp-chapter-title{font-size:13px;color:var(--text);font-weight:700;margin-top:2px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mvp-chapter-translator{font-size:11px;color:var(--accent);font-weight:800;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mvp-chapter-bato-body{min-width:0;flex:1}.mvp-chapter-bato-meta{display:flex;align-items:center;gap:8px;flex-shrink:0;color:var(--muted);font-size:11px;font-weight:700}
+@media(max-width:520px){.mvp-alpha-item{font-size:14px}.mvp-translator-name{font-size:16px}.mvp-chapter-bato-meta{font-size:10px}}
+
+/* READER UI */
+.ui-hidden .readerhead { transform: translateY(-120%); }
+.ui-hidden .reader-nav { transform: translateY(120%); }
+.readerhead{ position:fixed; top:0; left:0; width:100%; z-index:50; padding:10px; background:var(--overlay-bg); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:1px solid rgba(255,255,255,0.05); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+.reader-topbar{display:flex;align-items:center;gap:8px;width:100%;position:relative}
+.reader-info{flex:0 0 auto;border:0;border-radius:10px;padding:10px;background:var(--panel2);color:var(--text);font-weight:800; font-size:14px; pointer-events:auto;}
+.reader-chapter-wrap{flex:1;min-width:0;position:relative}
+.reader-chapter-btn{width:100%;border:none;border-radius:10px;padding:10px;background:var(--panel2);color:var(--text);font-size:14px;font-weight:700;text-align:center; pointer-events:auto;}
+.reader-chapter-menu{position:absolute;left:0;top:calc(100% + 8px);width:100%;max-height:60vh;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.6);z-index:40}
+.reader-chapter-option{display:block;width:100%;border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--text);text-align:left;padding:12px 16px;font-size:14px; pointer-events:auto; font-weight: 500;}
+.reader-chapter-option:active,.reader-chapter-option.current{background:var(--btn-bg);color:var(--btn-text); font-weight: 700;}
+
+/* NAVIGATION BAWAH READER */
+.reader-nav{ position:fixed; bottom:0; left:0; width:100%; z-index:50; display:flex; flex-direction:column; align-items:stretch; gap:6px; padding:10px 10px calc(10px + env(safe-area-inset-bottom)); background:var(--overlay-bg); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-top:1px solid rgba(255,255,255,0.05); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+.reader-nav .navbtn{flex:1;min-width:0;text-align:center;border:0;border-radius:10px;padding:12px 8px;background:var(--panel2);color:var(--text);font-weight:700; font-size:13px; pointer-events:auto; cursor:pointer;}
+.reader-nav-row{display:flex;align-items:center;gap:6px;width:100%}
+.reader-nav-row .navbtn{flex:1;min-width:0}
+.reader-nav .disabled{opacity:.35;pointer-events:none}
+
+.readerpages{ display:flex;flex-direction:column;align-items:center;gap:0;margin:0; padding-top:40px; padding-bottom:110px; min-height:100vh; width:100vw;max-width:100vw;overflow-x:hidden; }
+.readerpage{display:block;width:100vw;max-width:100vw;height:auto;margin:0;padding:0;background:#000;object-fit:contain; touch-action:pan-x pan-y pinch-zoom;}
+.readererror{padding:18px;text-align:center;border:1px solid #ef4444;border-radius:12px;background:#24181b;margin-top:12px}
+
+/* WATERMARK SECURITY */
+.reader-watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;pointer-events:none;text-align:center;line-height:1.15;opacity:.25;color:var(--text);text-shadow:0 1px 3px rgba(0,0,0,.75);white-space:nowrap;font-weight:700}
+.reader-watermark .wm-title{font-size:32px; font-weight:900; letter-spacing: 2px;}
+.reader-watermark .wm-user{font-size:14px;font-weight:700;margin-top:4px}
+
+.novel-reader{width:min(820px,100%);margin:0 auto;padding:10px 24px 20px;background:transparent;color:var(--text);line-height:1.8;font-size:17px;user-select:none;-webkit-user-select:none;} 
+.novel-reader p{margin:0 0 1.2em}
+.novel-reader h1,.novel-reader h2,.novel-reader h3{line-height:1.4;margin:1.8em 0 .8em}
+.novel-reader p.bookmarked { background-color:rgba(94, 129, 255, 0.15); border-left:4px solid var(--accent); padding:4px 12px; border-radius:0 8px 8px 0; transition:all 0.3s ease; }
+body.light .novel-reader p.bookmarked { background-color:rgba(59, 130, 246, 0.15); }
+
+/* PROGRESS BAR */
+#progressContainer{position:fixed;top:0;left:0;width:100vw;height:3px;background:transparent;z-index:9999;display:none;pointer-events:none;}
+#progressBar{height:100%;background:var(--accent);width:0%;transition:width 0.1s ease-out;}
+
+/* ===== MVP VISUAL REVISION v1 — BATO-INSPIRED, MVP-OWNED ===== */
+:root{--bg:#242633;--text:#f4f3f7;--muted:#9da0ae;--panel:#2a2c39;--panel2:#313342;--border:#3b3d4d;--border2:#535668;--input:#20222d;--btn-bg:#343646;--btn-text:#fff;--overlay-bg:rgba(36,38,51,.88);--accent:#ee63b8;--accent-hover:#f17bc4;--bato-star:#f6c945;--accent2:#b995ff}
+body.light{--bg:#f4f2f6;--text:#24232a;--muted:#777783;--panel:#fff;--panel2:#ece9f0;--border:#d8d3dd;--border2:#bbb4c2;--input:#fff;--btn-bg:#e8e4eb;--btn-text:#24232a;--overlay-bg:rgba(244,242,246,.92);--accent:#d84a9f;--accent-hover:#e35fb0;--accent2:#7d5bc6}
+html,body{background:var(--bg)}
+.wrap{max-width:940px;padding:20px 18px}
+#home header{padding:8px 0 14px}
+#home header h1{font-size:28px!important;letter-spacing:-.9px!important;background:linear-gradient(110deg,#f05fb7,#b996ff)!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important}
+#home header p{font-size:12px!important;letter-spacing:.15px}
+.search-container{margin:14px 0 18px}.search{border:2px solid var(--accent);background:var(--input);border-radius:10px;padding:13px 16px;font-weight:650}.search:focus{box-shadow:0 0 0 3px rgba(238,99,184,.16);border-color:var(--accent)}
+.mode-switch{background:transparent;box-shadow:none;padding:0;gap:8px;border-radius:0}.mode-btn{border:1px solid var(--border);background:var(--panel);border-radius:12px;color:var(--muted)}.mode-btn.active{background:var(--accent);color:#fff;box-shadow:none;border-color:var(--accent)}
+.b-sec{margin-bottom:34px}.b-head{border-bottom:1px solid var(--border);padding:4px 0 12px;margin-bottom:16px}.b-title{font-size:21px;letter-spacing:-.2px}.b-title:after{content:'✦';font-size:13px;color:var(--accent);margin-left:2px}.b-toggle{background:var(--panel);border:1px solid var(--border);width:30px;height:30px}
+.b-list{gap:0}.b-item{padding:16px 0;border-bottom:1px solid var(--border);gap:14px;min-width:0}.b-item:first-child{padding-top:4px}.b-cover{width:94px;border-radius:9px;box-shadow:0 6px 14px rgba(0,0,0,.24)}.b-info{gap:5px}.b-item-title{font-size:17px;line-height:1.28}.b-item-title .txt{display:block}.b-stats{gap:13px;font-size:12px}.b-tags{font-size:11px}.b-chaps{gap:5px;margin-top:4px}.b-chap{padding:5px 0}.b-chap-name{font-size:14px}.b-chap-meta{font-size:10px}.b-grid{gap:4px;border-radius:12px}.b-grid-item{border-radius:5px;overflow:hidden}.badge-status{border-radius:5px}
+.mvp-home-history{margin-top:7px;display:grid;gap:5px}.mvp-home-line{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;min-width:0}.mvp-home-line .label{font-weight:800;color:var(--muted);white-space:nowrap}.mvp-home-line .value{color:var(--text);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mvp-home-line.latest .label{color:var(--accent)}.mvp-home-line.history .label{color:#5ba9ff}.mvp-home-line button{border:0;background:none;color:inherit;padding:0;font:inherit;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+#detail .detailcover{width:132px;border-radius:10px;box-shadow:0 8px 18px rgba(0,0,0,.28)}#detailContent>.mvp-detail-top{display:flex;gap:16px;align-items:flex-start;margin:8px 0 14px}.mvp-detail-title{font-size:21px!important;line-height:1.25!important;letter-spacing:-.3px}.mvp-detail-stats{display:flex;flex-wrap:wrap;gap:9px;margin-top:9px;font-size:12px;font-weight:800}.mvp-detail-stat{padding:6px 9px;background:var(--panel2);border-radius:8px;border:1px solid var(--border)}.mvp-detail-status{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 3px}.mvp-detail-chip{padding:6px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--border);font-size:11px;font-weight:800;color:var(--muted)}
+.novel-reader p{position:relative;touch-action:pan-y;cursor:default;transition:background-color .18s,border-color .18s,box-shadow .18s}.novel-reader p.mvp-hold-armed{background:rgba(238,99,184,.07)}.novel-reader p.bookmarked{background-color:rgba(238,99,184,.13)!important;border-left:4px solid var(--accent)!important;padding:7px 14px!important;border-radius:0 9px 9px 0;box-shadow:inset 0 0 0 1px rgba(238,99,184,.08)}body.light .novel-reader p.bookmarked{background-color:rgba(216,74,159,.10)!important}.mvp-mark-hint{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:100;pointer-events:none;background:var(--panel);color:var(--text);border:1px solid var(--border);box-shadow:0 8px 28px rgba(0,0,0,.35);padding:8px 12px;border-radius:999px;font-size:11px;font-weight:800;opacity:0;transition:opacity .15s}.mvp-mark-hint.show{opacity:1}
+
+
+
+/* SIMPLE NAV PAGES — palette intentionally inherited from locked MVP palette */
+.mvp-simple-page{display:none}
+.mvp-simple-page.active{display:block}
+.mvp-lapak-list{margin-top:8px}
+.mvp-lapak-letter{font-size:18px;font-weight:900;color:var(--muted);margin:32px 0 12px;padding:0 4px}
+.mvp-lapak-letter:first-child{margin-top:12px}
+.mvp-lapak-item{width:100%;display:flex;align-items:center;border:0;background:transparent;color:var(--text);padding:8px 8px;text-align:left;font-size:15px;font-weight:600;cursor:pointer;border-radius:8px}
+.mvp-lapak-item:active{background:var(--panel2)}
+
+/* v5 translator identity */
+.guest-translator-link{
+  border:0;background:none;padding:0;margin:0;
+  color:inherit;font:inherit;font-weight:700;
+  cursor:pointer;text-align:center;
+}
+.mvp-translator{
+  display:inline-block;
+  font-weight:800;
+  background:linear-gradient(90deg,#ff9fcf,#c9a7ff,#9ee7ff);
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;
+}
+.translator-card{
+  text-align:center;
+}
+.translator-card .translator-name{
+  display:flex;justify-content:center;align-items:center;
+  min-height:28px;
+}
+
+
+/* v6 translator identity */
+
+.guest-translator-link{
+  border:0;
+  background:transparent;
+  padding:0;
+  margin:0;
+  color:var(--accent);
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
+  text-align:center;
+  text-decoration:none;
+}
+.mvp-translator{
+  display:inline-block;
+  font-weight:900;
+  background:linear-gradient(90deg,#ff9fcf,#c9a7ff,#9ee7ff);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+
+/* v6 translator profile */
+
+.mvp-guest-profile-card{
+  text-align:center;
+  padding:24px 18px;
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:16px;
+  margin-bottom:18px;
+}
+.mvp-guest-avatar{font-size:42px;margin-bottom:6px}
+.mvp-guest-profile-name{margin:0;font-size:22px}
+.mvp-guest-profile-count{margin-top:5px;color:var(--muted);font-size:13px;font-weight:700}
+.mvp-guest-profile-card .mvp-support-btn{margin-top:14px}
+.mvp-guest-project-list{display:flex;flex-direction:column;gap:8px}
+.mvp-guest-project{
+  width:100%;
+  text-align:left;
+  border:1px solid var(--border);
+  background:var(--panel);
+  color:var(--text);
+  border-radius:10px;
+  padding:12px 14px;
+  font:inherit;
+  font-weight:700;
+  cursor:pointer;
+}
+
+
+/* v8: chapter translator identity */
+.chapter-translator{
+  display:block;
+  width:100%;
+  text-align:center;
+  margin:3px 0 5px;
+  font-size:12px;
+  font-weight:700;
+  color:var(--muted);
+}
+.chapter-translator .mvp-translator{
+  display:inline-block;
+  font-size:13px;
+  font-weight:900;
+  background:linear-gradient(90deg,#ff9fcf,#c9a7ff,#9ee7ff);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+
+
+/* v9 chapter row */
+.chapter-item .chapter-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  width:100%;
+}
+.chapter-item .chapter-title{
+  min-width:0;
+  flex:1;
+}
+.chapter-item .chapter-age{
+  flex:0 0 auto;
+  white-space:nowrap;
+  color:var(--muted);
+  font-size:12px;
+}
+.chapter-item .chapter-translator{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  width:100%;
+  text-align:center;
+  margin:4px 0 2px;
+  min-height:18px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:700;
+}
+.chapter-item .chapter-translator .mvp-translator{
+  font-size:13px;
+}
+
+
+
+
+/* CHAPTER TRANSLATOR — FINAL CENTERING */
+.chapter-item{
+  position:relative !important;
+}
+.chapter-item .chapter-translator,
+.chapter-item .chapter-translator-row{
+  width:100% !important;
+  box-sizing:border-box !important;
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+  text-align:center !important;
+  margin-left:0 !important;
+  margin-right:0 !important;
+  left:auto !important;
+  right:auto !important;
+}
+.chapter-item .chapter-translator{
+  flex:0 0 100% !important;
+  max-width:100% !important;
+  margin-top:5px !important;
+  font-size:12px !important;
+  font-weight:700 !important;
+}
+.chapter-item .chapter-translator .mvp-translator{
+  display:inline-block !important;
+  margin:0 auto !important;
+  background:linear-gradient(90deg,#ff9fcf,#c9a7ff,#9ee7ff) !important;
+  -webkit-background-clip:text !important;
+  background-clip:text !important;
+  color:transparent !important;
+  font-weight:900 !important;
+}
+
+
+.mvp-detail-translator{margin-top:8px;margin-bottom:20px;text-align:left;font-size:13px;font-weight:900;letter-spacing:.2px}
+
+.translator-gradient-all{
+  background:linear-gradient(90deg,#ff9fcf,#c9a7ff,#9ee7ff);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  color:transparent;
+  font-weight:900;
+}
+
+/* =========================================================
+   MVP MINIWEB — TOTAL LAYOUT REMASTER
+   Presentation-only overhaul: existing IDs, APIs and JS are kept.
+   ========================================================= */
+
+:root{
+  --bg:#0d0f14;
+  --text:#f7f7fb;
+  --muted:#9298a8;
+  --panel:#151821;
+  --panel2:#1c202b;
+  --border:#292e3b;
+  --border2:#3a4150;
+  --input:#12151d;
+  --btn-bg:#202532;
+  --btn-text:#fff;
+  --overlay-bg:rgba(13,15,20,.90);
+  --accent:#ff4fb3;
+  --accent-hover:#ff72c2;
+  --bato-star:#ffd35a;
+  --accent2:#9b7cff;
+}
+body.light{
+  --bg:#f6f5f8;
+  --text:#20212a;
+  --muted:#747887;
+  --panel:#fff;
+  --panel2:#efedf3;
+  --border:#ddd9e4;
+  --border2:#c5c0ce;
+  --input:#fff;
+  --btn-bg:#e8e5ed;
+  --btn-text:#20212a;
+  --overlay-bg:rgba(246,245,248,.93);
+  --accent:#db3c9b;
+  --accent-hover:#ed57ad;
+  --accent2:#7456c7;
+}
+html{background:var(--bg)}
+body{
+  background:
+    radial-gradient(circle at 10% -5%,rgba(255,79,179,.13),transparent 28rem),
+    radial-gradient(circle at 100% 0%,rgba(155,124,255,.10),transparent 25rem),
+    var(--bg);
+  min-height:100vh;
+}
+.wrap{max-width:1080px;padding:22px 22px 90px}
+#home.wrap{padding-top:20px}
+
+/* Header */
+#home header{
+  position:relative;
+  padding:8px 0 18px;
+}
+#home header>div:first-child{
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:24px;
+  background:linear-gradient(135deg,rgba(255,79,179,.10),rgba(155,124,255,.08)),var(--panel);
+  box-shadow:0 18px 45px rgba(0,0,0,.16);
+}
+#home header h1{
+  font-size:30px!important;
+  letter-spacing:-1.2px!important;
+}
+#home header p{font-size:12px!important}
+.theme-toggle{
+  width:42px;height:42px;border-radius:13px;
+  border:1px solid var(--border);
+  background:var(--panel2);
+}
+
+/* Main navigation */
+#home header>div:nth-child(2){
+  margin-top:12px;
+  padding:4px;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:var(--panel);
+}
+#home header>div:nth-child(2) .btn{
+  border-radius:11px!important;
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  font-weight:850;
+}
+#home header>div:nth-child(2) .btn.primary{
+  background:var(--accent);
+  color:#fff;
+  box-shadow:0 7px 18px rgba(255,79,179,.22);
+}
+
+/* Search */
+.search-container{margin:12px 0 14px}
+.search{
+  height:50px;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:var(--input);
+  padding:0 18px;
+  font-size:15px;
+  font-weight:650;
+  box-shadow:0 8px 25px rgba(0,0,0,.08);
+}
+.search:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 4px rgba(255,79,179,.10),0 10px 30px rgba(0,0,0,.12);
+}
+.search-dropdown{
+  border-radius:18px;
+  border-color:var(--border);
+  background:var(--panel);
+}
+
+/* Mode selector */
+.mode-switch{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:5px;
+  padding:5px;
+  margin:0 0 24px;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:var(--panel);
+  box-shadow:none;
+}
+.mode-btn{
+  border:0;
+  border-radius:11px;
+  padding:11px;
+  color:var(--muted);
+  background:transparent;
+}
+.mode-btn.active{
+  background:linear-gradient(135deg,var(--accent),#b56cff);
+  color:#fff;
+  box-shadow:0 8px 20px rgba(255,79,179,.20);
+}
+
+/* Home sections */
+.b-sec{
+  margin-bottom:30px;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:22px;
+  background:rgba(21,24,33,.72);
+}
+body.light .b-sec{background:rgba(255,255,255,.78)}
+.b-head{
+  padding:0 0 14px;
+  margin:0 0 4px;
+  border-bottom:1px solid var(--border);
+}
+.b-title{
+  font-size:17px;
+  letter-spacing:-.25px;
+}
+.b-title:after{display:none}
+.b-toggle{
+  width:30px;height:30px;
+  border-radius:10px;
+  border:1px solid var(--border);
+}
+.b-list{gap:0}
+.b-item{
+  padding:14px 0;
+  border-bottom:1px solid var(--border);
+  gap:14px;
+}
+.b-item:last-child{border-bottom:0}
+.b-cover{
+  width:82px;
+  border-radius:12px;
+  box-shadow:0 8px 20px rgba(0,0,0,.22);
+}
+.b-info{gap:4px}
+.b-item-title{font-size:15px}
+.b-stats{gap:10px}
+.b-tags{margin-bottom:2px}
+
+/* Popular grid */
+#secPopular.b-grid{
+  grid-template-columns:repeat(3,1fr);
+  gap:7px;
+  margin-top:12px;
+  border-radius:15px;
+}
+.b-grid-item{border-radius:9px}
+.b-grid-overlay{padding:45px 9px 9px}
+.b-grid-title{font-size:10px}
+.b-grid-ch{font-size:9px}
+
+/* History / update mini rows */
+.mvp-home-history{
+  padding-top:5px;
+}
+.mvp-home-line{
+  padding:5px 0;
+}
+
+/* Pages */
+.mvp-browse-layer,
+.mvp-simple-page,
+#detail{
+  max-width:1080px;
+  padding-bottom:100px;
+}
+.mvp-browse-top{
+  padding:14px 0 18px;
+  margin-bottom:6px;
+}
+.mvp-browse-title{font-size:26px;letter-spacing:-.8px}
+.mvp-browse-sub{font-size:12px}
+.back{
+  border:1px solid var(--border);
+  background:var(--panel);
+  border-radius:12px;
+}
+.mvp-tag-cloud{gap:8px}
+.mvp-tag-link{
+  border-radius:12px;
+  padding:9px 12px;
+  background:var(--panel);
+}
+.mvp-browse-results{
+  margin-top:22px;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:22px;
+  background:var(--panel);
+}
+.mvp-browse-results-head{
+  border-bottom:1px solid var(--border);
+}
+.mvp-browse-results-title{font-size:18px}
+
+/* Detail */
+#detailContent{
+  max-width:900px;
+  margin:0 auto;
+}
+#detail .detailcover{
+  width:150px;
+  border-radius:16px;
+}
+.mvp-detail-top{
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:22px;
+  background:linear-gradient(135deg,rgba(255,79,179,.07),rgba(155,124,255,.06)),var(--panel);
+}
+.mvp-detail-title{font-size:25px!important}
+.mvp-detail-stats{gap:7px}
+.mvp-detail-stat{
+  border-radius:10px;
+  padding:7px 10px;
+}
+.mvp-detail-part{
+  margin-top:18px;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:22px;
+  background:var(--panel);
+}
+.mvp-detail-part-title{
+  margin-bottom:12px;
+  font-size:11px;
+  letter-spacing:.12em;
+}
+.mvp-vote-panel{
+  border-radius:16px;
+  background:var(--panel2);
+}
+.mvp-description{font-size:15px;line-height:1.8}
+.chapter-scroll-box{
+  max-height:500px;
+  border-radius:16px;
+  background:var(--panel2);
+}
+.chapter-bato{
+  padding:14px 16px;
+}
+.chapter-bato:last-child{border-bottom:0}
+.mvp-chapters-head{
+  margin-top:0;
+}
+
+/* Browse/list cards */
+.mvp-translator-card{
+  border-radius:18px;
+  padding:17px;
+  background:var(--panel);
+}
+.mvp-lapak-list{
+  padding:10px 14px 20px;
+  border:1px solid var(--border);
+  border-radius:20px;
+  background:var(--panel);
+}
+.mvp-lapak-letter{
+  margin:22px 0 8px;
+  color:var(--accent);
+}
+.mvp-lapak-item{
+  padding:12px 8px;
+  border-bottom:1px solid var(--border);
+  border-radius:0;
+}
+.mvp-lapak-item:last-child{border-bottom:0}
+
+/* Reader */
+#reader.wrap{background:#000;padding:0}
+.readerhead{
+  padding:9px 10px;
+  background:rgba(8,9,12,.82);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.reader-info,.reader-chapter-btn{
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  background:#171a22;
+}
+.reader-nav{
+  padding:9px 10px calc(9px + env(safe-area-inset-bottom));
+  background:rgba(8,9,12,.86);
+}
+.reader-nav .navbtn{
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  background:#171a22;
+}
+.readerpages{padding-bottom:125px}
+.novel-reader{
+  max-width:820px;
+  padding:24px 24px 50px;
+}
+.reader-watermark{opacity:.18}
+
+/* Desktop composition */
+@media(min-width:800px){
+  #home header>div:first-child{
+    padding:24px;
+  }
+  #home header>div:nth-child(2){
+    width:max-content;
+    max-width:100%;
+  }
+  #home header>div:nth-child(2) .btn{
+    min-width:92px;
+  }
+  #secPopular.b-grid{
+    grid-template-columns:repeat(6,1fr);
+  }
+  .b-list{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    column-gap:24px;
+  }
+  .b-item{min-width:0}
+  #secLatest.b-list{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+/* Mobile */
+@media(max-width:600px){
+  .wrap{padding:14px 14px 90px}
+  #home header h1{font-size:27px!important}
+  #home header>div:first-child{padding:16px}
+  .b-sec{padding:15px;border-radius:19px}
+  .b-cover{width:76px}
+  .b-item{gap:11px}
+  #secPopular.b-grid{gap:3px}
+  .mvp-detail-part{padding:15px;border-radius:18px}
+  #detail .detailcover{width:112px}
+  .mvp-detail-title{font-size:19px!important}
+  .mvp-detail-top{padding:14px;gap:12px}
+}
+
+/* Better tap feedback */
+button,.b-item,.b-grid-item,.chapter-bato{transition:transform .14s,background .14s,border-color .14s,opacity .14s}
+button:active,.b-item:active,.b-grid-item:active,.chapter-bato:active{transform:scale(.985)}
+
 </style>
 </head>
 <body oncontextmenu="return false">
 
-<!-- PROGRESS BAR -->
-<div id="progressContainer" style="position:fixed;top:0;left:0;width:100vw;height:3px;background:var(--panel);z-index:9999;display:none;pointer-events:none;">
-  <div id="progressBar" style="height:100%;background:var(--accent);width:0%;transition:width 0.1s ease-out; box-shadow:0 0 10px var(--accent);"></div>
-</div>
+<div id="progressContainer"><div id="progressBar"></div></div>
 
 <script>
+  // SORTIR ASC/DESC GLOBAL
   window.chapterSortDesc = true;
   window.toggleChapterSort = function(pid) {
       window.chapterSortDesc = !window.chapterSortDesc;
       openProject(pid);
   };
 
+  // VOTE 1-10 GLOBAL
   window.doVote = async function(pid, score) {
     try {
       var r = await fetch("/api/vote", {method:"POST",headers:Object.assign({"Content-Type":"application/json"},accessHeaders()),body:JSON.stringify({project_id:pid,score:score})});
@@ -225,114 +877,128 @@ h1,h2,h3,p{margin:0}
 
 <div id="gate" class="notice hidden"><div><h2>🔒 Akses Ditolak</h2><p class="muted" style="margin-top:8px">Buka via Telegram.</p></div></div>
 
-<!-- HOME LAYER -->
 <div id="home" class="wrap hidden">
   <header>
-    <div class="app-title">MVP Library</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div>
+        <h1 style="font-size:24px; font-weight:900; letter-spacing:-0.5px; background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">MVP Miniweb</h1>
+        <p class="muted" style="margin-top:2px; font-size:13px; font-weight:600;">Baca sepuasnya, rebahan selamanya.</p>
+      </div>
+      <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()"></button>
+    </div>
+    <div style="display:flex;gap:8px;overflow-x:auto;padding:12px 0 2px;scrollbar-width:none">
+      <button class="btn primary" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="showHome()">Home</button>
+      <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="openBrowse()">Browse</button>
+      <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="openLapakList()">List</button>
+      <button class="btn" style="border-radius:11px;white-space:nowrap;padding:9px 14px" onclick="openGuestPage()">Guest</button>
+    </div>
   </header>
 
   <div class="search-container" id="mainSearchContainer">
-    <input id="search" class="search" placeholder="Cari judul, author..." autocomplete="off">
+    <input id="search" class="search" placeholder="Cari Judul atau Author..." autocomplete="off">
     <div id="searchDropdown" class="search-dropdown"></div>
   </div>
 
-  <div class="nav-scroll">
-    <button class="btn-pill active" onclick="showHome()">Beranda</button>
-    <button class="btn-pill" onclick="openBrowse()">Browse Tags</button>
-    <button class="btn-pill" onclick="openLapakList()">Semua Judul</button>
-    <button class="btn-pill" onclick="openGuestPage()">Guest Translator</button>
+  <!-- SWITCH MODE -->
+  <div class="mode-switch">
+    <button id="btnModeComic" class="mode-btn active" onclick="setMode('comic')">Komik</button>
+    <button id="btnModeNovel" class="mode-btn" onclick="setMode('novel')">Novel</button>
   </div>
 
-  <div class="nav-scroll" style="margin-bottom: 24px; padding:0;">
-    <button id="btnModeComic" class="btn-pill active" onclick="setMode('comic')" style="border-radius:10px; padding:6px 16px;">📚 Komik</button>
-    <button id="btnModeNovel" class="btn-pill" onclick="setMode('novel')" style="border-radius:10px; padding:6px 16px;">📖 Novel</button>
-  </div>
-
-  <div id="homeLayer" class="active">
-    
+  <div id="homeLayer" class="home-layer active">
+    <!-- SECTION HOMEPAGE TANPA EMOJI -->
     <section class="b-sec">
-      <div class="b-head">
-        <div class="b-title">🔥 Sedang Hangat</div>
-      </div>
-      <!-- INI HORIZONTAL SCROLL -->
-      <div id="secPopular"></div> 
-    </section>
-
-    <section class="b-sec">
-      <div class="b-head">
-        <div class="b-title">🕒 Update Terakhirmu</div>
-      </div>
-      <!-- INI MAGAZINE STYLE LIST -->
-      <div id="secHistory" class="b-list"></div>
-    </section>
-
-    <section class="b-sec">
-      <div class="b-head">
-        <div class="b-title">🔖 Bookmark Baru</div>
+      <div class="b-head" onclick="toggleSec('secUpdates', this)">
+        <div class="b-title">My Updates</div>
+        <div class="b-toggle">−</div>
       </div>
       <div id="secUpdates" class="b-list"></div>
     </section>
 
     <section class="b-sec">
-      <div class="b-head">
-        <div class="b-title">✨ Rilisan Terbaru</div>
+      <div class="b-head" onclick="toggleSec('secHistory', this)">
+        <div class="b-title">My History</div>
+        <div class="b-toggle">−</div>
+      </div>
+      <div id="secHistory" class="b-list"></div>
+    </section>
+
+    <section class="b-sec">
+      <div class="b-head" onclick="toggleSec('secPopular', this)">
+        <div class="b-title">Popular Updates</div>
+        <div class="b-toggle">−</div>
+      </div>
+      <div id="secPopular" class="b-grid"></div>
+    </section>
+
+    <section class="b-sec">
+      <div class="b-head" onclick="toggleSec('secLatest', this)">
+        <div class="b-title">Latest Releases</div>
+        <div class="b-toggle">−</div>
       </div>
       <div id="secLatest" class="b-list"></div>
     </section>
   </div>
 
-  <div id="catalogLayer" class="hidden">
-    <div class="b-head" style="margin-top:20px;">
-      <div class="b-title">Hasil Pencarian</div>
-      <button class="btn-pill" onclick="closeSearch()">Batal</button>
+  <div id="catalogLayer" class="catalog-layer">
+    <div class="catalog-head">
+      <button class="back" onclick="closeSearch()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
+      <h2 id="catalogTitle" style="font-size:20px;">Hasil Pencarian</h2>
     </div>
     <div id="searchGrid" class="b-list"></div>
   </div>
 </div>
 
-<!-- BROWSE LAYER -->
-<div id="browseLayer" class="wrap hidden">
-  <div class="b-head" style="margin-top:10px;">
-    <div class="b-title">Browse Tags</div>
-    <button class="btn-pill" onclick="closeBrowse()">Kembali</button>
+<div id="browseLayer" class="wrap hidden mvp-browse-layer">
+  <div class="mvp-browse-top">
+    <button class="back" onclick="closeBrowse()" style="padding:8px;background:var(--panel2);color:var(--text);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </button>
+    <div>
+      <div class="mvp-browse-title">Browse</div>
+      <div class="mvp-browse-sub">Filter project berdasarkan tag.</div>
+    </div>
   </div>
-  <div class="nav-scroll" style="padding:0; margin-bottom:20px;">
-    <button id="browseModeComic" class="btn-pill active" onclick="setBrowseMode('comic')">Komik</button>
-    <button id="browseModeNovel" class="btn-pill" onclick="setBrowseMode('novel')">Novel</button>
+  <div class="mode-switch" style="margin-bottom:14px;">
+    <button id="browseModeComic" class="mode-btn active" onclick="setBrowseMode('comic')">Komik</button>
+    <button id="browseModeNovel" class="mode-btn" onclick="setBrowseMode('novel')">Novel</button>
   </div>
-  <div id="browseStatusFilter" style="display:flex; gap:10px; margin-bottom:16px;"></div>
-  <div id="browseTagCloud" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px;"></div>
-  <div class="b-title" style="margin-bottom:16px; font-size:18px;" id="browseResultsTitle">Hasil</div>
-  <div id="browseResults" class="b-list"></div>
+  <div id="browseTagCloud" class="mvp-tag-cloud"></div>
+  <div id="browseStatusFilter" class="mvp-status-filter"></div>
+  <div id="browseResults" class="mvp-browse-results"></div>
 </div>
 
-<!-- LAPAK LAYER -->
-<div id="lapakLayer" class="wrap hidden">
-  <div class="b-head" style="margin-top:10px;">
-    <div class="b-title">Semua Judul A-Z</div>
-    <button class="btn-pill" onclick="closeLapakList()">Kembali</button>
+<div id="lapakLayer" class="wrap hidden mvp-simple-page">
+  <div class="mvp-browse-top">
+    <button class="back" onclick="closeLapakList()" style="padding:8px;background:var(--panel2);color:var(--text);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </button>
+    <div>
+      <div class="mvp-browse-title">List</div>
+      <div class="mvp-browse-sub">Semua project</div>
+    </div>
   </div>
-  <div id="lapakListContent"></div>
+  <div id="lapakListContent" class="mvp-lapak-list"></div>
 </div>
 
-<!-- GUEST LAYER -->
-<div id="guestLayer" class="wrap hidden">
-  <div class="b-head" style="margin-top:10px;">
-    <div class="b-title">Guest Translator</div>
-    <button class="btn-pill" onclick="closeGuestPage()">Kembali</button>
+<div id="guestLayer" class="wrap hidden mvp-simple-page">
+  <div class="mvp-browse-top">
+    <button class="back" onclick="closeGuestPage()" style="padding:8px;background:var(--panel2);color:var(--text);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="5"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </button>
+    <div>
+      <div class="mvp-browse-title">Guest</div>
+      <div class="mvp-browse-sub">Translator yg up project di MVP</div>
+    </div>
   </div>
-  <div id="guestListContent" class="guest-grid"></div>
+  <div id="guestListContent" class="mvp-translator-list"></div>
 </div>
 
-<!-- DETAIL PAGE LAYER -->
-<div id="detail" class="wrap hidden">
-  <div id="detailContent"></div>
-</div>
+<div id="detail" class="wrap hidden"><div id="detailContent"></div></div>
 
-<!-- READER LAYER -->
 <div id="reader" class="wrap hidden">
   <div id="readerContent"></div>
-  <div id="readerWatermark" class="reader-watermark hidden"><div class="wm-title">MVP</div><div id="readerWatermarkUser" class="wm-user"></div></div>
+  <div id="readerWatermark" class="reader-watermark hidden"><div class="wm-title">👑 MVP</div><div id="readerWatermarkUser" class="wm-user"></div></div>
 </div>
 
 <script>
@@ -348,21 +1014,25 @@ var accessDenied = false;
 var currentMode = "comic";
 var uiTimeout;
 
-var decBadge = function(d) { return Number(d) === 1 ? " [DEC]" : (Number(d) === 2 ? " [UNC]" : ""); };
+var decBadge = function(d) { return Number(d) === 1 ? " [Decensored]" : (Number(d) === 2 ? " [Uncensored]" : ""); };
 
+// WAKTU BACA DARI DATABASE
 function timeAgo(ts) {
-  if (!ts) return "Baru saja";
+  if (!ts) return "Just now";
   var seconds = Math.floor((Date.now() / 1000) - ts);
-  if (seconds < 60) return "Baru saja";
+  if (seconds < 60) return "Just now";
   var minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return minutes + "mnt lalu";
+  if (minutes < 60) return minutes + " mins ago";
   var hours = Math.floor(minutes / 60);
-  if (hours < 24) return hours + "jam lalu";
+  if (hours < 24) return hours + " hours ago";
   var days = Math.floor(hours / 24);
-  return days + "hr lalu";
+  return days + " days ago";
 }
 
-function getTagsArr(p) { return Array.isArray(p.tags) ? p.tags.filter(function(t){ return t && isNaN(Number(t)); }) : []; }
+function getTags(p) { 
+  var arr = Array.isArray(p.tags) ? p.tags.filter(function(t){ return t && isNaN(Number(t)); }) : []; 
+  return arr.length ? esc(arr.join(", ")) : ""; 
+}
 
 function accessHeaders(){ return {"X-Telegram-Init-Data": (tg && tg.initData) ? tg.initData : ""}; }
 function showDenied(){
@@ -378,7 +1048,7 @@ async function requireAccess(){
       var data = await r.json().catch(function(){ return {}; });
       if(r.status===403 || r.status===401) { 
         accessDenied=true; $("home").classList.add("hidden"); $("detail").classList.add("hidden"); $("reader").classList.add("hidden");
-        $("gate").innerHTML="<div><h2>🔒 Akses Ditolak</h2><p class='muted' style='margin-top:8px'>Anda bukan bagian dari MVP.</p></div>";
+        $("gate").innerHTML="<div><h2>🔒 Akses Ditolak</h2><p class='muted' style='margin-top:8px'>Anda bukan bagian dari MVP.</p><button class='btn primary' style='margin-top:16px' onclick='if(tg) tg.close()'>Tutup</button></div>";
         $("gate").classList.remove("hidden"); 
         return false; 
       }
@@ -398,10 +1068,10 @@ async function toggleBookmark(id) {
   try{
     var r=await fetch("/api/bookmark",{method:"POST",headers:Object.assign({"Content-Type":"application/json"},accessHeaders()),body:JSON.stringify({project_id:id,bookmarked:next})});
     var data=await r.json().catch(function(){return {};});
-    if(!r.ok) throw new Error();
+    if(!r.ok) throw new Error(data.error||"bookmark");
     if(p){p.rating=data.rating;p.votes=data.votes;p.vote_distribution=data.vote_distribution;p.bookmarks=data.bookmarks;p.comments=data.comments;p.user_vote=data.user_vote;p.bookmarked=data.bookmarked;}
     if(!$('detail').classList.contains('hidden')) openProject(id); else renderHome();
-  }catch(e){if(tg&&tg.showAlert)tg.showAlert("Gagal menyimpan bookmark.");}
+  }catch(e){if(tg&&tg.showAlert)tg.showAlert("Bookmark gagal disimpan.");}
 }
 function saveHistory(pid, ch, dec) {
   try{ var h=JSON.parse(localStorage.getItem("mvp_history")||"{}"); h[pid]={chapter:ch, decensored:Number(dec), ts:Date.now()}; localStorage.setItem("mvp_history",JSON.stringify(h)); }catch(e){}
@@ -420,355 +1090,597 @@ function getSortedProjects() {
   }).filter(Boolean).sort(function(a,b){ return b.latest.ts - a.latest.ts; });
 }
 
-// LOGIKA HALAMAN HOME (DIROMBAK TOTAL UNTUK LAYOUT BARU)
-function renderMagItem(p, chInfo, homeLines){
-  var coverHtml = p.cover_file_id ? `<img class="mag-cover" src="${fileUrl(p.cover_file_id)}" loading="lazy">` : `<div class="mag-cover"></div>`;
-  var rating = p.rating != null ? Number(p.rating).toFixed(1) : "0.0";
-  var tags = getTagsArr(p).slice(0,3).map(t => `<span class="mag-tag">${esc(t)}</span>`).join("");
-  
-  var chpUi = chInfo ? `
-    <div class="mag-chap" onclick="event.stopPropagation();openReader('${esc(p.id)}','${esc(chInfo.chapter)}',${Number(chInfo.decensored||0)})">
-      <div class="mag-chap-title">Ch. ${esc(chInfo.chapter)}${decBadge(chInfo.decensored)}</div>
-      <div class="mag-chap-time">${timeAgo(chInfo.updated_at||(chInfo.ts?Math.floor(chInfo.ts/1000):0))}</div>
-    </div>` : "";
 
-  var histUi = homeLines ? `
-    <div class="mag-chap" onclick="event.stopPropagation();openReader('${esc(p.id)}','${esc(homeLines.chapter)}',${Number(homeLines.decensored||0)})" style="border-color:var(--accent);">
-      <div class="mag-chap-title" style="color:var(--text);">Lanjut Ch. ${esc(homeLines.chapter)}</div>
-      <div class="mag-chap-time" style="color:var(--accent);">Baca</div>
-    </div>` : "";
+function normalizeTagKey(tag){
+  return String(tag||"").trim().toLowerCase().replace(/\s+/g," ").replace(/[()_\-]/g,"");
+}
+function tagPriority(tag){
+  var k=normalizeTagKey(tag);
+  if(k==="manhwa" || k==="manga" || k==="manhua") return 0;
+  if(k==="yaoi" || k==="yaoibl" || k==="shounenai" || k==="shounen ai") return 1;
+  return 2;
+}
+function sortedTags(tags){
+  var seen={};
+  return (Array.isArray(tags)?tags:[]).map(function(t){return String(t||"").trim();})
+    .filter(function(t){return t && isNaN(Number(t));})
+    .filter(function(t){var k=normalizeTagKey(t);if(seen[k])return false;seen[k]=true;return true;})
+    .sort(function(a,b){
+      var pa=tagPriority(a), pb=tagPriority(b);
+      if(pa!==pb) return pa-pb;
+      return a.localeCompare(b,undefined,{sensitivity:"base"});
+    });
+}
+function allUsedTags(mode){
+  var map={};
+  catalog.forEach(function(p){
+    if(mode && normalizeType(p)!==mode) return;
+    sortedTags(p.tags).forEach(function(t){
+      var k=normalizeTagKey(t);
+      if(!map[k]) map[k]=t;
+    });
+  });
+  return Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){
+    var pa=tagPriority(a), pb=tagPriority(b);
+    if(pa!==pb) return pa-pb;
+    return a.localeCompare(b,undefined,{sensitivity:"base"});
+  });
+}
+function tagButtonHtml(tag, extraClass){
+  var cls="tag "+(tagPriority(tag)===0?"tag-major ":(tagPriority(tag)===1?"tag-secondary ":""))+(extraClass||"");
+  return "<button type='button' class='"+cls+"' onclick=\"event.stopPropagation();openTagBrowse('"+esc(tag).replace(/'/g,"&#39;")+"')\">"+esc(tag)+"</button>";
+}
+var browseMode=currentMode;
+var browseSelectedTag="";
+var browseSelectedStatus="";
+function normalizeStatusKey(status){
+  var k=String(status||"").trim().toLowerCase();
+  if(k==="completed"||k==="complete"||k==="tamat"||k==="finished"||k==="finish") return "completed";
+  if(k==="ongoing"||k==="on-going"||k==="berjalan") return "ongoing";
+  return k;
+}
+function statusLabel(status){return normalizeStatusKey(status)==="completed"?"Completed":"Ongoing";}
+function projectMatchesStatus(p,status){var key=normalizeStatusKey(status);return !key||normalizeStatusKey(p.status)===key;}
+function renderBrowseTags(){
+  var cloud=$("browseTagCloud");if(!cloud)return;
+  var tags=allUsedTags(browseMode);
+  cloud.innerHTML=tags.length?tags.map(function(t){var active=!browseSelectedStatus&&normalizeTagKey(t)===normalizeTagKey(browseSelectedTag);return "<button type='button' class='mvp-tag-link "+(tagPriority(t)===0?"major ":"")+(tagPriority(t)===1?"secondary ":"")+(active?" active":"")+"' onclick=\"openTagBrowse('"+esc(t).replace(/'/g,"&#39;")+"')\">"+esc(t)+"</button>";}).join(""):"<div class='mvp-empty-state'>Belum ada tag pada mode ini.</div>";
+  var sf=$("browseStatusFilter");if(sf){sf.innerHTML="<div class='mvp-status-filter-label'>Status</div>"+["ongoing","completed"].map(function(x){var active=!browseSelectedTag&&browseSelectedStatus===x;return "<button type='button' class='mvp-tag-link status "+x+(active?" active":"")+"' onclick=\"openStatusBrowse('"+x+"')\">"+statusLabel(x)+"</button>";}).join("");}
+}
+function renderBrowseResults(){
+  var out=$("browseResults");if(!out)return;
+  var list=catalog.filter(function(p){if(normalizeType(p)!==browseMode)return false;if(browseSelectedStatus)return projectMatchesStatus(p,browseSelectedStatus);if(!browseSelectedTag)return false;return sortedTags(p.tags).some(function(t){return normalizeTagKey(t)===normalizeTagKey(browseSelectedTag);});}).sort(function(a,b){return String(a.title||"").localeCompare(String(b.title||""),undefined,{sensitivity:"base"});});
+  var label=browseSelectedStatus?statusLabel(browseSelectedStatus):(browseSelectedTag?browseSelectedTag:"Pilih tag atau status");
+  out.innerHTML="<div class='mvp-browse-results-head'><div class='mvp-browse-results-title'>"+esc(label)+"</div><div class='mvp-browse-count'>"+list.length+" project</div></div>"+(list.length?"<div class='b-list'>"+list.map(function(p){return renderBatoItem(p,[]);}).join("")+"</div>":"<div class='mvp-empty-state'>Tidak ada project dengan filter ini.</div>");
+}
+function setBrowseMode(mode){browseMode=mode;$("browseModeComic").classList.toggle("active",mode==="comic");$("browseModeNovel").classList.toggle("active",mode==="novel");browseSelectedTag="";browseSelectedStatus="";renderBrowseTags();renderBrowseResults();}
+function hideHomeForPage(){
+  $("home").classList.add("hidden");
+  $("detail").classList.add("hidden");
+  $("catalogLayer").classList.remove("active");
+  $("browseLayer").classList.remove("active");
+  $("browseLayer").classList.add("hidden");
+  $("lapakLayer").classList.remove("hidden");
+  $("guestLayer").classList.remove("active");
+  $("guestLayer").classList.add("hidden");
+}
 
-  return `
-  <div class="mag-item" onclick="openProject('${esc(p.id)}')">
-    ${coverHtml}
-    <div class="mag-info">
-      <div class="mag-title">${esc(p.title)}</div>
-      <div class="mag-stats"><span>★ ${rating}</span> <span>💬 ${p.comments||0}</span></div>
-      <div class="mag-tags">${tags}</div>
-      ${histUi || chpUi}
-    </div>
-  </div>`;
+function openLapakList(){
+  hideHomeForPage();
+  $("lapakLayer").classList.remove("hidden");
+  $("lapakLayer").classList.add("active");
+  renderLapakList();
+  window.scrollTo(0,0);
+}
+function closeLapakList(){
+  $("lapakLayer").classList.remove("active");
+  $("lapakLayer").classList.add("hidden");
+  $("home").classList.remove("hidden");
+  window.scrollTo(0,0);
+}
+function renderLapakList(){
+  var target=$("lapakListContent");
+  if(!target)return;
+  var projects=catalog.slice().sort(function(a,b){
+    return String(a.title||"").localeCompare(String(b.title||""),undefined,{sensitivity:"base"});
+  });
+  if(!projects.length){
+    target.innerHTML="<p class='muted' style='font-size:14px;text-align:center;padding:20px 0;'>Belum ada project.</p>";
+    return;
+  }
+  var groups={};
+  projects.forEach(function(p){
+    var letter=(String(p.title||"?").trim().charAt(0)||"?").toUpperCase();
+    if(!groups[letter])groups[letter]=[];
+    groups[letter].push(p);
+  });
+  target.innerHTML=Object.keys(groups).sort().map(function(letter){
+    return `<div class="mvp-lapak-letter">${esc(letter)}</div>`+
+      groups[letter].map(function(p){
+        var pType = normalizeType(p);
+        var typeBadge = pType === 'novel' 
+          ? `<span style="font-size:10px; background:var(--accent2); color:#fff; padding:2px 6px; border-radius:4px; margin-left:8px; font-weight:800;">NOVEL</span>` 
+          : `<span style="font-size:10px; background:var(--accent); color:#fff; padding:2px 6px; border-radius:4px; margin-left:8px; font-weight:800;">COMIC</span>`;
+        return `<button type="button" class="mvp-lapak-item" onclick="openProjectFromLapak('${esc(p.id)}')"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.title)}</span>${typeBadge}</button>`;
+      }).join("");
+  }).join("");
+}
+function openProjectFromLapak(id){
+  $("lapakLayer").classList.remove("active");
+  $("lapakLayer").classList.add("hidden");
+  openProject(id);
+}
+function guestTranslatorMap(){
+  var map={};
+  catalog.forEach(function(p){
+    var name=String(p.translator||"").trim();
+    if(!name || name.toLowerCase()==="mvp")return;
+    var key=name.toLowerCase();
+    if(!map[key])map[key]={name:name,projects:[],url:"",label:"Traktir Kopi"};
+    if(!map[key].projects.some(function(x){return x.id===p.id;}))map[key].projects.push(p);
+    if(!map[key].url&&p.trakteer)map[key].url=p.trakteer;
+    if(p.trakteer_label)map[key].label=p.trakteer_label;
+  });
+  return Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){
+    return a.name.localeCompare(b.name,undefined,{sensitivity:"base"});
+  });
+}
+function openGuestPage(){
+  $("home").classList.add("hidden");
+  $("detail").classList.add("hidden");
+  $("reader").classList.add("hidden");
+  $("browseLayer").classList.remove("active"); $("browseLayer").classList.add("hidden");
+  $("catalogLayer").classList.remove("active"); $("catalogLayer").classList.add("hidden");
+  $("lapakLayer").classList.remove("active"); $("lapakLayer").classList.add("hidden");
+  $("guestLayer").classList.remove("hidden"); $("guestLayer").classList.add("active");
+  renderGuestPage();
+  window.scrollTo(0,0);
+}
+function closeGuestPage(){
+  $("guestLayer").classList.remove("active");
+  $("guestLayer").classList.add("hidden");
+  $("home").classList.remove("hidden");
+  window.scrollTo(0,0);
+}
+function renderGuestPage(){
+  var target=$("guestListContent");
+  if(!target)return;
+  var list=guestTranslatorMap();
+  target.innerHTML=list.length?list.map(function(t){
+    var support=t.url?`<a class="mvp-support-btn" href="${esc(t.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">☕ ${esc(t.label||"Traktir Kopi")}</a>`:"";
+    return `<article class="mvp-translator-card" onclick="openTranslatorProfile('${esc(t.name)}')">
+      <div class="mvp-translator-head">
+        <div class="mvp-translator-name">${esc(t.name)}</div>
+        <div class="mvp-translator-count">${t.projects.length} project${t.projects.length===1?"":"s"}</div>
+      </div>
+      <div class="mvp-translator-actions">${support}</div>
+    </article>`;
+  }).join(""):"<p class='muted' style='font-size:14px;text-align:center;padding:20px 0;'>Belum ada guest translator.</p>";
+}
+
+function openBrowse(tag){$("lapakLayer").classList.remove("active");$("lapakLayer").classList.add("hidden");$("guestLayer").classList.remove("active");$("guestLayer").classList.add("hidden");browseMode=currentMode;browseSelectedTag=tag||"";browseSelectedStatus="";$("home").classList.add("hidden");$("detail").classList.add("hidden");$("catalogLayer").classList.remove("active");$("browseLayer").classList.remove("hidden");$("browseLayer").classList.add("active");$("browseModeComic").classList.toggle("active",browseMode==="comic");$("browseModeNovel").classList.toggle("active",browseMode==="novel");renderBrowseTags();renderBrowseResults();window.scrollTo(0,0);}
+function openTagBrowse(tag){openBrowse(tag);}
+function openStatusBrowse(status){browseMode=currentMode;browseSelectedTag="";browseSelectedStatus=normalizeStatusKey(status);$("home").classList.add("hidden");$("detail").classList.add("hidden");$("catalogLayer").classList.remove("active");$("browseLayer").classList.remove("hidden");$("browseLayer").classList.add("active");$("browseModeComic").classList.toggle("active",browseMode==="comic");$("browseModeNovel").classList.toggle("active",browseMode==="novel");renderBrowseTags();renderBrowseResults();window.scrollTo(0,0);}
+function closeBrowse(){$("browseLayer").classList.remove("active");$("browseLayer").classList.add("hidden");$("home").classList.remove("hidden");window.scrollTo(0,0);}
+
+// UI LOGIC
+function setMode(mode) {
+  currentMode = mode;
+  var bC = $('btnModeComic'); var bN = $('btnModeNovel');
+  if(bC) bC.classList.toggle('active', mode==='comic');
+  if(bN) bN.classList.toggle('active', mode==='novel');
+  renderHome();
+  if($("browseLayer") && $("browseLayer").classList.contains("active")){
+    setBrowseMode(mode);
+  }
+}
+function toggleSec(id, btn) {
+  var el = $(id);
+  if(el && el.classList.contains('hidden')) { el.classList.remove('hidden'); btn.querySelector('.b-toggle').textContent = "−"; } 
+  else if(el) { el.classList.add('hidden'); btn.querySelector('.b-toggle').textContent = "+"; }
+}
+
+// FORMAT BATO LIST DENGAN STATS DARI DATABASE
+function chapterDisplayTitle(ch){return String(ch&&(ch.chapter_title||ch.title||ch.name)||"").trim();}
+function chapterTranslator(p,ch){
+  var t=String((ch&&ch.translator)||"").trim();
+  if(t) return t;
+  var pt=String((p&&p.translator)||"").trim();
+  return pt || "MVP";
+}
+function renderBatoItem(p,chaptersToShow,homeContext){
+  var cover=p.cover_file_id?`<img class="b-cover" src="${fileUrl(p.cover_file_id)}" loading="lazy">`:`<div class="b-cover"></div>`;
+  var pRating=(p.rating!=null?Number(p.rating).toFixed(1):"0.0"),pBookmarks=p.bookmarks||"0",pComments=Number(p.comments||0);
+  var chHtml=(chaptersToShow||[]).map(function(ch){
+    var timeStr=ch.updated_at?timeAgo(ch.updated_at):(ch.ts?timeAgo(Math.floor(ch.ts/1000)):"Just now"),title=chapterDisplayTitle(ch),trans=chapterTranslator(p,ch);
+    return `<div class="b-chap" onclick="event.stopPropagation();openReader('${esc(p.id)}','${esc(ch.chapter)}',${Number(ch.decensored||0)})"><div style="min-width:0;flex:1"><div class="b-chap-name">Chapter ${esc(ch.chapter)}${decBadge(ch.decensored)}</div>${title?`<div class="mvp-chapter-title">${esc(title)}</div>`:""}</div><div class="b-chap-meta">${timeStr}</div></div>`;
+  }).join("");
+  var homeLines=homeContext?`<div class="mvp-home-history">${homeContext.history?`<div class="mvp-home-line history" onclick="event.stopPropagation();openReader('${esc(p.id)}','${esc(homeContext.history.chapter)}',${Number(homeContext.history.decensored||0)})" style="cursor:pointer;"><span class="label">↻ Terakhir dibaca</span><div class="value">Ch. ${esc(homeContext.history.chapter)}${chapterDisplayTitle(homeContext.history)?` · ${esc(chapterDisplayTitle(homeContext.history))}`:""} · ${timeAgo(Math.floor(Number(homeContext.history.ts||0)/1000))}</div></div>`:""}${homeContext.latest?`<div class="mvp-home-line latest" onclick="event.stopPropagation();openReader('${esc(p.id)}','${esc(homeContext.latest.chapter)}',${Number(homeContext.latest.decensored||0)})" style="cursor:pointer;"><span class="label">✦ Chapter terbaru</span><div class="value">Ch. ${esc(homeContext.latest.chapter)}${chapterDisplayTitle(homeContext.latest)?` · ${esc(chapterDisplayTitle(homeContext.latest))}`:""} · ${timeAgo(Number(homeContext.latest.updated_at||0))}</div></div>`:""}</div>`:`<div class="b-chaps">${chHtml}</div>`;
+  return `<div class="b-item" onclick="openProject('${esc(p.id)}')">${cover}<div class="b-info"><div class="b-item-title"><span class="txt">${esc(p.title)}</span></div><div class="b-stats"><span><span style="color:var(--bato-star)">⭐</span> ${pRating}</span><span class="bookmark-stat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>${pBookmarks}</span><span>💬 ${pComments}</span></div><div class="b-tags">${getTags(p)}</div>${homeLines}</div></div>`;
+}
+function translatorName(project){
+  var name = String((project && (project.translator || project.TRANSLATOR)) || "").trim();
+  if(!name){
+    return "<span class='mvp-translator'>MVP</span>";
+  }
+  return "<button type='button' class='guest-translator-link translator-gradient-all' data-guest='"+esc(name)+"'>"+esc(name)+"</button>";
 }
 
 function renderHome(){
-  var all = getSortedProjects(), histObj = getHistory();
-  
-  // 1. POPULAR (Horizontal Scroll Netflix Style)
-  var popular = all.slice().sort(function(){return Math.random()-0.5;}).slice(0,10);
-  $("secPopular").innerHTML = "<div class='scroll-x'>" + popular.map(function(item,i){
-    var coverHtml = item.p.cover_file_id ? `<img src="${fileUrl(item.p.cover_file_id)}" loading="lazy">` : "";
-    return `
-    <div class="card-slider-item" onclick="openReader('${esc(item.p.id)}','${esc(item.latest.chapter.chapter)}',${Number(item.latest.chapter.decensored||0)})">
-      ${coverHtml}
-      <div class="card-slider-overlay">
-        <span class="rank-badge">#${i+1}</span>
-        <div class="title">${esc(item.p.title)}</div>
-        <div class="ch">Ch.${esc(item.latest.chapter.chapter)}</div>
-      </div>
-    </div>`;
-  }).join("") + "</div>";
+  var all=getSortedProjects(), histObj=getHistory();
+  var myUpdates=all.filter(function(item){return isBookmark(item.p.id);}).slice(0,10);
+  var updatesTarget=$("secUpdates");
+  if(updatesTarget){
+    updatesTarget.innerHTML=myUpdates.length
+      ?myUpdates.map(function(item){return renderBatoItem(item.p,[],{history:histObj[item.p.id]||null,latest:item.latest?item.latest.chapter:null});}).join("")
+      :"<p class='muted' style='font-size:14px;text-align:center;padding:20px 0;'>Belum ada update bookmark.</p>";
+  }
 
-  // 2. HISTORY
-  var histArr = Object.keys(histObj).map(function(pid){var o=histObj[pid];o.pid=pid;return o;}).sort(function(a,b){return b.ts-a.ts;});
-  var myHist = histArr.map(function(h){
-    var p = catalog.find(function(x){return x.id===h.pid&&normalizeType(x)===currentMode;});
-    return p ? {p:p, hist:h} : null;
+  var histArr=Object.keys(histObj).map(function(pid){var o=histObj[pid];o.pid=pid;return o;}).sort(function(a,b){return b.ts-a.ts;});
+  var myHist=histArr.map(function(h){
+    var p=catalog.find(function(x){return x.id===h.pid&&normalizeType(x)===currentMode;});
+    if(!p)return null;
+    var latest=projectLatestChapter(p);
+    return {p:p,hist:h,latest:latest?latest.chapter:null};
   }).filter(Boolean).slice(0,5);
-  
-  $("secHistory").innerHTML = myHist.length 
-    ? myHist.map(i => renderMagItem(i.p, null, i.hist)).join("") 
-    : "<div style='text-align:center;color:var(--muted);font-size:14px;padding:20px;'>Belum ada riwayat baca.</div>";
 
-  // 3. BOOKMARK UPDATES
-  var myUpdates = all.filter(item => isBookmark(item.p.id)).slice(0,8);
-  $("secUpdates").innerHTML = myUpdates.length
-    ? myUpdates.map(i => renderMagItem(i.p, i.latest.chapter)).join("")
-    : "<div style='text-align:center;color:var(--muted);font-size:14px;padding:20px;'>Bookmark kosong.</div>";
+  var historyTarget=$("secHistory");
+  if(historyTarget){
+    historyTarget.innerHTML=myHist.length
+      ?myHist.map(function(item){return renderBatoItem(item.p,[],{history:item.hist,latest:item.latest});}).join("")
+      :"<p class='muted' style='font-size:14px;text-align:center;padding:20px 0;'>Belum ada riwayat.</p>";
+  }
 
-  // 4. LATEST
-  $("secLatest").innerHTML = all.slice(0,15).map(i => renderMagItem(i.p, i.latest.chapter)).join("");
+  var popular=all.slice().sort(function(){return Math.random()-0.5;}).slice(0,9);
+  $("secPopular").innerHTML=popular.map(function(item,i){
+    var tamatBadge=(normalizeStatusKey(item.p.status)==="completed")?"<div class='badge-status badge-tamat'>Completed</div>":"";
+    var coverHtml=item.p.cover_file_id?"<img src='"+fileUrl(item.p.cover_file_id)+"' loading='lazy'>":"";
+    return `<div class="b-grid-item" onclick="openReader('${esc(item.p.id)}','${esc(item.latest.chapter.chapter)}',${Number(item.latest.chapter.decensored||0)})">${tamatBadge}<div class="b-rank">${i+1}</div>${coverHtml}<div class="b-grid-overlay"><div class="b-grid-title">${esc(item.p.title)}</div><div class="b-grid-ch">Ch.${esc(item.latest.chapter.chapter)}</div></div></div>`;
+  }).join("");
+
+  $("secLatest").innerHTML=all.slice(0,15).map(function(item){return renderBatoItem(item.p,[item.latest.chapter]);}).join("");
 }
 
-// LOGIKA SEARCH DROPDOWN
+// DROPDOWN SEARCH LOGIC PADA HOMEPAGE
+function executeSearch(val) {
+  if(!val || !val.trim()) return;
+  var mainSearch = $("search");
+  if(mainSearch) {
+    mainSearch.value = val;
+    var dd = $("searchDropdown");
+    if(dd) dd.classList.remove("active");
+    $("homeLayer").classList.remove("active");
+    $("catalogLayer").classList.add("active");
+    
+    var res = catalog.filter(function(p){
+      return normalizeType(p)===currentMode && ((p.title||"").toLowerCase().includes(val.toLowerCase()) || (p.author||"").toLowerCase().includes(val.toLowerCase()));
+    });
+    $('searchGrid').innerHTML = res.length ? res.map(function(p){
+      var l=projectLatestChapter(p); return renderBatoItem(p, l?[l.chapter]:[]);
+    }).join("") : "<p class='muted' style='text-align:center;'>Tidak ditemukan.</p>";
+  }
+}
+
 if($("search")) {
   $("search").addEventListener("input", function(e) {
     var val = this.value.trim().toLowerCase();
     var dd = $("searchDropdown");
+    if(!dd) return;
     if(val === "") { dd.classList.remove("active"); return; }
     
     var matches = catalog.filter(function(p) {
-      return ((p.title||"").toLowerCase().includes(val) || (p.author||"").toLowerCase().includes(val)) && normalizeType(p)===currentMode;
-    }).slice(0, 6); 
+      var t = String((p && p.title) || "").toLowerCase();
+      var a = String((p && p.author) || "").toLowerCase();
+      return t.includes(val) || a.includes(val);
+    }).slice(0, 8); 
 
     if(matches.length === 0) {
-      dd.innerHTML = "<div style='padding:16px;text-align:center;color:var(--muted);'>Tidak ditemukan.</div>";
+      dd.innerHTML = "<div style='padding:16px; text-align:center; color:var(--muted); font-size:14px;'>Tidak ada hasil untuk \"" + esc(val) + "\"</div>";
     } else {
       dd.innerHTML = matches.map(function(p) {
-        var imgHtml = p.cover_file_id ? "<img src='"+fileUrl(p.cover_file_id)+"' loading='lazy'>" : "<div style='width:50px;height:70px;background:var(--panel2);border-radius:8px;flex-shrink:0;'></div>";
-        return `<div class='search-item' onclick="openProject('${esc(p.id)}'); document.getElementById('searchDropdown').classList.remove('active'); document.getElementById('search').value='';">
-          ${imgHtml}
-          <div class='info'><div class='title'>${esc(p.title)}</div><div class='author'>${esc(p.author||'')}</div></div>
-        </div>`;
+        var imgHtml = p.cover_file_id ? "<img src='"+fileUrl(p.cover_file_id)+"' loading='lazy'>" : "<div style='width:45px;height:65px;background:var(--panel2);border-radius:8px;flex:0 0 auto;'></div>";
+        var authorHtml = p.author ? "<div class='author'>"+esc(p.author)+"</div>" : "";
+        return "<div class='search-item' onclick=\"openProject('"+esc(p.id)+"'); document.getElementById('searchDropdown').classList.remove('active'); document.getElementById('search').value=''; \">" +
+          imgHtml +
+          "<div class='info'><div class='title'>"+esc(p.title)+"</div>"+authorHtml+"</div>" +
+        "</div>";
       }).join("");
     }
     dd.classList.add("active");
   });
 
   $("search").addEventListener("keydown", function(e) {
-    if(e.key === "Enter") { 
-      e.preventDefault(); 
-      var val = this.value.trim().toLowerCase();
-      this.blur();
-      $("searchDropdown").classList.remove("active");
-      if(!val) return;
-      $("homeLayer").classList.add("hidden");
-      $("catalogLayer").classList.remove("hidden");
-      
-      var res = catalog.filter(p => normalizeType(p)===currentMode && ((p.title||"").toLowerCase().includes(val) || (p.author||"").toLowerCase().includes(val)));
-      $('searchGrid').innerHTML = res.length ? res.map(p => {
-        var l = projectLatestChapter(p); return renderMagItem(p, l?l.chapter:null);
-      }).join("") : "<p style='text-align:center;color:var(--muted);'>Tidak ditemukan.</p>";
-    }
+    if(e.key === "Enter") { e.preventDefault(); executeSearch(this.value.trim()); this.blur(); }
   });
 
   document.addEventListener("click", function(e) {
     var container = $("mainSearchContainer");
-    if(container && !container.contains(e.target)) $("searchDropdown").classList.remove("active");
+    if(container && !container.contains(e.target)) {
+      var dd = $("searchDropdown");
+      if (dd) dd.classList.remove("active");
+    }
   });
 }
 
 function closeSearch() { 
-  $("search").value = ""; 
-  $("catalogLayer").classList.add('hidden'); 
-  $("homeLayer").classList.remove('hidden'); 
+  var searchInput = $("search");
+  if(searchInput) searchInput.value = ""; 
+  $("catalogLayer").classList.remove('active'); 
+  $("homeLayer").classList.add('active'); 
 }
 
-// LOGIKA BROWSE, LIST, GUEST
-function showHome() {
-  $("browseLayer").classList.add("hidden");
-  $("lapakLayer").classList.add("hidden");
-  $("guestLayer").classList.add("hidden");
+function handleDetailSearch(val) {
+  val = val.trim().toLowerCase();
+  var dd = $("detailSearchDropdown");
+  if(!dd) return;
+  if(val === "") { dd.classList.remove("active"); return; }
+  var matches = catalog.filter(function(p) {
+    var t = String((p && p.title) || "").toLowerCase();
+    var a = String((p && p.author) || "").toLowerCase();
+    return t.includes(val) || a.includes(val);
+  }).slice(0, 8);
+  if(matches.length === 0) {
+    dd.innerHTML = "<div style='padding:16px; text-align:center; color:var(--muted); font-size:14px;'>Tidak ada hasil untuk \"" + esc(val) + "\"</div>";
+  } else {
+    dd.innerHTML = matches.map(function(p) {
+      var imgHtml = p.cover_file_id ? "<img src='"+fileUrl(p.cover_file_id)+"' loading='lazy'>" : "<div style='width:45px;height:65px;background:var(--panel2);border-radius:8px;flex:0 0 auto;'></div>";
+      var authorHtml = p.author ? "<div class='author'>"+esc(p.author)+"</div>" : "";
+      return "<div class='search-item' onclick=\"openProject('"+esc(p.id)+"'); document.getElementById('detailSearchDropdown').classList.remove('active'); \">" +
+        imgHtml +
+        "<div class='info'><div class='title'>"+esc(p.title)+"</div>"+authorHtml+"</div>" +
+      "</div>";
+    }).join("");
+  }
+  dd.classList.add("active");
+}
+
+function executeDetailSearch(val) {
+  if(!val || !val.trim()) return;
+  $("detail").classList.add("hidden");
+  $("home").classList.remove("hidden");
+  var mainSearch = $("search");
+  if(mainSearch) { mainSearch.value = val; mainSearch.focus(); executeSearch(val); }
+}
+
+document.addEventListener("click", function(e) {
+  var detailContainer = $("detailSearchContainer");
+  if(detailContainer && !detailContainer.contains(e.target)) {
+    var ddd = $("detailSearchDropdown");
+    if (ddd) ddd.classList.remove("active");
+  }
+});
+
+// TRANSLATOR PROFILE (Semua Project List Bato)
+function openTranslatorProfile(name){
+  var guest = String(name || "").trim();
+  if(!guest || guest.toLowerCase()==="mvp") return;
+
+  var list = catalog.filter(function(p){
+    var t=String(p.translator||"").trim();
+    return t && t.toLowerCase()===guest.toLowerCase();
+  });
+  if(!list.length) return;
+
+  $("home").classList.add("hidden");
   $("detail").classList.add("hidden");
   $("reader").classList.add("hidden");
-  $("home").classList.remove("hidden");
+  $("browseLayer").classList.remove("active"); $("browseLayer").classList.add("hidden");
+  $("catalogLayer").classList.remove("active"); $("catalogLayer").classList.add("hidden");
+  $("lapakLayer").classList.remove("active"); $("lapakLayer").classList.add("hidden");
+  $("guestLayer").classList.remove("hidden"); $("guestLayer").classList.add("active");
+
+  var targetP=list.find(function(p){return p.trakteer;}) || {};
+  var support=targetP.trakteer
+    ? "<a class='mvp-support-btn' href='"+esc(targetP.trakteer)+"' target='_blank' rel='noopener'>☕ "+esc(targetP.trakteer_label||"Traktir Kopi")+"</a>"
+    : "";
+
+  var projects=list.slice().sort(function(a,b){
+    return String(a.title||"").localeCompare(String(b.title||""),undefined,{sensitivity:"base"});
+  }).map(function(p){
+    return "<button type='button' class='mvp-guest-project' onclick=\"openProject('"+esc(p.id)+"')\">"+esc(p.title)+"</button>";
+  }).join("");
+
+  $("guestListContent").innerHTML=
+    "<div class='mvp-guest-profile'>"+
+      "<button type='button' class='back' onclick='openGuestPage()' style='margin-bottom:18px;'>← Guest</button>"+
+      "<div class='mvp-guest-profile-card'>"+
+        "<div class='mvp-guest-avatar'>👤</div>"+
+        "<h2 class='mvp-guest-profile-name'>"+esc(guest)+"</h2>"+
+        "<div class='mvp-guest-profile-count'>"+list.length+" project"+(list.length===1?"":"s")+"</div>"+
+        support+
+      "</div>"+
+      "<div class='mvp-detail-part'>"+
+        "<div class='mvp-detail-part-title'>Project</div>"+
+        "<div class='mvp-guest-project-list'>"+projects+"</div>"+
+      "</div>"+
+    "</div>";
+
   window.scrollTo(0,0);
 }
 
-function setMode(mode) {
-  currentMode = mode;
-  $('btnModeComic').classList.toggle('active', mode==='comic');
-  $('btnModeNovel').classList.toggle('active', mode==='novel');
-  renderHome();
-}
-
-function setBrowseMode(mode){ 
-  currentMode = mode; 
-  $('browseModeComic').classList.toggle('active', mode==='comic');
-  $('browseModeNovel').classList.toggle('active', mode==='novel');
-  openBrowse();
-}
-
-function openBrowse(){
-  $("home").classList.add("hidden");
-  $("lapakLayer").classList.add("hidden");
-  $("guestLayer").classList.add("hidden");
-  $("browseLayer").classList.remove("hidden");
-  
-  var tags = [...new Set(catalog.filter(p => normalizeType(p)===currentMode).flatMap(p => getTagsArr(p)))].sort();
-  
-  $("browseStatusFilter").innerHTML = `
-    <button class="btn-pill" onclick="filterBrowse('status', 'Ongoing')" style="border:1px solid var(--border);">Ongoing</button>
-    <button class="btn-pill" onclick="filterBrowse('status', 'Completed')" style="border:1px solid var(--border);">Completed</button>
-  `;
-  
-  $("browseTagCloud").innerHTML = tags.map(t => `<button class="detail-tag" onclick="filterBrowse('tag', '${esc(t)}')">${esc(t)}</button>`).join("");
-  $("browseResults").innerHTML = "";
-  $("browseResultsTitle").textContent = "Pilih filter di atas";
-  window.scrollTo(0,0);
-}
-
-function filterBrowse(type, val) {
-  var res = catalog.filter(p => {
-    if(normalizeType(p) !== currentMode) return false;
-    if(type === 'status') return String(p.status).toLowerCase().includes(val.toLowerCase());
-    if(type === 'tag') return getTagsArr(p).includes(val);
-    return true;
-  });
-  $("browseResultsTitle").textContent = "Hasil: " + esc(val) + " (" + res.length + ")";
-  $("browseResults").innerHTML = res.map(p => { var l = projectLatestChapter(p); return renderMagItem(p, l?l.chapter:null); }).join("");
-}
-
-function closeBrowse() { showHome(); }
-
-function openLapakList() {
-  $("home").classList.add("hidden");
-  $("browseLayer").classList.add("hidden");
-  $("guestLayer").classList.add("hidden");
-  $("lapakLayer").classList.remove("hidden");
-  
-  var sorted = catalog.slice().sort((a,b) => String(a.title).localeCompare(String(b.title)));
-  var html = "";
-  var lastL = "";
-  sorted.forEach(p => {
-    var l = String(p.title).charAt(0).toUpperCase();
-    if(l !== lastL) { html += `<div class="lapak-letter">${esc(l)}</div>`; lastL = l; }
-    html += `<div style="padding:12px; border-bottom:1px solid var(--border); font-size:15px; font-weight:700; cursor:pointer;" onclick="openProject('${esc(p.id)}')">${esc(p.title)} <span style="font-size:10px; background:var(--panel2); padding:2px 6px; border-radius:4px; color:var(--accent); margin-left:8px;">${normalizeType(p).toUpperCase()}</span></div>`;
-  });
-  $("lapakListContent").innerHTML = html;
-  window.scrollTo(0,0);
-}
-function closeLapakList() { showHome(); }
-
-function openGuestPage() {
-  $("home").classList.add("hidden");
-  $("browseLayer").classList.add("hidden");
-  $("lapakLayer").classList.add("hidden");
-  $("guestLayer").classList.remove("hidden");
-  
-  var map = {};
-  catalog.forEach(p => {
-    var t = String(p.translator||"").trim();
-    if(t && t.toLowerCase() !== "mvp") {
-      if(!map[t]) map[t] = {count:0, url:p.trakteer};
-      map[t].count++;
-    }
-  });
-  var html = Object.keys(map).sort().map(k => `
-    <div class="guest-card">
-      <div style="font-size:40px;">👤</div>
-      <h3>${esc(k)}</h3>
-      <div class="badge">${map[k].count} Projects</div>
-      ${map[k].url ? `<br><a href="${esc(map[k].url)}" target="_blank" class="btn primary" style="padding:8px 16px; font-size:12px;">☕ Dukung Translator</a>` : ''}
-    </div>
-  `).join("");
-  $("guestListContent").innerHTML = html || "<div style='text-align:center;color:var(--muted);'>Belum ada guest.</div>";
-  window.scrollTo(0,0);
-}
-function closeGuestPage() { showHome(); }
-
-// LOGIKA HALAMAN DETAIL (SPOTIFY/NETFLIX STYLE)
+// DETAIL PROJECT (COVER KIRI, INFO KANAN - UI ATAS LAMA)
 async function openProject(id){
   if(!(await requireAccess())) return;
   var p = catalog.find(function(x){ return x.id===id; });
   if(!p) return;
 
   $("home").classList.add("hidden");
+  $("guestLayer").classList.remove("active"); $("guestLayer").classList.add("hidden");
+  $("browseLayer").classList.remove("active");
   $("browseLayer").classList.add("hidden");
-  $("lapakLayer").classList.add("hidden");
-  $("guestLayer").classList.add("hidden");
+  $("catalogLayer").classList.remove("active");
   $("detail").classList.remove("hidden");
   window.scrollTo(0,0);
 
+  var cover = p.cover_file_id
+    ? "<img class='detailcover' src='"+fileUrl(p.cover_file_id)+"' alt='"+esc(p.title)+"' onerror=\"this.style.display='none'\">"
+    : "<div class='detailcover'></div>";
+
   var isBm=isBookmark(p.id);
   var pRating=(p.rating!=null?Number(p.rating).toFixed(1):"0.0");
-  
-  var bgUrl = p.cover_file_id ? fileUrl(p.cover_file_id) : "";
-  var coverImg = p.cover_file_id ? `<img class="detailcover" src="${bgUrl}">` : `<div class="detailcover"></div>`;
-  var blurBg = bgUrl ? `<div class="detail-blur-bg" style="background-image:url('${bgUrl}')"></div>` : `<div class="detail-blur-bg"></div>`;
-  
+  var pVotes=Number(p.votes||0);
+  var pBookmarks=p.bookmarks||"0";
+  var pComments=Number(p.comments||0);
+
+  // PART 1 — cover + title + alternative title + author + rating/bookmark.
+  var altTitle=p.alternative_title||p.alt_title||p.altTitle||p.alternatif_title||"";
+  var altHtml=altTitle ? "<div class='mvp-detail-alt'>"+esc(altTitle)+"</div>" : "";
+  var authorHtml=p.author ? "<div class='mvp-detail-author'>"+esc(p.author)+"</div>" : "";
+  var btnFavColor=isBm?"var(--accent)":"var(--panel2)";
+  var btnFavText=isBm?"#fff":"var(--text)";
+  var favIconColor=isBm?"#fff":"none";
+
   var shareAction="if(tg) tg.openTelegramLink('https://t.me/share/url?url="+encodeURIComponent("https://t.me/MVP_Zhenya_Bot?start="+p.id)+"&text="+encodeURIComponent("Baca "+p.title+" di MVP!")+"')";
-  
-  var headerPart = `
-    <button class="back" style="position:absolute; top:16px; left:16px; z-index:10;" onclick="$('detail').classList.add('hidden');$('home').classList.remove('hidden');">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-    </button>
-    <div class="detail-header-wrap">
-      ${blurBg}
-      <div class="detail-header-content">
-        ${coverImg}
-        <h1 class="detail-title">${esc(p.title)}</h1>
-        <div class="detail-author">${esc(p.author || 'Unknown Author')}</div>
-        
-        <div class="detail-action-bar">
-          <button class="btn ${isBm?'primary':''}" style="flex:1;" onclick="toggleBookmark('${esc(p.id)}')">
-            ${isBm ? '✅ Tersimpan' : '➕ Tambah ke Library'}
-          </button>
-          <button class="btn btn-round" onclick="${shareAction}">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-          </button>
-        </div>
-      </div>
-    </div>
-  `;
 
-  var statsGrid = `
-    <div class="detail-stats-grid">
-      <div class="stat-box"><span class="val">★ ${pRating}</span><span class="lbl">Rating</span></div>
-      <div class="stat-box"><span class="val">${p.bookmarks||0}</span><span class="lbl">Bookmarks</span></div>
-      <div class="stat-box"><span class="val">${String(p.status||'ONGOING').toUpperCase()}</span><span class="lbl">Status</span></div>
-    </div>
-  `;
+  var topBar=
+    "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:8px;'>"+
+      "<button class='back' onclick=\"$('detail').classList.add('hidden');$('home').classList.remove('hidden');\" style='padding:8px;flex:0 0 auto;background:var(--panel2);color:var(--text);'>"+
+        "<svg width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><line x1='19' y1='12' x2='5' y2='12'></line><polyline points='12 19 5 12 12 5'></polyline></svg>"+
+      "</button>"+
+      "<div id='detailSearchContainer' style='flex:1;position:relative;'>"+
+        "<input type='text' id='detailSearch' class='search' style='margin:0;padding:10px 16px;width:100%;border-radius:24px;font-size:14px;background:var(--panel2);color:var(--text);border:1px solid var(--border);pointer-events:auto;' placeholder='Cari judul...' onkeydown=\"if(event.key==='Enter') executeDetailSearch(this.value)\" oninput=\"handleDetailSearch(this.value)\" autocomplete='off'>"+
+        "<div id='detailSearchDropdown' class='search-dropdown'></div>"+
+      "</div>"+
+      "<div style='display:flex;gap:6px;flex:0 0 auto;'>"+
+        "<button class='btn' onclick=\""+shareAction+"\" style='padding:10px;border-radius:50%;background:var(--panel);' aria-label='Share'>"+
+          "<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8'></path><polyline points='16 6 12 2 8 6'></polyline><line x1='12' y1='2' x2='12' y2='15'></line></svg>"+
+        "</button>"+
+        "<button class='btn' style='padding:10px;border-radius:50%;background:"+btnFavColor+";color:"+btnFavText+";' onclick=\"toggleBookmark('"+esc(p.id)+"')\" aria-label='Bookmark'>"+
+          "<svg width='18' height='18' viewBox='0 0 24 24' fill='"+favIconColor+"' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z'></path></svg>"+
+        "</button>"+
+      "</div>"+
+    "</div>";
 
-  var tagsHtml = getTagsArr(p).map(t => `<div class="detail-tag">${esc(t)}</div>`).join("");
-  var tagsPart = tagsHtml ? `<div class="detail-section"><div class="detail-section-title">Genre & Tags</div><div class="detail-tags">${tagsHtml}</div></div>` : "";
+  var detailStatus="<div class='mvp-detail-status'>"+
+    (p.status?"<span class='mvp-detail-chip'>"+esc(String(p.status).toUpperCase())+"</span>":"")+
+    "</div>";
 
-  var translator = String(p.translator||'MVP').trim();
-  var transHtml = `<div class="translator-box">Diterjemahkan oleh: <span style="color:var(--accent);">${esc(translator)}</span></div>`;
-  var supportHtml = p.trakteer ? `<br><a href="${esc(p.trakteer)}" target="_blank" class="btn primary" style="width:100%; border-radius:12px;">☕ ${esc(p.trakteer_label||'Traktir Kopi')}</a>` : '';
+  var part1=
+    "<section class='mvp-detail-part' style='margin-top:0'>"+
+      "<div class='mvp-detail-top'>"+
+        cover+
+        "<div style='flex:1;min-width:0;'>"+
+          "<h1 class='mvp-detail-title' style='margin:0;'>"+esc(p.title)+"</h1>"+
+          altHtml+
+          authorHtml+
+          ""+
+          "<div class='mvp-detail-stats'>"+
+            "<span class='mvp-detail-stat'><span style='color:var(--bato-star)'>★</span> "+pRating+"</span>"+
+            "<button type='button' class='mvp-detail-stat mvp-detail-stat-btn "+(isBm?"bookmark-on":"")+"' onclick=\"toggleBookmark('"+esc(p.id)+"')\">"+
+              "<svg width='14' height='14' viewBox='0 0 24 24' fill='"+favIconColor+"' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 0-2 2z'></path></svg>"+pBookmarks+
+            "</button>"+
+            "<span class='mvp-detail-stat'>💬 "+pComments+"</span>"+
+          "</div>"+
+          detailStatus+
+        "</div>"+
+      "</div>"+
+    "</section>";
 
-  var descPart = `
-    <div class="detail-section">
-      <div class="detail-section-title">Sinopsis</div>
-      <div class="desc-box">${esc(p.description||'Tidak ada sinopsis.')}</div>
-      ${transHtml}
-      ${supportHtml}
-    </div>
-  `;
+  // PART 2 — ordered clickable tags + voting + distribution.
+  var tagsArr=sortedTags(p.tags);
+  var tagsHtml=tagsArr.length
+    ? "<div class='mvp-detail-tags'><div class='tags'>"+tagsArr.map(function(t){return tagButtonHtml(t,tagPriority(t)===0?"tag-major":(tagPriority(t)===1?"tag-secondary":""));}).join("")+"</div></div>"
+    : "<div class='mvp-empty-state'>Belum ada tag.</div>";
 
-  // Voting
   var savedVote=Number(p.user_vote||"0");
   var starsArr=[1,2,3,4,5,6,7,8,9,10];
   var starsHtml=starsArr.map(function(n){
     var filled=n<=savedVote;
-    return `<span id="star_${p.id}_${n}" onclick="doVote('${esc(p.id)}',${n})" style="color:${filled?'var(--accent)':'var(--border)'}">${filled?'★':'☆'}</span>`;
+    return "<span id='star_"+p.id+"_"+n+"' onclick=\"event.stopPropagation();doVote('"+esc(p.id)+"',"+n+")\" style='cursor:pointer;color:"+(filled?"var(--accent)":"var(--border2)")+";transition:.2s;'>"+(filled?"★":"☆")+"</span>";
   }).join("");
-  var votePart = `<div class="vote-container"><div style="font-size:12px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px;">Berikan Penilaianmu</div><div class="vote-stars">${starsHtml}</div><div style="font-size:12px; color:var(--muted);">${p.votes||0} user telah menilai</div></div>`;
 
-  // Chapters
+  var dist=Array.isArray(p.vote_distribution)&&p.vote_distribution.length===5
+    ? p.vote_distribution.map(function(n){return Number(n)||0;})
+    : [0,0,0,0,0];
+  var distTotal=dist.reduce(function(a,b){return a+b;},0);
+  var distLabels=["5★","4★","3★","2★","1★"];
+  var ratingBars=distLabels.map(function(label,i){
+    var pct=distTotal?(dist[i]/distTotal*100):0;
+    var pctText=pct.toFixed(pct>=10?0:1);
+    return "<div class='mvp-rating-bar'>"+
+      "<span class='lbl'>"+label+"</span>"+
+      "<div class='track'><div class='fill' style='width:"+pct+"%'></div></div>"+
+      "<span class='pct'>"+pctText+"%</span>"+
+    "</div>";
+  }).join("");
+
+  var ratingPanel=
+    "<div class='mvp-vote-panel'>"+
+      "<div class='mvp-vote-top'><div class='mvp-vote-label'>BERIKAN VOTE (1–10)</div><div style='font-size:11px;color:var(--muted)'>"+pVotes+" vote"+(pVotes===1?"":"s")+"</div></div>"+
+      "<div class='mvp-vote-stars'>"+starsHtml+"</div>"+
+      "<div class='mvp-rating-summary'>"+
+        "<div class='mvp-rating-score'><div class='num'>"+pRating+"</div><div class='stars'>★★★★★</div><div class='votes'>"+pVotes+" vote"+(pVotes===1?"":"s")+"</div></div>"+
+        "<div class='mvp-rating-bars'>"+ratingBars+"</div>"+
+      "</div>"+
+    "</div>";
+
+  var part2=
+    "<section class='mvp-detail-part'>"+
+      "<div class='mvp-detail-part-title'>Tags</div>"+
+      tagsHtml+
+      ratingPanel+
+    "</section>";
+
+  // PART 3 — description.
+  var trakteerDetail=p.trakteer ? "<a href='"+esc(p.trakteer)+"' target='_blank' class='btn' style='background:#e74c3c;color:#fff;width:100%;margin-top:14px;'>☕ "+esc(p.trakteer_label || "Traktir Kopi")+"</a>" : "";
+  var detailTranslator=String(p.translator||"").trim() || "MVP";
+  var translatorHtml=detailTranslator.toUpperCase()==="MVP"
+    ? "<div class='mvp-detail-translator'>DITERJEMAHKAN OLEH : <span class='mvp-translator'>MVP</span></div>"
+    : "<div class='mvp-detail-translator'>DITERJEMAHKAN OLEH : <button type='button' class='guest-translator-link translator-gradient-all' data-guest='"+esc(detailTranslator)+"'>"+esc(detailTranslator)+"</button></div>";
+  var part3=
+    "<section class='mvp-detail-part'>"+
+      translatorHtml+
+      "<div class='mvp-detail-part-title'>Deskripsi</div>"+
+      "<div class='mvp-description'>"+esc(p.description||"")+"</div>"+
+      trakteerDetail+
+    "</section>";
+
   var chaptersArr=Array.isArray(p.chapters)?p.chapters.slice():[];
   var mappedChaps=chaptersArr.map(function(c,i){return {c:c,i:i};});
   if(!window.chapterSortDesc) mappedChaps.reverse();
 
   var chaptersHtml=mappedChaps.map(function(item){
-    var timeStr=item.c.updated_at?timeAgo(item.c.updated_at):"Baru saja";
-    var chTitle = esc(item.c.chapter_title||item.c.title||item.c.name||"");
-    return `
-    <div class="ch-item" onclick="openReader('${esc(p.id)}','${esc(item.c.chapter)}',${Number(item.c.decensored||0)})">
-      <div class="ch-item-left">
-        <div class="ch-num">Chapter ${esc(item.c.chapter)}${decBadge(item.c.decensored)}</div>
-        ${chTitle ? `<div class="ch-title">${chTitle}</div>` : ''}
-      </div>
-      <div class="ch-date">${timeStr}</div>
-    </div>`;
+    var timeStr=item.c.updated_at?timeAgo(item.c.updated_at):"Just now";
+    var chTitle=chapterDisplayTitle(item.c);
+    var chTranslator=chapterTranslator(p,item.c);
+    return "<div class='chapter-bato' onclick=\"openReader('"+esc(p.id)+"','"+esc(item.c.chapter)+"',"+Number(item.c.decensored||0)+")\">"+
+      "<div class='mvp-chapter-bato-body'><div style='font-weight:800;font-size:14px;color:var(--accent);'>Chapter "+esc(item.c.chapter)+decBadge(item.c.decensored)+"</div>"+
+      (chTitle?"<div class='mvp-chapter-title'>"+esc(chTitle)+"</div>":"")+"</div>"+
+      "<div class='mvp-chapter-bato-meta'>🕒 "+timeStr+"</div>"+
+    "</div>";
   }).join("");
 
-  var chapterPart = `
-    <div class="detail-section">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <div class="detail-section-title" style="margin:0;">Chapters (${chaptersArr.length})</div>
-        <button class="btn" style="padding:6px 12px; border-radius:8px; font-size:12px;" onclick="toggleChapterSort('${esc(p.id)}')">⇅ Sortir</button>
-      </div>
-      <div class="chapter-list">${chaptersHtml || '<div style="text-align:center; color:var(--muted); padding:20px;">Belum ada chapter</div>'}</div>
-    </div>
-  `;
+  var chaptersWrap="<div class='chapter-scroll-box'>"+
+    (chaptersHtml||"<div class='mvp-empty-state'>Belum ada chapter.</div>")+
+    "</div>";
 
-  $("detailContent").innerHTML = headerPart + statsGrid + tagsPart + descPart + votePart + chapterPart;
+  var part4=
+    "<section class='mvp-detail-part'>"+
+      "<div class='mvp-chapters-head'>"+
+        "<h3>Chapters <span style='color:var(--muted);font-size:14px;'>("+chaptersArr.length+")</span></h3>"+
+        "<button class='btn' style='padding:6px 12px;font-size:12px;background:var(--panel2);color:var(--text);border:1px solid var(--border);pointer-events:auto;' onclick=\"toggleChapterSort('"+esc(p.id)+"')\">⇅ Sortir</button>"+
+      "</div>"+
+      chaptersWrap+
+    "</section>";
+
+  $("detailContent").innerHTML=topBar+part1+part2+part3+part4;
 }
 
-// LOGIKA SCROLL AUTO-HIDE READER UI
+// LOGIKA SCROLL: Progress bar & Auto-hide UI
 window.addEventListener('scroll', function() {
   if (!$("reader").classList.contains("hidden")) {
     var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
     var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
     if (height > 0) {
-      $("progressBar").style.width = ((winScroll / height) * 100) + "%";
+      var scrolled = (winScroll / height) * 100;
+      $("progressBar").style.width = scrolled + "%";
     }
     
-    if (winScroll > 15 && !$("reader").classList.contains("ui-hidden")) {
+    if ((document.body.scrollTop || document.documentElement.scrollTop) > 15 && !$("reader").classList.contains("ui-hidden")) {
       var menu = $("readerChapterMenu");
-      if (!menu || !menu.classList.contains("active")) {
+      if (!menu || menu.classList.contains("hidden")) {
         $("reader").classList.add("ui-hidden");
-        clearTimeout(uiTimeout);
+        if(typeof uiTimeout !== 'undefined') clearTimeout(uiTimeout);
       }
     }
   }
@@ -776,29 +1688,42 @@ window.addEventListener('scroll', function() {
 
 function getTelegramIdentity(){
   var user = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
-  return user ? { id: String(user.id || ""), username: user.username ? ("@" + user.username) : "" } : {id:"", username:""};
+  if(!user) return {id:"", username:""};
+  return { id: String(user.id || ""), username: user.username ? ("@" + user.username) : "" };
 }
 
 function showReaderWatermark(){
   var u = getTelegramIdentity();
-  $("readerWatermarkUser").textContent = [u.id, u.username].filter(Boolean).join(" | ");
+  var parts = [];
+  if (u.id) parts.push(u.id);
+  if (u.username) parts.push(u.username);
+  $("readerWatermarkUser").textContent = parts.join(" | ");
   $("readerWatermark").classList.remove("hidden");
 }
 
-function hideReaderWatermark(){ $("readerWatermark").classList.add("hidden"); }
+function hideReaderWatermark(){
+  $("readerWatermark").classList.add("hidden");
+}
 
 function chapterIndex(projectId, chapterName, decensored){
-  var p = catalog.find(x => x.id === projectId);
+  var p = catalog.find(function(x) { return x.id === projectId; });
   if(!p) return -1;
-  var chaptersArr = Array.isArray(p.chapters) ? p.chapters : [];
-  return chaptersArr.findIndex(c => String(c.chapter) === String(chapterName) && Number(c.decensored) === Number(decensored));
+  var chaptersArr = Array.isArray(p && p.chapters) ? p.chapters : [];
+  return chaptersArr.findIndex(function(c) { return String(c.chapter) === String(chapterName) && Number(c.decensored) === Number(decensored); });
 }
 
 async function openChapter(projectId, index){
   if(!(await requireAccess())) return;
-  var p = catalog.find(x => x.id === projectId);
+  var p = catalog.find(function(x) { return x.id === projectId; });
+  if(!p) return;
   var chaptersArr = Array.isArray(p && p.chapters) ? p.chapters : [];
-  if(chaptersArr[index]) openReader(projectId, chaptersArr[index].chapter, Number(chaptersArr[index].decensored));
+  if(!chaptersArr[index]) return;
+  var c = chaptersArr[index];
+  openReader(projectId, c.chapter, Number(c.decensored));
+}
+
+function chapterCommentLink(p){
+  return (p && p.comment_link) || "";
 }
 
 function showReaderUI() {
@@ -806,41 +1731,50 @@ function showReaderUI() {
     clearTimeout(uiTimeout);
     uiTimeout = setTimeout(function() {
         var menu = $("readerChapterMenu");
-        if ((!menu || !menu.classList.contains("active")) && !$("reader").classList.contains("hidden")) {
+        var isMenuOpen = menu && !menu.classList.contains("hidden");
+        if (!isMenuOpen && !$("reader").classList.contains("hidden")) {
             $("reader").classList.add("ui-hidden");
         }
-    }, 3000); 
+    }, 3500); 
 }
 
 function toggleReaderUI(e) {
-  if(e && e.target && e.target.closest('.reader-ui')) return;
-  if ($("reader").classList.contains("ui-hidden")) showReaderUI();
-  else { $("reader").classList.add("ui-hidden"); clearTimeout(uiTimeout); }
+  if(e && e.target && (e.target.closest('button') || e.target.closest('a') || e.target.closest('.readerhead') || e.target.closest('.reader-nav') || e.target.closest('input'))) return;
+  
+  if ($("reader").classList.contains("ui-hidden")) {
+      showReaderUI();
+  } else {
+      $("reader").classList.add("ui-hidden");
+      clearTimeout(uiTimeout);
+  }
 }
 
 function changeFontSize(dir, e) {
   if (e) e.stopPropagation(); 
   var currentFontSize = Number(localStorage.getItem('mvp_fontsize')) || 17;
-  currentFontSize = Math.max(12, Math.min(32, currentFontSize + (dir * 2)));
+  currentFontSize += (dir * 2);
+  if (currentFontSize < 12) currentFontSize = 12;
+  if (currentFontSize > 32) currentFontSize = 32;
   localStorage.setItem('mvp_fontsize', currentFontSize);
   var reader = document.querySelector('.novel-reader');
   if (reader) reader.style.fontSize = currentFontSize + 'px';
 }
 
-// LOGIKA OPEN READER (FLOATING PILL UI)
+// LOGIKA OPEN READER
 async function openReader(projectId, chapterName, decensored){
   if(!(await requireAccess())) return;
   
-  var p = catalog.find(x => x.id === projectId);
+  var p = catalog.find(function(x) { return x.id === projectId; });
   if(!p) return;
   var idx = chapterIndex(projectId, chapterName, decensored);
-  var chaptersArr = Array.isArray(p.chapters) ? p.chapters : [];
+  var chaptersArr = Array.isArray(p && p.chapters) ? p.chapters : [];
   var c = chaptersArr[idx];
   if(!c) return;
 
   var platform = String((tg && tg.platform) || "").toLowerCase();
   if (Number(c.decensored) === 1 && platform !== "android" && platform !== "android_x") {
-      alert("Akses ditolak!\nChapter Decensored hanya tersedia di Android"); return;
+      alert("Akses ditolak!\nChapter Decensored hanya tersedia di Android");
+      return;
   }
 
   saveHistory(projectId, c.chapter, Number(c.decensored));
@@ -855,43 +1789,55 @@ async function openReader(projectId, chapterName, decensored){
 
   var chapterOptions = chaptersArr.map(function(ch, i) {
     var isCur = i === idx ? "current" : "";
-    return `<button class="reader-chapter-option ${isCur}" onclick="selectReaderChapter('${esc(p.id)}',${i})">Ch. ${esc(ch.chapter)}${decBadge(ch.decensored)}</button>`;
+    return "<button class='reader-chapter-option "+isCur+"' onclick=\"selectReaderChapter('"+esc(p.id)+"',"+i+")\">Chapter "+esc(ch.chapter)+decBadge(ch.decensored)+(chapterDisplayTitle(ch)?" · "+esc(chapterDisplayTitle(ch)):"")+"</button>";
   }).join("");
 
   var isLast = idx >= chaptersArr.length - 1;
-  var btnNextAction = isLast ? `closeReader()` : `openChapter('${esc(p.id)}',${idx+1})`;
-  var btnPrevAction = idx <= 0 ? `` : `openChapter('${esc(p.id)}',${idx-1})`;
-  
-  var fontBtns = c.content_type === "docx" ? `<div style="display:flex;justify-content:center;gap:10px;margin-bottom:8px;"><button class="btn" style="border-radius:20px;" onclick="changeFontSize(-1, event)">A-</button><button class="btn" style="border-radius:20px;" onclick="changeFontSize(1, event)">A+</button></div>` : "";
+  var btnNextAction = isLast ? "closeReader()" : "openChapter('"+esc(p.id)+"',"+(idx+1)+")";
+  var btnNextText = isLast ? "Detail »" : "Next »";
+  var btnNextClass = isLast ? "primary" : "";
 
-  var bottomNav = `
-    <div class="reader-ui">
-      ${fontBtns}
-      <div id="readerChapterMenu" class="reader-chapter-menu">${chapterOptions}</div>
-      <div class="reader-pill">
-        <button class="reader-btn" onclick="closeReader()" aria-label="Back">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        </button>
-        <button class="reader-btn" style="opacity:${idx<=0?0.3:1};" onclick="${btnPrevAction}" aria-label="Prev">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        
-        <div class="reader-center-text" onclick="toggleChapterMenu(event)">
-          Ch. ${esc(c.chapter)}${decBadge(c.decensored)} ▾
-        </div>
+  var topNav = 
+    "<div class='readerhead'>" +
+      "<div class='reader-topbar'>" +
+        "<button class='reader-info' onclick=\"readerInfo('"+esc(p.id)+"')\">" +
+            "<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><line x1='19' y1='12' x2='5' y2='12'></line><polyline points='12 19 5 12 12 5'></polyline></svg>" +
+        "</button>" +
+        "<div class='reader-chapter-wrap'>" +
+          "<button id='readerChapterButton' class='reader-chapter-btn' onclick='toggleChapterMenu(event)'>" +
+            "Ch."+esc(c.chapter)+decBadge(c.decensored) +
+          "</button>" +
+          "<div id='readerChapterMenu' class='reader-chapter-menu hidden'>" + chapterOptions + "</div>" +
+        "</div>" +
+      "</div>" +
+    "</div>";
 
-        <button class="reader-btn" onclick="${btnNextAction}" aria-label="Next">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-        </button>
-      </div>
-    </div>
-  `;
+  var commentUrl = chapterCommentLink(p);
+  var btnPrevClass = idx <= 0 ? "disabled" : "";
+  var commentBtnHtml = commentUrl 
+    ? "<div class='reader-nav-row' style='margin-top:2px;'><button class='navbtn commentbtn primary' style='width:100%' onclick=\"location.href='"+esc(commentUrl)+"'\">💬 Tulis Komentar</button></div>" 
+    : "";
 
-  $("readerContent").innerHTML = `<div id="readerPages" class="readerpages" onclick="toggleReaderUI(event)"></div>` + bottomNav;
+  var fontBtns = c.content_type === "docx" 
+    ? "<div class='reader-nav-row' style='margin-bottom:6px;'><button class='navbtn' onclick='changeFontSize(-1, event)'>A- Kecilkan</button><button class='navbtn' onclick='changeFontSize(1, event)'>A+ Besarkan</button></div>" 
+    : "";
+
+  var botNav = 
+    "<div id='readerNav' class='reader-nav'>" +
+      fontBtns +
+      "<div class='reader-nav-row'>" +
+        "<button class='navbtn "+btnPrevClass+"' "+btnPrevClass+" onclick=\"openChapter('"+esc(p.id)+"',"+(idx-1)+")\">« Prev</button>" +
+        "<button class='navbtn upbtn' onclick=\"window.scrollTo({top:0,behavior:'smooth'})\">↑ Up</button>" +
+        "<button class='navbtn "+btnNextClass+"' onclick=\""+btnNextAction+"\">"+btnNextText+"</button>" +
+      "</div>" +
+      commentBtnHtml +
+    "</div>";
+
+  $("readerContent").innerHTML = topNav + "<div id='readerPages' class='readerpages' onclick='toggleReaderUI(event)'></div>" + botNav;
   var pages = $("readerPages");
 
   if(c && c.content_type === "docx"){
-    pages.innerHTML = "<div style='padding:40px;text-align:center;font-weight:bold;color:var(--accent);'>Memuat novel...</div>";
+    pages.innerHTML = "<div class='novel-loading'>Memuat chapter…</div>";
     try {
       var r = await fetch("/api/novel?project_id=" + encodeURIComponent(projectId) + "&chapter=" + encodeURIComponent(c.chapter) + "&decensored=" + c.decensored, {cache:"no-store",headers:accessHeaders()});
       if(!r.ok) throw new Error("novel");
@@ -900,26 +1846,28 @@ async function openReader(projectId, chapterName, decensored){
       pages.innerHTML = "<article class='novel-reader' style='font-size:"+savedFont+"px'>" + ((data && data.html) ? data.html : "<p class='muted'>Chapter kosong.</p>") + "</article>";
         
       setTimeout(function() {
+          if (!$('mvpMarkHint')) { var hint=document.createElement('div'); hint.id='mvpMarkHint'; hint.className='mvp-mark-hint'; hint.textContent='Tahan paragraf untuk menandai'; document.body.appendChild(hint); setTimeout(function(){hint.classList.add('show');},80); setTimeout(function(){hint.classList.remove('show');},2300); }
           var paragraphs = document.querySelectorAll('.novel-reader p');
           var saveKey = 'mvp_novel_mark_' + projectId + '_' + c.chapter + '_' + Number(c.decensored||0);
           var savedIndex = localStorage.getItem(saveKey);
 
           var markTimer=null, markTarget=null, holdFired=false, holdX=0, holdY=0;
+          var HOLD_MS=550;
           var markParagraph=function(p,pIdx){
               document.querySelectorAll('.novel-reader p.bookmarked').forEach(function(el){if(el!==p)el.classList.remove('bookmarked');});
               if(p.classList.contains('bookmarked')){p.classList.remove('bookmarked');localStorage.removeItem(saveKey);}
               else{p.classList.add('bookmarked');localStorage.setItem(saveKey,pIdx);}
           };
-          var clearHold=function(){if(markTimer)clearTimeout(markTimer);markTimer=null;markTarget=null;};
+          var clearHold=function(p){if(markTimer){clearTimeout(markTimer);markTimer=null;}if(p)p.classList.remove('mvp-hold-armed');markTarget=null;};
           paragraphs.forEach(function(p,pIdx){
               p.addEventListener('pointerdown',function(e){
                   if(e.pointerType==='mouse'&&e.button!==0)return;
-                  holdFired=false;markTarget=p;holdX=e.clientX;holdY=e.clientY;
-                  markTimer=setTimeout(function(){if(markTarget!==p)return;holdFired=true;markParagraph(p,pIdx);if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred('light');},550);
+                  holdFired=false;markTarget=p;holdX=e.clientX;holdY=e.clientY;p.classList.add('mvp-hold-armed');
+                  markTimer=setTimeout(function(){if(markTarget!==p)return;holdFired=true;p.classList.remove('mvp-hold-armed');markParagraph(p,pIdx);if(tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred){try{tg.HapticFeedback.impactOccurred('light');}catch(_){}}},HOLD_MS);
               });
-              p.addEventListener('pointermove',function(e){if(markTarget!==p)return;var dx=e.clientX-holdX,dy=e.clientY-holdY;if(dx*dx+dy*dy>64)clearHold();});
-              p.addEventListener('pointerup',function(e){var wasHold=holdFired;clearHold();if(wasHold){e.preventDefault();e.stopPropagation();}});
-              p.addEventListener('pointercancel',clearHold);
+              p.addEventListener('pointermove',function(e){if(markTarget!==p)return;var dx=e.clientX-holdX,dy=e.clientY-holdY;if(dx*dx+dy*dy>64)clearHold(p);});
+              p.addEventListener('pointerup',function(e){var wasHold=holdFired;clearHold(p);if(wasHold){e.preventDefault();e.stopPropagation();}});
+              p.addEventListener('pointercancel',function(){clearHold(p);});
           });
 
           if (savedIndex !== null && paragraphs[savedIndex]) {
@@ -928,19 +1876,23 @@ async function openReader(projectId, chapterName, decensored){
           }
       }, 100);
     } catch(e) {
-      pages.innerHTML = "<div style='padding:20px;text-align:center;color:#ef4444;font-weight:bold;'>Gagal memuat chapter.</div>";
+      pages.innerHTML = "<div class='readererror'>Gagal memuat chapter novel.</div>";
     }
   } else {
-    if(!Array.isArray(c && c.file_ids) || !c.file_ids.length){ alert("Halaman chapter belum tersedia."); return; }
+    if(!Array.isArray(c && c.file_ids) || !c.file_ids.length){
+      alert("Halaman chapter belum tersedia.");
+      return;
+    }
     c.file_ids.forEach(function(fid, i) {
       var img = document.createElement("img");
       img.className = "readerpage";
+      img.alt = p.title + " Chapter " + chapterName + " Page " + (i+1);
       img.loading = i < 2 ? "eager" : "lazy";
       img.src = fileUrl(fid);
       img.onerror = function() {
         var err = document.createElement("div");
-        err.style.cssText = "padding:20px;text-align:center;color:#ef4444;";
-        err.textContent = "Gagal memuat halaman " + (i+1);
+        err.className = "readererror";
+        err.textContent = "Gagal memuat halaman " + (i+1) + ".";
         img.parentNode.replaceChild(err, img);
       };
       pages.appendChild(img);
@@ -950,16 +1902,33 @@ async function openReader(projectId, chapterName, decensored){
 
 function toggleChapterMenu(e){
   if(e) e.stopPropagation();
-  $("readerChapterMenu").classList.toggle("active");
+  var menu = $("readerChapterMenu");
+  if(menu) menu.classList.toggle("hidden");
 }
 
 function selectReaderChapter(projectId, index){
-  var p = catalog.find(x => x.id === projectId);
-  var chaptersArr = Array.isArray(p.chapters) ? p.chapters : [];
-  $("readerChapterMenu").classList.remove("active");
-  if(chaptersArr[index]) openReader(projectId, chaptersArr[index].chapter, Number(chaptersArr[index].decensored));
+  var p = catalog.find(function(x) { return x.id === projectId; });
+  if(!p) return;
+  var chaptersArr = Array.isArray(p && p.chapters) ? p.chapters : [];
+  if(!chaptersArr[index]) return;
+  
+  var menu = $("readerChapterMenu");
+  if (menu) menu.classList.add("hidden");
+  var c = chaptersArr[index];
+  openReader(projectId, c.chapter, Number(c.decensored));
 }
 
+document.addEventListener("click", function(e) {
+  var menu = $("readerChapterMenu");
+  var wrap = menu ? menu.parentElement : null;
+  if(menu && wrap && !wrap.contains(e.target)) menu.classList.add("hidden");
+});
+
+function readerInfo(projectId){
+  hideReaderWatermark();
+  $("reader").classList.add("hidden");
+  openProject(projectId);
+}
 function closeReader(){
   $("progressContainer").style.display="none";
   hideReaderWatermark();
@@ -967,12 +1936,38 @@ function closeReader(){
   $("detail").classList.remove("hidden");
 }
 
+function applyTheme(theme){
+  var light = theme === "light";
+  if (light) { document.body.classList.add("light"); } else { document.body.classList.remove("light"); }
+  var btn = $("themeToggle");
+  if(btn) {
+    btn.innerHTML = light 
+    ? "<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z'></path></svg>"
+    : "<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='5'></circle><line x1='12' y1='1' x2='12' y2='3'></line><line x1='12' y1='21' x2='12' y2='23'></line><line x1='4.22' y1='4.22' x2='5.64' y2='5.64'></line><line x1='18.36' y1='18.36' x2='19.78' y2='19.78'></line><line x1='1' y1='12' x2='3' y2='12'></line><line x1='21' y1='12' x2='23' y2='12'></line><line x1='4.22' y1='19.78' x2='5.64' y2='18.36'></line><line x1='18.36' y1='5.64' x2='19.78' y2='4.22'></line></svg>";
+  }
+  try{localStorage.setItem("mvp_theme", light ? "light" : "dark")}catch(e){}
+}
+
+function toggleTheme(){
+  applyTheme(document.body.classList.contains("light") ? "dark" : "light");
+}
+
+(function initTheme(){
+  var theme = "dark";
+  try{theme = localStorage.getItem("mvp_theme") || "dark"}catch(e){}
+  applyTheme(theme);
+})(); 
+
+// FUNGSI INIT GLOBAL
 (async function(){
   if(!tg){showDenied();return;}
   tg.ready();tg.expand();
   
   var platform = String((tg && tg.platform) || "").toLowerCase();
-  if(!tg.initData || (platform !== "android" && platform !== "android_x" && platform !== "ios")){ showDenied(); return; }
+  if(!tg.initData || (platform !== "android" && platform !== "android_x" && platform !== "ios")){
+    showDenied();
+    return;
+  }
   
   try{
     if(!(await requireAccess())) return;
@@ -985,13 +1980,29 @@ function closeReader(){
     renderHome();
 
     var startParam = (tg && tg.initDataUnsafe) ? tg.initDataUnsafe.start_param : null;
-    if (startParam) { var p = catalog.find(x => x.id === startParam); if (p) openProject(startParam); }
+    if (startParam) {
+      var p = catalog.find(function(x) { return x.id === startParam; });
+      if (p) { openProject(startParam); }
+    }
   }catch(e){
     if(accessDenied) return;
     $("home").classList.remove("hidden");
-    $("homeLayer").innerHTML="<p style='text-align:center;padding:20px;'>Library belum tersambung ke katalog.</p>";
+    $("grid").innerHTML="<p class='muted'>Library belum tersambung ke katalog.</p>";
   }
 })();
+</script>
+<!-- v5 guest navigation -->
+<script>
+
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('.guest-translator-link');
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const name = btn.getAttribute('data-guest') || '';
+  if (name && name.toUpperCase() !== 'MVP') openTranslatorProfile(name);
+});
+
 </script>
 </body>
 </html>
