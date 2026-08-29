@@ -227,7 +227,22 @@ body.light .reader-watermark{opacity:0.35;text-shadow:0 1px 3px rgba(255,255,255
   }, 1000);
 </script>
 
-<div id="gate" class="notice hidden"><div><h2>🔒 Akses Ditolak</h2><p class="muted" style="margin-top:8px">MVP Miniweb eksklusif hanya dapat dibuka melalui aplikasi Telegram di HP (Android & iOS).</p></div></div>
+<div id="gate" class="notice hidden">
+  <div style="max-width:420px;width:100%">
+    <div style="font-size:48px;margin-bottom:12px">🔒</div>
+    <h2 id="gateTitle">Akses Member Only</h2>
+    <p id="gateMessage" class="muted" style="margin-top:10px;line-height:1.6">
+      Untuk membuka MVP Miniweb, kamu harus bergabung ke semua Channel dan Grup MVP terlebih dahulu.
+    </p>
+    <div id="requiredChats" style="margin-top:20px;display:flex;flex-direction:column;gap:10px"></div>
+    <button id="checkAccessBtn" class="btn primary" style="width:100%;margin-top:16px" onclick="checkAccessAgain()">
+      🔄 Saya Sudah Join
+    </button>
+    <button class="btn" style="width:100%;margin-top:10px" onclick="if(tg) tg.close()">
+      Tutup
+    </button>
+  </div>
+</div>
 
 <div id="home" class="wrap hidden">
 <header>
@@ -314,10 +329,19 @@ var catalog = [];
 var $ = function(id) { return document.getElementById(id); };
 var esc = function(s) { return String(s != null ? s : "").replace(/[&<>"']/g, function(m) { return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]); }); };
 var API_BASE = location.origin;
+/*
+  ACCESS CONTRACT:
+  GET /api/access must validate Telegram initData and check membership for:
+  MVP_CHANNEL_ID, MVP_DISCUSSION_ID, MVP_CONTROL_ID, MVP_CORE_ID from server ENV.
+  Response allowed: { ok:true, user:{...} }
+  Response denied:  { ok:false, message:"...", missing:[{title:"...", url:"https://t.me/..."}] }
+  ADMIN_USER_IDS may bypass membership checks on the server.
+*/
 var fileUrl = function(fileId) { return API_BASE + "/api/file?file_id=" + encodeURIComponent(fileId) + "&init_data=" + encodeURIComponent((tg && tg.initData) ? tg.initData : ""); };
 
 var accessUser = null;
 var accessDenied = false;
+var accessChecking = false;
 var currentType = "comic";
 var currentTag = "";
 
@@ -327,36 +351,145 @@ function accessHeaders(){
   return {"X-Telegram-Init-Data": (tg && tg.initData) ? tg.initData : ""};
 }
 
-function showDenied(){
-  accessDenied=true;
+function showTelegramOnly(){
+  accessDenied = true;
   $("home").classList.add("hidden");
   $("detail").classList.add("hidden");
   $("reader").classList.add("hidden");
-  $("gate").innerHTML = "<div><h2>🔒 Akses Ditolak</h2><p class='muted' style='margin-top:8px'>Silakan buka melalui aplikasi Telegram.</p></div>";
+  $("gate").innerHTML =
+    "<div style='max-width:420px;width:100%'>" +
+      "<div style='font-size:48px;margin-bottom:12px'>📱</div>" +
+      "<h2>Telegram Only</h2>" +
+      "<p class='muted' style='margin-top:10px;line-height:1.6'>MVP Miniweb hanya dapat dibuka melalui aplikasi Telegram.</p>" +
+    "</div>";
+  $("gate").classList.remove("hidden");
+}
+
+function showDenied(message, missing){
+  accessDenied = true;
+  $("home").classList.add("hidden");
+  $("detail").classList.add("hidden");
+  $("reader").classList.add("hidden");
+
+  var gateTitle = $("gateTitle");
+  var gateMessage = $("gateMessage");
+  var requiredChats = $("requiredChats");
+
+  if(gateTitle) gateTitle.textContent = "🔒 Akses Member Only";
+  if(gateMessage){
+    gateMessage.textContent = message || "Untuk membuka MVP Miniweb, kamu harus bergabung ke semua Channel dan Grup MVP terlebih dahulu.";
+  }
+
+  if(requiredChats){
+    if(Array.isArray(missing) && missing.length > 0){
+      requiredChats.innerHTML = missing.map(function(chat){
+        var title = esc(chat.title || chat.name || "Channel / Grup MVP");
+        var url = chat.url || chat.link || "";
+        if(url){
+          return "<a href='"+esc(url)+"' target='_blank' class='btn primary' style='width:100%;justify-content:center'>➕ Join "+title+"</a>";
+        }
+        return "<div class='btn' style='width:100%;opacity:.75;cursor:default'>🔒 "+title+"</div>";
+      }).join("");
+    } else {
+      requiredChats.innerHTML =
+        "<div style='padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--panel);font-size:13px;color:var(--muted)'>" +
+        "Silakan bergabung ke semua Channel dan Grup wajib, lalu tekan tombol <b>Saya Sudah Join</b>." +
+        "</div>";
+    }
+  }
+
   $("gate").classList.remove("hidden");
 }
 
 async function requireAccess(){
-  if(accessDenied) return false;
+  if(accessChecking) return false;
+  accessChecking = true;
+
   try {
-    var r = await fetch("/api/access",{cache:"no-store",headers:accessHeaders()});
-    var data = await r.json().catch(function(){ return {}; });
-    if(r.status === 403 || r.status === 401){
-      accessDenied=true;
-      $("home").classList.add("hidden");
-      $("detail").classList.add("hidden");
-      $("reader").classList.add("hidden");
-      $("gate").innerHTML = "<div><h2>🔒 Akses Ditolak</h2><p class='muted' style='margin-top:8px'>Anda belum terdaftar.</p><button class='btn primary' style='margin-top:16px' onclick='if(tg) tg.close()'>Tutup</button></div>";
-      $("gate").classList.remove("hidden");
+    var initData = (tg && tg.initData) ? tg.initData : "";
+    if(!initData){
+      showTelegramOnly();
       return false;
     }
-    if(!r.ok){
-      throw new Error(data.reason || "access");
+
+    var r = await fetch("/api/access", {
+      method:"GET",
+      cache:"no-store",
+      headers:accessHeaders()
+    });
+
+    var data = await r.json().catch(function(){ return {}; });
+
+    if(r.status === 401 || r.status === 403){
+      showDenied(data.message || "Kamu belum memenuhi syarat akses.", data.missing || []);
+      return false;
     }
+
+    if(!r.ok){
+      showDenied(data.message || "Terjadi kesalahan saat memeriksa akses.", []);
+      return false;
+    }
+
+    if(data.ok !== true){
+      showDenied(data.message || "Akses tidak dapat diberikan.", data.missing || []);
+      return false;
+    }
+
+    accessDenied = false;
     accessUser = data.user || null;
+    $("gate").classList.add("hidden");
     return true;
+
   } catch(e) {
+    console.error("ACCESS CHECK ERROR:", e);
+    showDenied("Gagal terhubung ke server untuk memeriksa akses.", []);
     return false;
+  } finally {
+    accessChecking = false;
+  }
+}
+
+async function checkAccessAgain(){
+  if(accessChecking) return;
+
+  var button = $("checkAccessBtn");
+  if(button){
+    button.disabled = true;
+    button.textContent = "⏳ Memeriksa akses...";
+  }
+
+  accessDenied = false;
+  var allowed = await requireAccess();
+
+  if(allowed){
+    try {
+      $("gate").classList.add("hidden");
+      var r = await fetch("/api/catalog", {
+        cache:"no-store",
+        headers:accessHeaders()
+      });
+
+      if(r.status === 401 || r.status === 403){
+        showDenied("Akses katalog ditolak.", []);
+        return;
+      }
+
+      if(!r.ok) throw new Error("catalog");
+
+      catalog = await r.json();
+      $("home").classList.remove("hidden");
+      renderHome();
+
+    } catch(e) {
+      console.error("CATALOG LOAD ERROR:", e);
+      showDenied("Akses berhasil diverifikasi, tetapi katalog gagal dimuat.", []);
+    }
+  }
+
+  button = $("checkAccessBtn");
+  if(button){
+    button.disabled = false;
+    button.textContent = "🔄 Saya Sudah Join";
   }
 }
 
@@ -1218,37 +1351,51 @@ function toggleTheme(){
 
 // FUNGSI INIT GLOBAL
 (async function(){
-  if(!tg){showDenied();return;}
-  tg.ready();tg.expand();
-  
-  var platform = String((tg && tg.platform) || "").toLowerCase();
-  if(!tg.initData || (platform !== "android" && platform !== "android_x" && platform !== "ios")){
-    showDenied();
+  if(!tg){
+    showTelegramOnly();
     return;
   }
-  
+
+  tg.ready();
+  tg.expand();
+
+  var platform = String((tg && tg.platform) || "").toLowerCase();
+
+  if(!tg.initData || (platform !== "android" && platform !== "android_x" && platform !== "ios")){
+    showTelegramOnly();
+    return;
+  }
+
   try{
     if(!(await requireAccess())) return;
-    var r = await fetch("/api/catalog", {cache: "no-store", headers: accessHeaders()});
-    if(r.status === 403 || r.status === 401){showDenied();return;}
+
+    var r = await fetch("/api/catalog", {
+      cache:"no-store",
+      headers:accessHeaders()
+    });
+
+    if(r.status === 403 || r.status === 401){
+      showDenied("Akses katalog ditolak.", []);
+      return;
+    }
+
     if(!r.ok) throw new Error("catalog");
+
     catalog = await r.json();
-    $("home").classList.remove("hidden"); 
-    
+    $("home").classList.remove("hidden");
     renderHome();
 
     var startParam = (tg && tg.initDataUnsafe) ? tg.initDataUnsafe.start_param : null;
-    if (startParam) {
-      var p = catalog.find(function(x) { return x.id === startParam; });
-      if (p) {
-        openProject(startParam); 
-      }
+
+    if(startParam){
+      var p = catalog.find(function(x){ return x.id === startParam; });
+      if(p) openProject(startParam);
     }
 
-  }catch(e){
+  } catch(e){
+    console.error("MINIWEB INIT ERROR:", e);
     if(accessDenied) return;
-    $("home").classList.remove("hidden");
-    $("grid").innerHTML="<p class='muted'>Library belum tersambung ke katalog.</p>";
+    showDenied("Terjadi kesalahan saat memuat Miniweb.", []);
   }
 })();
 </script>
