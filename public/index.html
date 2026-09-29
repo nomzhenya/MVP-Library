@@ -517,6 +517,7 @@ html,body{background:var(--bg)}
   color:#fff;font-size:12px;font-weight:900;
 }
 .mvp-comment-author-wrap{min-width:0;flex:1}
+.mvp-mod-badge{color:#a855f7;font-weight:900;margin-left:4px}.mvp-mod-name{color:#a855f7}.mvp-comment-username{color:var(--muted);font-size:11px}
 .mvp-comment-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .mvp-comment-time{font-size:10px;color:var(--muted);margin-top:2px}
 .mvp-comment-text{margin-top:11px!important;font-size:13px;line-height:1.65}
@@ -1793,6 +1794,12 @@ function apiJSON(url,opt){opt=opt||{};opt.headers=Object.assign({},opt.headers||
 function communityAuthorName(x){
   return x.telegram_name || [x.first_name,x.last_name].filter(Boolean).join(" ").trim() || x.username || "Unknown User";
 }
+function communityIsMod(x){ return !!(x && (x.is_mod===true || x.role==="mod" || x.role==="moderator")); }
+function communityAuthorMeta(x){
+  var name=communityAuthorName(x);
+  if(communityIsMod(x)) return "<b class='mvp-mod-name'>"+esc(name)+"</b><span class='mvp-mod-badge'>Mod MVP</span>";
+  return "<b>"+esc(name)+"</b>"+(x.username?" <span class='mvp-comment-username'>@"+esc(String(x.username).replace(/^@/,""))+"</span>":"");
+}
 function communityIsMine(x){
   var id=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user)?String(tg.initDataUnsafe.user.id):"";
   return id && String(x.user_id||x.telegram_id||"")===id;
@@ -1896,7 +1903,7 @@ function commentCard(pid,x,reply,parent){
     "<div class='mvp-comment-head'>"+
       "<div class='mvp-comment-avatar'>"+communityAvatar(x)+"</div>"+
       "<div class='mvp-comment-author-wrap'>"+
-        "<div class='mvp-comment-meta'><b>"+esc(name)+"</b>"+(x.username?" <span class='mvp-comment-username'>@"+esc(String(x.username).replace(/^@/,""))+"</span>":"")+"</div>"+
+        "<div class='mvp-comment-meta'>"+communityAuthorMeta(x)+"</div>"+
         "<div class='mvp-comment-time'>"+esc(when)+(x.edited_at?" · edited":"")+"</div>"+
       "</div>"+
     "</div>"+
@@ -2003,7 +2010,7 @@ function renderReviewFeed(pid,reviews){
       "<div class='mvp-comment-head'>"+
         "<div class='mvp-comment-avatar'>"+communityAvatar(x)+"</div>"+
         "<div class='mvp-comment-author-wrap'>"+
-          "<div class='mvp-comment-meta'><b>"+esc(name)+"</b>"+(x.username?" <span class='mvp-comment-username'>@"+esc(String(x.username).replace(/^@/,""))+"</span>":"")+"</div>"+
+          "<div class='mvp-comment-meta'>"+communityAuthorMeta(x)+"</div>"+
           "<div class='mvp-comment-time'>"+esc(x.created_at?timeAgo(x.created_at):"Just now")+"</div>"+
         "</div>"+
       "</div>"+
@@ -2059,6 +2066,8 @@ async function loadCommunity(pid){
     var d=await apiJSON("/api/community?project_id="+encodeURIComponent(pid));
     var r=Array.isArray(d.reviews)?d.reviews:[];
     var c=Array.isArray(d.comments)?d.comments:[];
+    window.__communityCache=window.__communityCache||{};
+    window.__communityCache[pid]=c.slice();
     r.sort(function(a,b){return safeNum(b.created_at,0)-safeNum(a.created_at,0);});
     c.sort(function(a,b){return safeNum(a.created_at,0)-safeNum(b.created_at,0);});
 
@@ -2102,6 +2111,25 @@ function updateNotificationBadge(a){var b=$("notificationBadge");if(!b)return;va
 async function loadNotifications(){try{var d=await apiJSON("/api/notifications?limit=50"),a=Array.isArray(d)?d:(d.notifications||[]);$("notificationList").innerHTML=a.length?a.map(function(n){return "<button class='mvp-notification-item "+(n.read?"":"unread")+"' onclick='openNotification("+JSON.stringify(n).replace(/'/g,"&#39;")+")'><b>"+esc(n.type==="review"?"Review baru":n.type==="comment_reply"?"Balasan komentar":"Komentar baru")+"</b><div>"+esc(n.text||n.message||"")+"</div></button>";}).join(""):"<div class='mvp-empty-state'>Belum ada notifikasi.</div>";updateNotificationBadge(a);}catch(e){$("notificationList").innerHTML="<div class='mvp-empty-state'>Notifikasi belum tersedia.</div>";}}
 async function openNotifications(){["home","detail","reader","browseLayer","catalogLayer","lapakLayer","guestLayer"].forEach(function(id){var e=$(id);if(e)e.classList.add("hidden");});$("notificationsLayer").classList.remove("hidden");$("notificationsLayer").classList.add("active");window.scrollTo(0,0);loadNotifications();}
 function closeNotifications(){$("notificationsLayer").classList.remove("active");$("notificationsLayer").classList.add("hidden");$("home").classList.remove("hidden");}
+async function prepareNotificationComment(pid,commentId){
+  if(!pid||!commentId)return;
+  var cache=(window.__communityCache&&window.__communityCache[pid])||[];
+  var target=cache.find(function(x){return String(x.id)===String(commentId);});
+  if(!target)return;
+  var root=target,guard=0;
+  while(root && root.parent_id && guard++<100){
+    var parent=cache.find(function(x){return String(x.id)===String(root.parent_id);});
+    if(!parent)break;
+    root=parent;
+  }
+  var roots=threadRoots(cache);
+  var idx=roots.findIndex(function(x){return String(x.id)===String(root.id);});
+  if(idx>=0){
+    var st=communityPageState(pid+"::comments");
+    st.comments=Math.floor(idx/20)+1;
+    await loadCommunity(pid);
+  }
+}
 function revealNotificationComment(commentId){
   if(!commentId)return;
   var el=document.getElementById("comment_"+String(commentId));
@@ -2136,10 +2164,11 @@ async function openNotification(n){
   if(n.project_id){
     closeNotifications();
     await openProject(String(n.project_id));
-    setTimeout(function(){
-      if(n.comment_id)revealNotificationComment(n.comment_id);
-      else if(n.parent_id)revealNotificationComment(n.parent_id);
-    },120);
+    var targetId=n.comment_id||n.parent_id;
+    if(targetId){
+      await prepareNotificationComment(String(n.project_id),String(targetId));
+      setTimeout(function(){revealNotificationComment(String(targetId));},160);
+    }
     return;
   }
 }
