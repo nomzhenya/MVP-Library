@@ -155,6 +155,23 @@ async function saveInteraction(env, projectId, data) {
   await env.LIBRARY.put(`interaction:${projectId}`, JSON.stringify(data));
 }
 
+function envIdSet(value) {
+  return new Set(String(value || "").split(",").map(x => x.trim()).filter(Boolean));
+}
+function isModUser(env, userId) {
+  return envIdSet(env.MOD_USER_IDS).has(String(userId || ""));
+}
+function decoratePublicUser(item, env) {
+  const uid = String(item.user_id || item.telegram_id || "");
+  const mod = isModUser(env, uid);
+  const out = {...item, is_mod: mod};
+  if (mod) {
+    // Mod public identity never exposes Telegram username.
+    delete out.username;
+  }
+  return out;
+}
+
 async function enrichCatalog(env, catalog, userId) {
   if (!Array.isArray(catalog)) return [];
   return Promise.all(catalog.map(async p => {
@@ -163,6 +180,7 @@ async function enrichCatalog(env, catalog, userId) {
     const summary = summarizeInteraction(data, userId, community.comments.length);
     return {
       ...p,
+      is_mod: isModUser(env, userId),
       rating: summary.rating,
       votes: summary.votes,
       vote_distribution: summary.vote_distribution,
@@ -247,7 +265,8 @@ export default {
           username: access.user.username || "",
           first_name: access.user.first_name || "",
           last_name: access.user.last_name || "",
-          telegram_name: [access.user.first_name, access.user.last_name].filter(Boolean).join(" ").trim()
+          telegram_name: [access.user.first_name, access.user.last_name].filter(Boolean).join(" ").trim(),
+          is_mod: isModUser(env, access.user.id)
         }
       }), {
         headers: cors({"content-type": "application/json; charset=utf-8"})
@@ -430,7 +449,9 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const uid = String(access.user.id);
       const decorate = (item) => {
         item.loves = item.loves && typeof item.loves === "object" ? item.loves : {};
-        return {...item, love_count:Object.keys(item.loves).length, user_loved:Object.prototype.hasOwnProperty.call(item.loves, uid)};
+        const out = {...item, love_count:Object.keys(item.loves).length, user_loved:Object.prototype.hasOwnProperty.call(item.loves, uid), is_mod:isModUser(env, item.user_id || item.telegram_id)};
+        if (out.is_mod) delete out.username;
+        return out;
       };
       data.reviews = data.reviews.map(decorate).sort((a,b) => Number(b.created_at || 0) - Number(a.created_at || 0));
       data.comments = data.comments.map(decorate).sort((a,b) => Number(b.created_at || 0) - Number(a.created_at || 0));
@@ -587,6 +608,17 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
             project_id: projectId,
             comment_id: comment.id,
             parent_id: parentId,
+            root_comment_id: (() => {
+              let r = parent;
+              let guard = 0;
+              while (r && r.parent_id && guard++ < 100) {
+                const next = data.comments.find(c => String(c.id) === String(r.parent_id));
+                if (!next) break;
+                r = next;
+              }
+              return r ? String(r.id) : parentId;
+            })(),
+            chapter: comment.chapter ?? parent.chapter ?? null,
             actor_id: uid,
             actor_name: telegramName || access.user.username || "Reader",
             text: `${telegramName || access.user.username || "Reader"} membalas komentarmu: ${text.slice(0, 180)}`
