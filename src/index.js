@@ -191,6 +191,19 @@ async function putNotifications(env, userId, data) {
   await env.LIBRARY.put(`notifications:${String(userId)}`, JSON.stringify(data.slice(0, 100)));
 }
 
+async function addNotification(env, userId, notification) {
+  const uid = String(userId || "").trim();
+  if (!uid) return;
+  const list = await getNotifications(env, uid);
+  list.unshift({
+    id: crypto.randomUUID(),
+    created_at: nowSec(),
+    read: false,
+    ...notification
+  });
+  await putNotifications(env, uid, list);
+}
+
 function displayCallFromUser(user) {
   return user.username ? `@${user.username}` : (user.first_name || "Reader");
 }
@@ -219,7 +232,10 @@ export default {
         ok: true,
         user: {
           id: String(access.user.id),
-          username: access.user.username || ""
+          username: access.user.username || "",
+          first_name: access.user.first_name || "",
+          last_name: access.user.last_name || "",
+          telegram_name: [access.user.first_name, access.user.last_name].filter(Boolean).join(" ").trim()
         }
       }), {
         headers: cors({"content-type": "application/json; charset=utf-8"})
@@ -508,6 +524,24 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       };
       data.comments.push(comment);
       await putCommunity(env, projectId, data);
+
+      // Notify the owner of the parent comment when someone replies.
+      if (parentId) {
+        const parent = data.comments.find(c => String(c.id) === parentId);
+        const parentOwner = parent ? String(parent.user_id || parent.telegram_id || "") : "";
+        if (parentOwner && parentOwner !== uid) {
+          await addNotification(env, parentOwner, {
+            type: "comment_reply",
+            project_id: projectId,
+            comment_id: comment.id,
+            parent_id: parentId,
+            actor_id: uid,
+            actor_name: telegramName || access.user.username || "Reader",
+            text: `${telegramName || access.user.username || "Reader"} membalas komentarmu: ${text.slice(0, 180)}`
+          });
+        }
+      }
+
       return json({ok:true, comment});
     }
 
