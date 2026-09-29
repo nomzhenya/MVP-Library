@@ -1785,7 +1785,7 @@ async function openProject(id){
     "</section>";
 
   $("detailContent").innerHTML=topBar+part1+part2+part3+part4;
-  loadCommunity(p.id);
+  await loadCommunity(p.id);
 }
 
 /* COMMUNITY / NOTIFICATIONS */
@@ -2111,7 +2111,7 @@ function updateNotificationBadge(a){var b=$("notificationBadge");if(!b)return;va
 async function loadNotifications(){try{var d=await apiJSON("/api/notifications?limit=50"),a=Array.isArray(d)?d:(d.notifications||[]);$("notificationList").innerHTML=a.length?a.map(function(n){return "<button class='mvp-notification-item "+(n.read?"":"unread")+"' onclick='openNotification("+JSON.stringify(n).replace(/'/g,"&#39;")+")'><b>"+esc(n.type==="review"?"Review baru":n.type==="comment_reply"?"Balasan komentar":"Komentar baru")+"</b><div>"+esc(n.text||n.message||"")+"</div></button>";}).join(""):"<div class='mvp-empty-state'>Belum ada notifikasi.</div>";updateNotificationBadge(a);}catch(e){$("notificationList").innerHTML="<div class='mvp-empty-state'>Notifikasi belum tersedia.</div>";}}
 async function openNotifications(){["home","detail","reader","browseLayer","catalogLayer","lapakLayer","guestLayer"].forEach(function(id){var e=$(id);if(e)e.classList.add("hidden");});$("notificationsLayer").classList.remove("hidden");$("notificationsLayer").classList.add("active");window.scrollTo(0,0);loadNotifications();}
 function closeNotifications(){$("notificationsLayer").classList.remove("active");$("notificationsLayer").classList.add("hidden");$("home").classList.remove("hidden");}
-async function prepareNotificationComment(pid,commentId){
+async function prepareNotificationComment(pid,commentId,chapter){
   if(!pid||!commentId)return;
   var cache=(window.__communityCache&&window.__communityCache[pid])||[];
   var target=cache.find(function(x){return String(x.id)===String(commentId);});
@@ -2122,12 +2122,25 @@ async function prepareNotificationComment(pid,commentId){
     if(!parent)break;
     root=parent;
   }
-  var roots=threadRoots(cache);
+  var pool=chapter!=null ? cache.filter(function(x){return String(x.chapter||"")===String(chapter);}) : cache;
+  var roots=threadRoots(pool);
   var idx=roots.findIndex(function(x){return String(x.id)===String(root.id);});
+  if(idx<0 && chapter!=null){
+    roots=threadRoots(cache);
+    idx=roots.findIndex(function(x){return String(x.id)===String(root.id);});
+  }
   if(idx>=0){
-    var st=communityPageState(pid+"::comments");
+    var key=chapter!=null ? pid+"::chapter::"+String(chapter) : pid+"::comments";
+    var st=communityPageState(key);
     st.comments=Math.floor(idx/20)+1;
     await loadCommunity(pid);
+    if(chapter!=null){
+      var details=document.querySelector("#chapterComments_"+CSS.escape(pid)+"_"+CSS.escape(String(chapter)));
+      if(details){
+        var d=details.closest("details");
+        if(d)d.open=true;
+      }
+    }
   }
 }
 function revealNotificationComment(commentId){
@@ -2166,7 +2179,7 @@ async function openNotification(n){
     await openProject(String(n.project_id));
     var targetId=n.comment_id||n.parent_id;
     if(targetId){
-      await prepareNotificationComment(String(n.project_id),String(targetId));
+      await prepareNotificationComment(String(n.project_id),String(targetId),n.chapter);
       setTimeout(function(){revealNotificationComment(String(targetId));},160);
     }
     return;
