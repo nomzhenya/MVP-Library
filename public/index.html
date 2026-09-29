@@ -581,6 +581,258 @@ html,body{background:var(--bg)}
 <style>
 .mvp-community-panel{margin-top:16px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px}.mvp-community-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.mvp-review-form,.mvp-comment-compose{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid var(--border)}.mvp-review-stars{display:flex}.mvp-review-stars button{border:0;background:none;color:var(--bato-star);font-size:26px}.mvp-comment-input{width:100%;min-height:80px;resize:vertical;border:1px solid var(--border);border-radius:10px;background:var(--input);color:var(--text);padding:10px;font:inherit}.mvp-comments{display:grid;gap:8px;padding-top:12px}.mvp-review-card,.mvp-comment-card{padding:11px;background:var(--panel2);border:1px solid var(--border);border-radius:10px}.mvp-review-text,.mvp-comment-text{margin-top:6px;font-size:13px;line-height:1.5;white-space:pre-line}.mvp-community-section-title{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;margin:6px 0}.mvp-review-stars-static{color:var(--bato-star)}.mvp-notif-badge{position:absolute;right:-2px;top:-2px;min-width:17px;height:17px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--panel2)}.mvp-notification-list{display:grid;gap:8px}.mvp-notification-item{width:100%;text-align:left;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:12px;padding:12px}.mvp-notification-item.unread{border-color:var(--accent);background:var(--panel2)}.mvp-notification-item div{margin-top:5px;color:var(--muted);font-size:12px}.readerpage{content-visibility:auto;contain-intrinsic-size:100vw 1200px}
 </style>
+
+<style>
+/* Community layout based on the reference UI */
+.mvp-feature-panel{
+  margin-top:26px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+.mvp-feature-panel>summary{
+  list-style:none!important;
+  cursor:pointer;
+  padding:10px 0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px;
+  font-weight:800!important;
+  font-size:13px!important;
+  color:var(--text);
+}
+.mvp-feature-panel>summary::-webkit-details-marker{display:none!important}
+.mvp-feature-panel>summary::after{
+  content:"+";
+  width:24px!important;height:24px!important;
+  min-width:24px;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border:1px solid var(--border)!important;
+  border-radius:6px!important;
+  color:var(--muted)!important;
+  font-size:17px!important;
+  line-height:1!important;
+}
+.mvp-feature-panel[open]>summary::after{
+  content:"−";
+  color:var(--accent)!important;
+  border-color:var(--accent)!important;
+}
+.mvp-review-vote-wrap{
+  padding:0!important;
+}
+.mvp-review-form,.mvp-comment-compose{
+  margin:8px 0 12px!important;
+  padding:10px 0 12px!important;
+  border-bottom:1px solid var(--border);
+}
+.mvp-review-form textarea,.mvp-comment-compose textarea{
+  min-height:72px!important;
+  font-size:11px!important;
+}
+.mvp-review-form .btn,.mvp-comment-compose .btn{
+  font-size:10px!important;
+  padding:7px 12px!important;
+}
+.mvp-review-list{
+  display:grid!important;
+  gap:12px!important;
+  margin-top:8px!important;
+  padding:0 0 12px!important;
+}
+.mvp-review-card{
+  padding:11px 12px!important;
+  border-radius:10px!important;
+  background:var(--panel2)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:none!important;
+}
+.mvp-review-card .mvp-comment-head{
+  margin:0!important;
+}
+.mvp-review-stars{
+  margin:5px 0 4px 39px!important;
+  font-size:12px!important;
+  letter-spacing:1px;
+  color:var(--accent)!important;
+}
+.mvp-review-text{
+  margin:6px 0 5px!important;
+  font-size:12px!important;
+  line-height:1.55!important;
+}
+.mvp-review-tools{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin-top:5px;
+  min-height:22px;
+}
+.mvp-love-button{
+  border:0!important;
+  background:transparent!important;
+  color:var(--muted)!important;
+  font-size:11px!important;
+  padding:2px 0!important;
+}
+.mvp-love-button span{font-size:10px!important}
+.mvp-review-owner-actions{
+  display:flex;
+  gap:5px;
+}
+.mvp-small-action{
+  border:0!important;
+  background:transparent!important;
+  color:var(--muted)!important;
+  font-size:9px!important;
+  padding:2px 4px!important;
+}
+.mvp-comment-compose{
+  border-bottom:1px solid var(--border)!important;
+}
+.mvp-comments,.mvp-chapter-comment-list{
+  display:block!important;
+  margin-top:2px!important;
+  padding:0!important;
+}
+.mvp-comment-card{
+  padding:10px 0 12px!important;
+  margin:0!important;
+  border:0!important;
+  border-bottom:1px solid var(--border)!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.mvp-comment-card.mvp-comment-reply{
+  padding:8px 0 9px!important;
+  border-bottom:0!important;
+  background:transparent!important;
+}
+.mvp-comment-head{
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+}
+.mvp-comment-avatar{
+  position:relative!important;
+  width:30px!important;
+  height:30px!important;
+  min-width:30px!important;
+  border-radius:50%!important;
+  overflow:hidden!important;
+  background:var(--panel2)!important;
+}
+.mvp-community-avatar-img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  display:block;
+}
+.mvp-community-avatar-fallback{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--panel2));
+  font-size:9px;
+  font-weight:900;
+}
+.mvp-comment-meta{
+  display:flex!important;
+  align-items:center!important;
+  gap:5px!important;
+  font-size:11px!important;
+  line-height:1.15!important;
+}
+.mvp-comment-meta b{
+  color:var(--accent)!important;
+  font-size:11px!important;
+}
+.mvp-comment-time{
+  font-size:9px!important;
+  margin-top:2px!important;
+  color:var(--muted)!important;
+}
+.mvp-comment-chapter-line{
+  margin:7px 0 2px 37px!important;
+  color:var(--accent)!important;
+  font-size:10px!important;
+  font-weight:800!important;
+}
+.mvp-comment-text{
+  margin:5px 0 0 37px!important;
+  font-size:11px!important;
+  line-height:1.55!important;
+  color:var(--text)!important;
+}
+.mvp-comment-tools{
+  display:flex!important;
+  align-items:center!important;
+  gap:10px!important;
+  margin:6px 0 0 37px!important;
+}
+.mvp-reply-button{
+  border:0!important;
+  background:transparent!important;
+  color:var(--text)!important;
+  font-size:10px!important;
+  font-weight:700!important;
+  padding:2px 0!important;
+}
+.mvp-thread-replies{
+  margin:5px 0 0 15px!important;
+  padding-left:13px!important;
+  border-left:1px solid var(--border)!important;
+}
+.mvp-thread-toggle{
+  border:0!important;
+  background:transparent!important;
+  color:var(--accent)!important;
+  font-size:10px!important;
+  font-weight:800!important;
+  padding:5px 0 5px 37px!important;
+  cursor:pointer!important;
+}
+.mvp-project-comments{
+  margin-top:22px!important;
+}
+.mvp-chapter-comments{
+  margin-top:4px!important;
+  border-top:1px solid var(--border);
+}
+.mvp-chapter-comments>summary{
+  list-style:none!important;
+  cursor:pointer!important;
+  padding:8px 0!important;
+  font-size:10px!important;
+  color:var(--muted)!important;
+}
+.mvp-chapter-comments>summary::-webkit-details-marker{display:none!important}
+.mvp-chapter-comments>summary::after{
+  content:"+";
+  float:right;
+  width:20px;height:20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid var(--border);
+  border-radius:5px;
+  font-size:14px;
+}
+.mvp-chapter-comments[open]>summary::after{content:"−";color:var(--accent);border-color:var(--accent)}
+.mvp-community-pager{
+  margin:12px 0!important;
+}
+</style>
+
 </head>
 <body oncontextmenu="return false">
 
@@ -1371,18 +1623,8 @@ async function openProject(id){
     "<section class='mvp-detail-part'>"+
       "<div class='mvp-detail-part-title'>Tags</div>"+
       tagsHtml+
-      "<details class='mvp-community-collapsible' open>"+
-        "<summary>⭐ Review & Voting</summary>"+
-        "<div class='mvp-review-vote-wrap'>"+
-          ratingPanel+
-          "<div class='mvp-review-form'>"+
-            "<b>Review kamu</b>"+
-            "<textarea id='reviewText_"+esc(p.id)+"' class='mvp-comment-input' maxlength='2000' placeholder='Tulis review...'></textarea>"+
-            "<button class='btn primary' onclick=\"submitReview('"+esc(p.id)+"')\">Kirim Review</button>"+
-          "</div>"+
-        "</div>"+
-      "</details>"+
     "</section>";
+
   // PART 3 — description.
   var trakteerDetail=p.trakteer ? "<a href='"+esc(p.trakteer)+"' target='_blank' class='btn' style='background:#e74c3c;color:#fff;width:100%;margin-top:14px;border-radius:24px;'>☕ "+esc(p.trakteer_label || "Traktir Kopi")+"</a>" : "";
   var detailTranslator=String(p.translator||"").trim() || "MVP";
@@ -1427,9 +1669,23 @@ async function openProject(id){
     (chaptersHtml||"<div class='mvp-empty-state'>Belum ada chapter.</div>")+
     "</div>";
 
+  var reviewPanel=
+    "<details class='mvp-community-collapsible mvp-review-panel mvp-feature-panel' id='reviewPanel_"+esc(p.id)+"'>"+
+      "<summary id='reviewSummary_"+esc(p.id)+"'>✎ Reviews (0)</summary>"+
+      "<div class='mvp-review-vote-wrap'>"+
+        ratingPanel+
+        "<div class='mvp-review-form'>"+
+          "<b>Review kamu</b>"+
+          "<textarea id='reviewText_"+esc(p.id)+"' class='mvp-comment-input' maxlength='2000' placeholder='Tulis review...'></textarea>"+
+          "<button class='btn primary' onclick=\"submitReview('"+esc(p.id)+"')\">Kirim Review</button>"+
+        "</div>"+
+        "<div id='reviewList_"+esc(p.id)+"' class='mvp-review-list'><div class='mvp-empty-state'>Memuat...</div></div>"+
+      "</div>"+
+    "</details>";
+
   var projectComments=
     "<details class='mvp-community-collapsible mvp-project-comments mvp-feature-panel' id='projectComments_"+esc(p.id)+"'>"+
-      "<summary>💬 Komentar</summary>"+
+      "<summary id='commentSummary_"+esc(p.id)+"'>💬 Comments (0)</summary>"+
       "<div class='mvp-comment-compose'>"+
         "<textarea id='commentInput_"+esc(p.id)+"' class='mvp-comment-input' maxlength='2000' placeholder='Tulis komentar...'></textarea>"+
         "<button class='btn primary' onclick=\"submitComment('"+esc(p.id)+"')\">Kirim Komentar</button>"+
@@ -1444,6 +1700,7 @@ async function openProject(id){
         "<button class='btn' style='padding:6px 12px;font-size:12px;background:var(--panel2);color:var(--text);border:1px solid var(--border);pointer-events:auto;border-radius:24px;' onclick=\"toggleChapterSort('"+esc(p.id)+"')\">⇅ Sortir</button>"+
       "</div>"+
       chaptersWrap+
+      reviewPanel+
       projectComments+
     "</section>";
 
@@ -1471,10 +1728,10 @@ function communityCanDelete(x){
 
 function reviewActions(pid,x){
   if(!communityIsMine(x)) return "";
-  return "<div class='mvp-community-actions'>"+
-    "<button type='button' onclick=\"editReview('"+esc(pid)+"','"+esc(x.id)+"',"+JSON.stringify(x.text||"")+")\">Edit</button>"+
-    "<button type='button' onclick=\"deleteReview('"+esc(pid)+"','"+esc(x.id)+"')\">Hapus</button>"+
-  "</div>";
+  return "<span class='mvp-review-owner-actions'>"+
+    "<button type='button' class='mvp-small-action' onclick=\"editReview('"+esc(pid)+"','"+esc(x.id)+"',"+JSON.stringify(x.text||"")+")\">Edit</button>"+
+    "<button type='button' class='mvp-small-action' onclick=\"deleteReview('"+esc(pid)+"','"+esc(x.id)+"')\">Hapus</button>"+
+  "</span>";
 }
 async function editReview(pid,id,current){
   var v=prompt("Edit review:",current||"");
@@ -1495,30 +1752,41 @@ async function submitReview(pid){
   catch(e){if(tg&&tg.showAlert)tg.showAlert("Review gagal disimpan.");}
 }
 
+function communityAvatar(x){
+  var name=communityAuthorName(x);
+  var initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(function(v){return v.charAt(0).toUpperCase();}).join("")||"?";
+  var src=x.photo_url||x.avatar_url||"";
+  return src
+    ? "<img class='mvp-community-avatar-img' src='"+esc(src)+"' alt='' loading='lazy' onerror=\"this.style.display='none';this.nextElementSibling.style.display='flex'\"><span class='mvp-community-avatar-fallback'>"+esc(initials)+"</span>"
+    : "<span class='mvp-community-avatar-fallback'>"+esc(initials)+"</span>";
+}
 function commentActions(pid,x){
-  var html="<div class='mvp-community-actions'>";
-  if(communityIsMine(x)) html+="<button type='button' onclick=\"editComment('"+esc(pid)+"','"+esc(x.id)+"',"+JSON.stringify(x.text||"")+")\">Edit</button>";
-  if(communityCanDelete(x)) html+="<button type='button' onclick=\"deleteComment('"+esc(pid)+"','"+esc(x.id)+"')\">Hapus</button>";
-  html+="<button type='button' onclick=\"replyComment('"+esc(pid)+"','"+esc(x.id)+"')\">Balas</button></div>";
+  var html="<div class='mvp-comment-tools'>"+
+    "<button type='button' class='mvp-love-button' onclick=\"event.stopPropagation();return false;\">♡ <span>"+Number(x.likes||x.loves||0)+"</span></button>"+
+    "<button type='button' class='mvp-reply-button' onclick=\"replyComment('"+esc(pid)+"','"+esc(x.id)+"')\">↩ reply</button>";
+  if(communityIsMine(x)) html+="<button type='button' class='mvp-small-action' onclick=\"editComment('"+esc(pid)+"','"+esc(x.id)+"',"+JSON.stringify(x.text||"")+")\">Edit</button>";
+  if(communityCanDelete(x)) html+="<button type='button' class='mvp-small-action' onclick=\"deleteComment('"+esc(pid)+"','"+esc(x.id)+"')\">Hapus</button>";
+  html+="</div>";
   return html;
 }
 function commentCard(pid,x,reply){
-  var chapter=x.chapter? "<span class='mvp-comment-chapter'>Chapter "+esc(x.chapter)+"</span>":"";
+  var chapter=x.chapter? "<div class='mvp-comment-chapter-line'>▣ Chapter "+esc(x.chapter)+"</div>":"";
   var name=communityAuthorName(x);
-  var initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(function(v){return v.charAt(0).toUpperCase();}).join("")||"?";
   var when=x.created_at?timeAgo(x.created_at):"Just now";
   return "<article class='mvp-comment-card "+(reply?"mvp-comment-reply":"")+"' id='comment_"+esc(String(x.id||""))+"'>"+
     "<div class='mvp-comment-head'>"+
-      "<div class='mvp-comment-avatar'>"+esc(initials)+"</div>"+
+      "<div class='mvp-comment-avatar'>"+communityAvatar(x)+"</div>"+
       "<div class='mvp-comment-author-wrap'>"+
-        "<div class='mvp-comment-meta'><b>"+esc(name)+"</b>"+(x.username?" <span class='mvp-comment-username'>@"+esc(String(x.username).replace(/^@/,""))+"</span>":"")+chapter+"</div>"+
+        "<div class='mvp-comment-meta'><b>"+esc(name)+"</b>"+(x.username?" <span class='mvp-comment-username'>@"+esc(String(x.username).replace(/^@/,""))+"</span>":"")+"</div>"+
         "<div class='mvp-comment-time'>"+esc(when)+(x.edited_at?" · edited":"")+"</div>"+
       "</div>"+
     "</div>"+
+    chapter+
     "<div class='mvp-comment-text'>"+esc(x.text||"")+"</div>"+
     commentActions(pid,x)+
   "</article>";
 }
+
 async function replyComment(pid,parentId){
   var v=prompt("Balas komentar:");
   if(v===null)return;
@@ -1591,19 +1859,27 @@ function renderReviewFeed(pid,reviews){
   var pg=communityPager(reviews,state.review,20);
   state.review=pg.page;
   return pg.items.length?pg.items.map(function(x){
+    var name=communityAuthorName(x);
+    var stars="";
+    if(Number(x.score)>0){
+      var sc=Math.max(0,Math.min(10,Number(x.score)));
+      stars="<div class='mvp-review-stars'>"+Array.from({length:10},function(_,i){return i<sc?"★":"☆";}).join("")+"</div>";
+    }
     return "<article class='mvp-review-card'>"+
       "<div class='mvp-comment-head'>"+
-        "<div class='mvp-comment-avatar'>"+esc((communityAuthorName(x).split(/\s+/).filter(Boolean).slice(0,2).map(function(v){return v.charAt(0).toUpperCase();}).join("")||"?"))+"</div>"+
+        "<div class='mvp-comment-avatar'>"+communityAvatar(x)+"</div>"+
         "<div class='mvp-comment-author-wrap'>"+
-          "<div class='mvp-comment-meta'><b>"+esc(communityAuthorName(x))+"</b>"+(x.username?" <span class='mvp-comment-username'>@"+esc(String(x.username).replace(/^@/,""))+"</span>":"")+"</div>"+
+          "<div class='mvp-comment-meta'><b>"+esc(name)+"</b>"+(x.username?" <span class='mvp-comment-username'>@"+esc(String(x.username).replace(/^@/,""))+"</span>":"")+"</div>"+
           "<div class='mvp-comment-time'>"+esc(x.created_at?timeAgo(x.created_at):"Just now")+"</div>"+
         "</div>"+
       "</div>"+
+      stars+
       (x.text?"<div class='mvp-review-text'>"+esc(x.text)+"</div>":"")+
-      reviewActions(pid,x)+
+      "<div class='mvp-review-tools'><span class='mvp-love-button'>♡ <span>"+Number(x.likes||x.loves||0)+"</span></span>"+reviewActions(pid,x)+"</div>"+
     "</article>";
   }).join(""):"<div class='mvp-empty-state'>Belum ada review.</div>";
 }
+
 function threadRoots(comments){
   var map={};
   comments.forEach(function(x){map[String(x.id)]=x;});
@@ -1654,6 +1930,11 @@ async function loadCommunity(pid){
 
     var state=communityPageState(pid);
     state.review=Math.min(state.review,Math.max(1,Math.ceil(r.length/20)));
+    var reviewSummary=document.getElementById("reviewSummary_"+pid);
+    if(reviewSummary)reviewSummary.textContent="✎ Reviews ("+r.length+")";
+    var commentSummary=document.getElementById("commentSummary_"+pid);
+    if(commentSummary)commentSummary.textContent="💬 Comments ("+c.length+")";
+
     var reviewList=document.getElementById("reviewList_"+pid);
     if(reviewList)reviewList.innerHTML=renderReviewFeed(pid,r)+communityPagerHtml("review",pid,state.review,Math.max(1,Math.ceil(r.length/20)));
 
