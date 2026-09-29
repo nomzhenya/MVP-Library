@@ -22,7 +22,7 @@ const json = (data, status = 200) =>
 function cors(headers = {}) {
   return {
     ...headers,
-    "access-control-allow-origin": "*",
+    "access-control-allow-origin": "https://web.telegram.org",
     "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
     "access-control-allow-headers": "Content-Type,X-Library-Secret,X-Telegram-Init-Data"
   };
@@ -244,6 +244,7 @@ async function requireApiAccess(request, env) {
 
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
 
     // =========================
     // SUPPORT US: QRIS DOWNLOAD
@@ -267,8 +268,6 @@ export default {
         }
       });
     }
-
-    const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
       return new Response(null, {headers: cors()});
