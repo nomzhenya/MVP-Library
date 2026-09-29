@@ -76,7 +76,7 @@ async function verifyTelegramInitData(initData, botToken) {
   }
 }
 
-async function telegramMemberInfo(env, chatId, userId) {
+async function telegramMemberStatus(env, chatId, userId) {
   const r = await fetch(
     `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getChatMember?chat_id=${encodeURIComponent(chatId)}&user_id=${encodeURIComponent(userId)}`
   );
@@ -84,25 +84,8 @@ async function telegramMemberInfo(env, chatId, userId) {
   const data = await r.json();
   if (!data.ok) return null;
 
-  return data.result || null;
-}
-
-function isActiveMember(info) {
-  return ["creator", "administrator", "member", "restricted"].includes(info?.status);
-}
-
-
-function miniwebModIds(env) {
-  return String(env.MINIWEB_MOD_IDS || "")
-    .split(",").map(x => x.trim()).filter(Boolean);
-}
-
-function isMiniwebMod(env, userId) {
-  return miniwebModIds(env).includes(String(userId));
-}
-
-function isMuted(info) {
-  return info?.status === "restricted" && info?.can_send_messages === false;
+  const status = data.result?.status;
+  return ["creator", "administrator", "member"].includes(status);
 }
 
 async function checkAccess(request, env) {
@@ -121,17 +104,11 @@ async function checkAccess(request, env) {
   }
 
   const [mvp, discussion] = await Promise.all([
-    telegramMemberInfo(env, CHANNEL_ID, user.id),
-    telegramMemberInfo(env, DISCUSSION_ID, user.id)
+    telegramMemberStatus(env, CHANNEL_ID, user.id),
+    telegramMemberStatus(env, DISCUSSION_ID, user.id)
   ]);
 
-  if (!isActiveMember(mvp) || !isActiveMember(discussion)) {
-    return {ok: false, code: 403};
-  }
-
-  // A Telegram "restricted" member with can_send_messages=false is currently muted.
-  // Muted users must not be allowed to open the Miniweb at all.
-  if (isMuted(mvp) || isMuted(discussion)) {
+  if (mvp !== true || discussion !== true) {
     return {ok: false, code: 403};
   }
 
@@ -242,10 +219,7 @@ export default {
         ok: true,
         user: {
           id: String(access.user.id),
-          username: access.user.username || "",
-          first_name: access.user.first_name || "",
-          last_name: access.user.last_name || "",
-          telegram_name: [access.user.first_name, access.user.last_name].filter(Boolean).join(" ").trim()
+          username: access.user.username || ""
         }
       }), {
         headers: cors({"content-type": "application/json; charset=utf-8"})
@@ -422,8 +396,7 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       return new Response(JSON.stringify({
         ok: true,
         reviews: data.reviews,
-        comments: data.comments,
-        comment_count: data.comments.length
+        comments: data.comments
       }), {
         headers: cors({"content-type":"application/json; charset=utf-8"})
       });
@@ -435,27 +408,22 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
 
       const body = await request.json().catch(() => ({}));
       const projectId = String(body.project_id || "").trim();
-      const textValue = String(body.text || "").trim();
+      const text = String(body.text || "").trim();
       const reviewId = String(body.review_id || "").trim();
-
       if (!projectId) return json({error:"project required"}, 400);
-      if (textValue.length > 2000) return json({error:"review too long"}, 400);
+      if (text.length > 2000) return json({error:"review too long"}, 400);
 
       const catalog = await env.LIBRARY.get("catalog", "json");
-      if (!Array.isArray(catalog) || !catalog.some(p => String(p.id) === projectId)) {
-        return json({error:"project not found"}, 404);
-      }
+      if (!Array.isArray(catalog) || !catalog.some(p => String(p.id) === projectId)) return json({error:"project not found"}, 404);
 
       const data = await getCommunity(env, projectId);
       data.reviews = Array.isArray(data.reviews) ? data.reviews : [];
       const uid = String(access.user.id);
       const now = nowSec();
+      const telegramName = [access.user.first_name, access.user.last_name].filter(Boolean).join(" ").trim();
 
       if (body.action === "delete") {
-        const idx = data.reviews.findIndex(r =>
-          String(r.id) === reviewId &&
-          String(r.user_id || r.telegram_id) === uid
-        );
+        const idx = data.reviews.findIndex(r => String(r.id) === reviewId && String(r.user_id || r.telegram_id) === uid);
         if (idx < 0) return json({error:"review not found or forbidden"}, 404);
         data.reviews.splice(idx, 1);
         await putCommunity(env, projectId, data);
@@ -465,42 +433,83 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       let existing = data.reviews.find(r => String(r.user_id || r.telegram_id) === uid);
       if (reviewId) {
         existing = data.reviews.find(r => String(r.id) === reviewId);
-        if (!existing || String(existing.user_id || existing.telegram_id) !== uid) {
-          return json({error:"review not found or forbidden"}, 404);
-        }
+        if (!existing || String(existing.user_id || existing.telegram_id) !== uid) return json({error:"review not found or forbidden"}, 404);
       }
 
-      const telegramName = [access.user.first_name, access.user.last_name]
-        .filter(Boolean).join(" ").trim();
-
       if (existing) {
-        existing.text = textValue;
+        existing.text = text;
         existing.updated_at = now;
         existing.telegram_name = telegramName;
         existing.first_name = access.user.first_name || "";
         existing.last_name = access.user.last_name || "";
         existing.username = access.user.username || "";
       } else {
-        if (!textValue) return json({error:"review text required"}, 400);
+        if (!text) return json({error:"review text required"}, 400);
         existing = {
-          id: crypto.randomUUID(),
-          user_id: uid,
-          telegram_id: uid,
-          username: access.user.username || "",
-          first_name: access.user.first_name || "",
-          last_name: access.user.last_name || "",
-          telegram_name: telegramName,
-          text: textValue,
-          created_at: now,
-          updated_at: now
+          id: crypto.randomUUID(), user_id: uid, telegram_id: uid,
+          username: access.user.username || "", first_name: access.user.first_name || "",
+          last_name: access.user.last_name || "", telegram_name: telegramName,
+          text, created_at: now, updated_at: now
         };
         data.reviews.push(existing);
       }
-
       await putCommunity(env, projectId, data);
       return json({ok:true, review:existing});
     }
 
+    if (url.pathname === "/api/comment" && request.method === "POST") {
+      const access = await requireApiAccess(request, env);
+      if (!access.ok) return json({ok:false, code:access.code}, access.code);
+      const body = await request.json().catch(() => ({}));
+      const projectId = String(body.project_id || "").trim();
+      const text = String(body.text || "").trim();
+      const commentId = String(body.comment_id || "").trim();
+      const parentId = String(body.parent_id || "").trim();
+      const chapter = body.chapter == null || body.chapter === "" ? null : String(body.chapter);
+      if (!projectId) return json({error:"missing project_id"}, 400);
+      if (!text && body.action !== "delete") return json({error:"empty comment"}, 400);
+      if (text.length > 2000) return json({error:"comment too long"}, 400);
+      const catalog = await env.LIBRARY.get("catalog", "json");
+      if (!Array.isArray(catalog) || !catalog.some(p => String(p.id) === projectId)) return json({error:"project not found"}, 404);
+      const data = await getCommunity(env, projectId);
+      data.comments = Array.isArray(data.comments) ? data.comments : [];
+      const uid = String(access.user.id);
+      const telegramName = [access.user.first_name, access.user.last_name].filter(Boolean).join(" ").trim();
+
+      if (body.action === "delete") {
+        const idx = data.comments.findIndex(c => String(c.id) === commentId && String(c.user_id || c.telegram_id) === uid);
+        if (idx < 0) return json({error:"comment not found or forbidden"}, 404);
+        data.comments.splice(idx, 1);
+        await putCommunity(env, projectId, data);
+        return json({ok:true});
+      }
+
+      if (commentId) {
+        const existing = data.comments.find(c => String(c.id) === commentId);
+        if (!existing || String(existing.user_id || existing.telegram_id) !== uid) return json({error:"comment not found or forbidden"}, 404);
+        existing.text = text;
+        existing.updated_at = nowSec();
+        existing.edited_at = nowSec();
+        existing.telegram_name = telegramName;
+        existing.first_name = access.user.first_name || "";
+        existing.last_name = access.user.last_name || "";
+        existing.username = access.user.username || "";
+        await putCommunity(env, projectId, data);
+        return json({ok:true, comment:existing});
+      }
+
+      if (parentId && !data.comments.some(c => String(c.id) === parentId)) return json({error:"parent comment not found"}, 404);
+      const comment = {
+        id: crypto.randomUUID(), user_id: uid, telegram_id: uid,
+        username: access.user.username || "", first_name: access.user.first_name || "",
+        last_name: access.user.last_name || "", telegram_name: telegramName,
+        text, chapter: parentId ? (data.comments.find(c => String(c.id) === parentId)?.chapter ?? chapter) : chapter,
+        parent_id: parentId || null, created_at: nowSec(), updated_at: nowSec()
+      };
+      data.comments.push(comment);
+      await putCommunity(env, projectId, data);
+      return json({ok:true, comment});
+    }
 
     // =========================
     // NOTIFICATIONS
