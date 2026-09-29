@@ -1125,6 +1125,7 @@ async function requireAccess(){
       }
       if(!r.ok) throw new Error(data.reason || "access");
       accessUser = data.user || null;
+      window.MINIWEB_MOD_IDS = accessUser && accessUser.is_mod ? String(accessUser.id) : "";
       return true;
   } catch(e) { return false; }
 }
@@ -1809,17 +1810,22 @@ function communityIsMine(x){
 function communityModIds(){
   return String(window.MINIWEB_MOD_IDS||"").split(",").map(function(x){return x.trim();}).filter(Boolean);
 }
-function communityCanDelete(x){
+function communityCanCurrentUserMod(){
+  if(accessUser && accessUser.is_mod===true) return true;
   var id=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user)?String(tg.initDataUnsafe.user.id):"";
-  return communityIsMine(x)||communityModIds().indexOf(id)>=0;
+  return !!id && communityModIds().indexOf(id)>=0;
+}
+function communityCanDelete(x){
+  return communityIsMine(x)||communityCanCurrentUserMod();
 }
 
 function reviewActions(pid,x){
-  if(!communityIsMine(x)) return "";
-  return "<span class='mvp-review-owner-actions'>"+
-    "<button type='button' class='mvp-small-action' onclick=\"editReview('"+esc(pid)+"','"+esc(x.id)+"',"+JSON.stringify(x.text||"")+")\">Edit</button>"+
-    "<button type='button' class='mvp-small-action' onclick=\"deleteReview('"+esc(pid)+"','"+esc(x.id)+"')\">Hapus</button>"+
-  "</span>";
+  var mine=communityIsMine(x), mod=communityIsMod(x) || communityCanCurrentUserMod();
+  if(!mine && !mod) return "";
+  var html="<span class='mvp-review-owner-actions'>";
+  if(mine) html+="<button type='button' class='mvp-small-action' onclick=\"editReview('"+esc(pid)+"','"+esc(x.id)+"',"+JSON.stringify(x.text||"")+")\">Edit</button>";
+  html+="<button type='button' class='mvp-small-action' onclick=\"deleteReview('"+esc(pid)+"','"+esc(x.id)+"')\">Hapus</button>";
+  return html+"</span>";
 }
 async function editReview(pid,id,current){
   var v=prompt("Edit review:",current||"");
@@ -2352,6 +2358,30 @@ function changeFontSize(dir, e) {
   if (reader) reader.style.fontSize = currentFontSize + 'px';
 }
 
+async function loadReaderChapterComments(pid,ch){
+  try{
+    var d=await apiJSON("/api/community?project_id="+encodeURIComponent(pid));
+    var all=Array.isArray(d.comments)?d.comments:[];
+    var arr=all.filter(function(x){return String(x.chapter||"")===String(ch);});
+    var box=document.getElementById("readerChapterComments");
+    if(box) box.innerHTML=renderCommentFeed(pid,arr)||"<div class='mvp-empty-state'>Belum ada komentar.</div>";
+  }catch(e){
+    var box=document.getElementById("readerChapterComments");
+    if(box) box.innerHTML="<div class='mvp-empty-state'>Komentar belum tersedia.</div>";
+  }
+}
+async function submitReaderChapterComment(pid,ch){
+  var el=document.getElementById("readerChapterCommentInput"),v=el?el.value.trim():"";
+  if(!v)return;
+  try{
+    var data=await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:v,chapter:String(ch)})});
+    applyInteractionToCatalog(pid,data);
+    if(el)el.value="";
+    await loadReaderChapterComments(pid,ch);
+    await loadCommunity(pid);
+  }catch(e){if(tg&&tg.showAlert)tg.showAlert("Komentar gagal dikirim.");}
+}
+
 // LOGIKA OPEN READER
 async function openReader(projectId, chapterName, decensored){
   if(!(await requireAccess())) return;
@@ -2404,15 +2434,22 @@ async function openReader(projectId, chapterName, decensored){
       "</div>" +
     "</div>";
 
-  var commentUrl = chapterCommentLink(p);
   var btnPrevClass = idx <= 0 ? "disabled" : "";
-  var commentBtnHtml = commentUrl 
-    ? "<div class='reader-nav-row' style='margin-top:2px;'><button class='navbtn commentbtn primary' style='width:100%' onclick=\"location.href='"+esc(commentUrl)+"'\">💬 Tulis Komentar</button></div>" 
-    : "";
+  var commentBtnHtml = "";
 
   var fontBtns = c.content_type === "docx" 
     ? "<div class='reader-nav-row' style='margin-bottom:6px;'><button class='navbtn' onclick='changeFontSize(-1, event)'>A- Kecilkan</button><button class='navbtn' onclick='changeFontSize(1, event)'>A+ Besarkan</button></div>" 
     : "";
+
+  var readerCommentSection =
+    "<section id='readerChapterCommunity' class='reader-chapter-community'>"+
+      "<div class='reader-chapter-community-title'>"+miniIcon("comment",14)+" Komentar Chapter "+esc(c.chapter)+"</div>"+
+      "<div id='readerChapterCommentCompose' class='mvp-comment-compose'>"+
+        "<textarea id='readerChapterCommentInput' class='mvp-comment-input' maxlength='2000' placeholder='Tulis komentar untuk Chapter "+esc(c.chapter)+"...'></textarea>"+
+        "<button class='btn primary' onclick=\"submitReaderChapterComment('"+esc(p.id)+"','"+esc(c.chapter)+"')\">Kirim Komentar</button>"+
+      "</div>"+
+      "<div id='readerChapterComments' class='mvp-chapter-comment-list'><div class='mvp-empty-state'>Memuat...</div></div>"+
+    "</section>";
 
   var botNav = 
     "<div id='readerNav' class='reader-nav'>" +
@@ -2425,7 +2462,8 @@ async function openReader(projectId, chapterName, decensored){
       commentBtnHtml +
     "</div>";
 
-  $("readerContent").innerHTML = topNav + "<div id='readerPages' class='readerpages' onclick='toggleReaderUI(event)'></div>" + botNav;
+  $("readerContent").innerHTML = topNav + "<div id='readerPages' class='readerpages' onclick='toggleReaderUI(event)'></div>" + readerCommentSection + botNav;
+  loadReaderChapterComments(p.id, c.chapter);
   var pages = $("readerPages");
 
   if(c && c.content_type === "docx"){
@@ -2647,6 +2685,11 @@ html,body{background:var(--bg)}
 .mvp-lapak-item:active{background:var(--panel2)}
 
 .mvp-tag-link.status.ongoing{color:#10b981}.mvp-tag-link.status.completed{color:var(--accent)}
+
+.reader-chapter-community{max-width:900px;margin:18px auto 12px;padding:14px 14px 4px;border-top:1px solid var(--border);background:var(--panel);border-radius:14px}
+.reader-chapter-community-title{font-size:13px;font-weight:900;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.reader-chapter-community .mvp-comment-compose{border-bottom:1px solid var(--border);margin-bottom:10px}
+.reader-chapter-community .mvp-chapter-comment-list{margin-top:8px}
 </style>
 </body>
 </html>
