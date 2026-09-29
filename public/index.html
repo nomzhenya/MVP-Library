@@ -554,7 +554,7 @@ html,body{background:var(--bg)}
 
   <!-- SWITCH MODE -->
   <div class="mode-switch">
-    <button id="btnModeComic" class="mode-btn active" onclick="setMode('comic')">Komik</button>
+    <button id="btnModeComic" class="mode-btn active" onclick="setMode('comic')">Comic</button>
     <button id="btnModeNovel" class="mode-btn" onclick="setMode('novel')">Novel</button>
   </div>
 
@@ -613,7 +613,7 @@ html,body{background:var(--bg)}
     </div>
   </div>
   <div class="mode-switch" style="margin-bottom:14px;">
-    <button id="browseModeComic" class="mode-btn active" onclick="setBrowseMode('comic')">Komik</button>
+    <button id="browseModeComic" class="mode-btn active" onclick="setBrowseMode('comic')">Comic</button>
     <button id="browseModeNovel" class="mode-btn" onclick="setBrowseMode('novel')">Novel</button>
   </div>
   <div id="browseTagCloud" class="mvp-tag-cloud"></div>
@@ -1263,7 +1263,7 @@ async function openProject(id){
 
   var reviewSection=
     "<details class='mvp-collapsible' id='reviewSection_"+esc(p.id)+"'>"+
-      "<summary>⭐ Review</summary>"+
+      "<summary>📝 Review</summary>"+
       "<div class='mvp-collapsible-body'>"+
         "<div class='mvp-vote-panel'>"+
           "<div class='mvp-vote-top'><div class='mvp-vote-label'>RATING (1–10)</div><div style='font-size:11px;color:var(--muted)'>"+pVotes+" vote"+(pVotes===1?"":"s")+"</div></div>"+
@@ -1283,25 +1283,13 @@ async function openProject(id){
       "</div>"+
     "</details>";
 
-  var commentSection=
-    "<details class='mvp-collapsible' id='commentSection_"+esc(p.id)+"'>"+
-      "<summary>💬 Komentar</summary>"+
-      "<div class='mvp-collapsible-body'>"+
-        "<div id='chapterCommentTarget_"+esc(p.id)+"' class='mvp-comment-target hidden'></div>"+
-        "<div id='comments_"+esc(p.id)+"' class='mvp-comments'><div class='mvp-empty-state'>Memuat...</div></div>"+
-        "<div class='mvp-comment-compose'>"+
-          "<textarea id='commentInput_"+esc(p.id)+"' class='mvp-comment-input' maxlength='1000' placeholder='Tulis komentar...'></textarea>"+
-          "<button class='btn primary' onclick=\"submitComment('"+esc(p.id)+"')\">Kirim Komentar</button>"+
-        "</div>"+
-      "</div>"+
-    "</details>";
+
 
   var part2=
     "<section class='mvp-detail-part'>"+
       "<div class='mvp-detail-part-title'>Tags</div>"+
       tagsHtml+
       reviewSection+
-      commentSection+
     "</section>";
   // PART 3 — description.
   var trakteerDetail=p.trakteer ? "<a href='"+esc(p.trakteer)+"' target='_blank' class='btn' style='background:#e74c3c;color:#fff;width:100%;margin-top:14px;border-radius:24px;'>☕ "+esc(p.trakteer_label || "Traktir Kopi")+"</a>" : "";
@@ -1348,6 +1336,19 @@ async function openProject(id){
       "</div>"+
       chaptersWrap+
     "</section>";
+
+  var commentSection=
+    "<details class='mvp-collapsible' id='commentSection_"+esc(p.id)+"'>"+
+      "<summary>💬 Komentar</summary>"+
+      "<div class='mvp-collapsible-body'>"+
+        "<div id='chapterCommentTarget_"+esc(p.id)+"' class='mvp-comment-target hidden'></div>"+
+        "<div id='comments_"+esc(p.id)+"' class='mvp-comments'><div class='mvp-empty-state'>Memuat...</div></div>"+
+        "<div class='mvp-comment-compose'>"+
+          "<textarea id='commentInput_"+esc(p.id)+"' class='mvp-comment-input' maxlength='1000' placeholder='Tulis komentar...'></textarea>"+
+          "<button class='btn primary' onclick=\"submitComment('"+esc(p.id)+"')\">Kirim Komentar</button>"+
+        "</div>"+
+      "</div>"+
+    "</details>";
 
   $("detailContent").innerHTML=topBar+part1+part2+part3+part4;
   loadCommunity(p.id);
@@ -1434,9 +1435,7 @@ async function loadCommunity(pid){
     c.sort(function(a,b){return Number(a.created_at||0)-Number(b.created_at||0);});
 
     if(reviewBox){
-      reviewBox.innerHTML=r.length?r.map(function(x){
-        var n=Number(x.score)||0;
-        return "<article class='mvp-review-card'>"+
+      reviewBox.innerHTML=r.length?r.map(function(x){return "<article class='mvp-review-card'>"+
           "<b>"+esc(x.telegram_name||x.first_name||x.last_name||x.username||"Unknown User")+"</b>"+
           (n?"":"")+
           (x.text?"<div class='mvp-review-text'>"+esc(x.text)+"</div>":"")+
