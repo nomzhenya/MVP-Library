@@ -580,7 +580,9 @@ html,body{background:var(--bg)}
 .mvp-thread-replies{margin-top:3px}
 </style>
 <style>
-.mvp-community-panel{margin-top:16px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px}.mvp-community-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.mvp-review-form,.mvp-comment-compose{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid var(--border)}.mvp-review-stars{display:flex}.mvp-review-stars button{border:0;background:none;color:var(--bato-star);font-size:26px}.mvp-comment-input{width:100%;min-height:80px;resize:vertical;border:1px solid var(--border);border-radius:10px;background:var(--input);color:var(--text);padding:10px;font:inherit}.mvp-comments{display:grid;gap:8px;padding-top:12px}.mvp-review-card,.mvp-comment-card{padding:11px;background:var(--panel2);border:1px solid var(--border);border-radius:10px}.mvp-review-text,.mvp-comment-text{margin-top:6px;font-size:13px;line-height:1.5;white-space:pre-line}.mvp-community-section-title{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;margin:6px 0}.mvp-review-stars-static{color:var(--bato-star)}.mvp-notif-badge{position:absolute;right:-2px;top:-2px;min-width:17px;height:17px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--panel2)}.mvp-notification-list{display:grid;gap:8px}.mvp-notification-item{width:100%;text-align:left;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:12px;padding:12px}.mvp-notification-item.unread{border-color:var(--accent);background:var(--panel2)}.mvp-notification-item div{margin-top:5px;color:var(--muted);font-size:12px}.readerpage{content-visibility:auto;contain-intrinsic-size:100vw 1200px}
+.mvp-community-panel{margin-top:16px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px}.mvp-community-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.mvp-review-form,.mvp-comment-compose{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid var(--border)}.mvp-review-stars{display:flex}.mvp-review-stars button{border:0;background:none;color:var(--bato-star);font-size:26px}.mvp-comment-input{width:100%;min-height:80px;resize:vertical;border:1px solid var(--border);border-radius:10px;background:var(--input);color:var(--text);padding:10px;font:inherit}.mvp-comments{display:grid;gap:8px;padding-top:12px}.mvp-review-card,.mvp-comment-card{padding:11px;background:var(--panel2);border:1px solid var(--border);border-radius:10px}.mvp-review-text,.mvp-comment-text{margin-top:6px;font-size:13px;line-height:1.5;white-space:pre-line}.mvp-community-section-title{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;margin:6px 0}.mvp-review-stars-static{color:var(--bato-star)}.mvp-notif-badge{position:absolute;right:-2px;top:-2px;min-width:17px;height:17px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--panel2)}.mvp-notification-list{display:grid;gap:8px}.mvp-notification-item{width:100%;text-align:left;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:12px;padding:12px}.mvp-notification-item.unread{border-color:var(--accent);background:var(--panel2)}
+.mvp-comment-target{animation:mvpCommentTarget 2.8s ease-out;outline:2px solid var(--accent);outline-offset:3px;border-radius:8px}
+@keyframes mvpCommentTarget{0%,100%{background:transparent}20%,55%{background:color-mix(in srgb,var(--accent) 18%,transparent)}}.mvp-notification-item div{margin-top:5px;color:var(--muted);font-size:12px}.readerpage{content-visibility:auto;contain-intrinsic-size:100vw 1200px}
 </style>
 
 <style>
@@ -2112,41 +2114,53 @@ async function loadNotifications(){try{var d=await apiJSON("/api/notifications?l
 async function openNotifications(){["home","detail","reader","browseLayer","catalogLayer","lapakLayer","guestLayer"].forEach(function(id){var e=$(id);if(e)e.classList.add("hidden");});$("notificationsLayer").classList.remove("hidden");$("notificationsLayer").classList.add("active");window.scrollTo(0,0);loadNotifications();}
 function closeNotifications(){$("notificationsLayer").classList.remove("active");$("notificationsLayer").classList.add("hidden");$("home").classList.remove("hidden");}
 async function prepareNotificationComment(pid,commentId,chapter){
-  if(!pid||!commentId)return;
+  if(!pid||!commentId)return false;
   var cache=(window.__communityCache&&window.__communityCache[pid])||[];
+  if(!cache.length)return false;
   var target=cache.find(function(x){return String(x.id)===String(commentId);});
-  if(!target)return;
+  if(!target)return false;
+
   var root=target,guard=0;
   while(root && root.parent_id && guard++<100){
     var parent=cache.find(function(x){return String(x.id)===String(root.parent_id);});
     if(!parent)break;
     root=parent;
   }
-  var pool=chapter!=null ? cache.filter(function(x){return String(x.chapter||"")===String(chapter);}) : cache;
+
+  var isChapter=chapter!=null && String(chapter)!=="";
+  var pool=isChapter ? cache.filter(function(x){return String(x.chapter||"")===String(chapter);}) : cache.filter(function(x){return !x.chapter;});
   var roots=threadRoots(pool);
   var idx=roots.findIndex(function(x){return String(x.id)===String(root.id);});
-  if(idx<0 && chapter!=null){
+  if(idx<0){
     roots=threadRoots(cache);
     idx=roots.findIndex(function(x){return String(x.id)===String(root.id);});
+    isChapter=false;
   }
-  if(idx>=0){
-    var key=chapter!=null ? pid+"::chapter::"+String(chapter) : pid+"::comments";
-    var st=communityPageState(key);
-    st.comments=Math.floor(idx/20)+1;
-    await loadCommunity(pid);
-    if(chapter!=null){
-      var details=document.querySelector("#chapterComments_"+CSS.escape(pid)+"_"+CSS.escape(String(chapter)));
-      if(details){
-        var d=details.closest("details");
-        if(d)d.open=true;
-      }
-    }
+  if(idx<0)return false;
+
+  var key=isChapter ? pid+"::chapter::"+String(chapter) : pid+"::comments";
+  var st=communityPageState(key);
+  st.comments=Math.floor(idx/20)+1;
+
+  if(isChapter){
+    var chapterBox=document.getElementById("chapterComments_"+pid+"_"+String(chapter));
+    if(chapterBox){var cd=chapterBox.closest("details");if(cd)cd.open=true;}
+  }else{
+    var projectBox=document.getElementById("projectComments_"+pid);
+    if(projectBox)projectBox.open=true;
   }
+
+  await loadCommunity(pid);
+  return true;
 }
 function revealNotificationComment(commentId){
   if(!commentId)return;
   var el=document.getElementById("comment_"+String(commentId));
   if(!el)return;
+
+  var details=el.closest("details");
+  if(details)details.open=true;
+
   var box=el.closest(".mvp-thread-replies");
   while(box){
     box.style.display="block";
@@ -2157,9 +2171,12 @@ function revealNotificationComment(commentId){
     }
     box=box.parentElement ? box.parentElement.closest(".mvp-thread-replies") : null;
   }
-  setTimeout(function(){
-    el.scrollIntoView({behavior:"smooth",block:"center"});
-  },80);
+
+  el.classList.remove("mvp-comment-target");
+  void el.offsetWidth;
+  el.classList.add("mvp-comment-target");
+  setTimeout(function(){el.scrollIntoView({behavior:"smooth",block:"center"});},120);
+  setTimeout(function(){el.classList.remove("mvp-comment-target");},3200);
 }
 async function openNotification(n){
   try{
@@ -2179,8 +2196,10 @@ async function openNotification(n){
     await openProject(String(n.project_id));
     var targetId=n.comment_id||n.parent_id;
     if(targetId){
-      await prepareNotificationComment(String(n.project_id),String(targetId),n.chapter);
-      setTimeout(function(){revealNotificationComment(String(targetId));},160);
+      var prepared=await prepareNotificationComment(String(n.project_id),String(targetId),n.chapter);
+      if(prepared){
+        requestAnimationFrame(function(){requestAnimationFrame(function(){revealNotificationComment(String(targetId));});});
+      }
     }
     return;
   }
