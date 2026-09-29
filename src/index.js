@@ -76,7 +76,7 @@ async function verifyTelegramInitData(initData, botToken) {
   }
 }
 
-async function telegramMemberStatus(env, chatId, userId) {
+async function telegramMemberInfo(env, chatId, userId) {
   const r = await fetch(
     `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getChatMember?chat_id=${encodeURIComponent(chatId)}&user_id=${encodeURIComponent(userId)}`
   );
@@ -84,8 +84,25 @@ async function telegramMemberStatus(env, chatId, userId) {
   const data = await r.json();
   if (!data.ok) return null;
 
-  const status = data.result?.status;
-  return ["creator", "administrator", "member"].includes(status);
+  return data.result || null;
+}
+
+function isActiveMember(info) {
+  return ["creator", "administrator", "member", "restricted"].includes(info?.status);
+}
+
+
+function miniwebModIds(env) {
+  return String(env.MINIWEB_MOD_IDS || "")
+    .split(",").map(x => x.trim()).filter(Boolean);
+}
+
+function isMiniwebMod(env, userId) {
+  return miniwebModIds(env).includes(String(userId));
+}
+
+function isMuted(info) {
+  return info?.status === "restricted" && info?.can_send_messages === false;
 }
 
 async function checkAccess(request, env) {
@@ -104,11 +121,17 @@ async function checkAccess(request, env) {
   }
 
   const [mvp, discussion] = await Promise.all([
-    telegramMemberStatus(env, CHANNEL_ID, user.id),
-    telegramMemberStatus(env, DISCUSSION_ID, user.id)
+    telegramMemberInfo(env, CHANNEL_ID, user.id),
+    telegramMemberInfo(env, DISCUSSION_ID, user.id)
   ]);
 
-  if (mvp !== true || discussion !== true) {
+  if (!isActiveMember(mvp) || !isActiveMember(discussion)) {
+    return {ok: false, code: 403};
+  }
+
+  // A Telegram "restricted" member with can_send_messages=false is currently muted.
+  // Muted users must not be allowed to open the Miniweb at all.
+  if (isMuted(mvp) || isMuted(discussion)) {
     return {ok: false, code: 403};
   }
 
@@ -199,15 +222,6 @@ async function requireApiAccess(request, env) {
   return await checkAccess(request, env);
 }
 
-function readerCodeKey(code) { return `reader_code:${safeId(code)}`; }
-function randomReaderCode() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const bytes = new Uint8Array(8);
-  crypto.getRandomValues(bytes);
-  return [...bytes].map(b => chars[b % chars.length]).join("");
-}
-function readerSession(request) { return (request.headers.get("X-Reader-Session") || "").slice(0, 80); }
-
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -228,71 +242,14 @@ export default {
         ok: true,
         user: {
           id: String(access.user.id),
-          username: access.user.username || ""
+          username: access.user.username || "",
+          first_name: access.user.first_name || "",
+          last_name: access.user.last_name || "",
+          telegram_name: [access.user.first_name, access.user.last_name].filter(Boolean).join(" ").trim()
         }
       }), {
         headers: cors({"content-type": "application/json; charset=utf-8"})
       });
-    }
-
-    if (url.pathname === "/api/reader-code" && request.method === "GET") {
-      const access = await checkAccess(request, env);
-      if (!access.ok) return json({ok:false, code:access.code}, access.code);
-      const session = readerSession(request) || "default";
-      const indexKey = `reader_session:${String(access.user.id)}:${safeId(session)}`;
-      let code = await env.LIBRARY.get(indexKey);
-      if (!code) {
-        for (let i=0;i<5;i++) {
-          const candidate = randomReaderCode();
-          const exists = await env.LIBRARY.get(readerCodeKey(candidate));
-          if (!exists) { code=candidate; break; }
-        }
-        if (!code) return json({error:"code generation failed"},503);
-        await env.LIBRARY.put(indexKey, code);
-      }
-      const key = readerCodeKey(code);
-      const existing = await env.LIBRARY.get(key, "json");
-      const record = {
-        code, user_id:String(access.user.id), username:access.user.username||"",
-        first_name:access.user.first_name||"", session_id:session,
-        issued_at:Number(existing?.issued_at||nowSec()), last_seen_at:nowSec()
-      };
-      await env.LIBRARY.put(key, JSON.stringify(record));
-      return json({ok:true,code});
-    }
-
-    if (url.pathname === "/api/admin/watermark" && request.method === "GET") {
-      const secret = request.headers.get("X-Library-Secret") || "";
-      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) return json({ok:false,reason:"unauthorized"},401);
-      const code = String(url.searchParams.get("code")||"").trim().toUpperCase();
-      if (!/^[A-Z0-9]{8}$/.test(code)) return json({ok:false,reason:"invalid_code"},400);
-      const data = await env.LIBRARY.get(readerCodeKey(code),"json");
-      if (!data) return json({ok:false,reason:"not_found"},404);
-      return json({ok:true,watermark:data});
-    }
-
-    if (url.pathname === "/api/tile" && request.method === "GET") {
-      const access = await checkAccess(request, env);
-      if (!access.ok) return json({ok:false,code:access.code},access.code);
-      if (!env.READER_TILES) return new Response("Tile storage is not configured",{status:503,headers:cors()});
-      const key = String(url.searchParams.get("key")||"").replace(/[^a-zA-Z0-9_\-\/\.]/g,"");
-      if (!key || key.includes("..")) return new Response("Invalid tile",{status:400,headers:cors()});
-      const obj = await env.READER_TILES.get(key);
-      if (!obj) return new Response("Tile not found",{status:404,headers:cors()});
-      const headers = cors({"cache-control":"public, max-age=31536000, immutable","content-type":obj.httpMetadata?.contentType||"image/webp","etag":obj.httpEtag||""});
-      return new Response(obj.body,{status:200,headers});
-    }
-
-    if (url.pathname === "/api/admin/tile" && request.method === "PUT") {
-      const secret = request.headers.get("X-Library-Secret") || "";
-      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) return json({ok:false,reason:"unauthorized"},401);
-      if (!env.READER_TILES) return json({ok:false,reason:"tile storage not configured"},503);
-      const key = String(url.searchParams.get("key")||"").replace(/[^a-zA-Z0-9_\-\/\.]/g,"");
-      if (!key || key.includes("..")) return json({ok:false,reason:"invalid_key"},400);
-      const body = request.body;
-      if (!body) return json({ok:false,reason:"empty_body"},400);
-      await env.READER_TILES.put(key, body, {httpMetadata:{contentType:request.headers.get("content-type")||"image/webp"}});
-      return json({ok:true,key});
     }
 
     if (url.pathname === "/api/catalog" && request.method === "GET") {
@@ -503,7 +460,7 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
         data.reviews.push({
           id: crypto.randomUUID(),
           user_id: uid,
-          display_call: displayCallFromUser(access.user),
+          display_call: $1,
           score,
           text,
           created_at: now,
@@ -519,37 +476,112 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       });
     }
 
-    if (url.pathname === "/api/comment" && request.method === "POST") {
-      const access = await requireApiAccess(request, env);
-      if (!access.ok) return json({ok:false, code:access.code}, access.code);
+    
+  if (url.pathname === "/api/comment" && request.method === "DELETE") {
+    const access = await requireApiAccess(request, env);
+    if (!access.ok) return json({ok:false, error:"ACCESS_DENIED"}, access.code || 403);
 
-      const body = await request.json().catch(() => ({}));
-      const projectId = String(body.project_id || "").trim();
-      const text = String(body.text || "").trim();
+    const body = await request.json().catch(() => ({}));
+    const projectId = String(body.project_id || "").trim();
+    const commentId = String(body.comment_id || "").trim();
+    if (!projectId || !commentId) return json({ok:false, error:"INVALID_REQUEST"}, 400);
 
-      if (!projectId) return json({error:"missing project_id"}, 400);
-      if (!text) return json({error:"empty comment"}, 400);
-      if (text.length > 2000) return json({error:"comment too long"}, 400);
+    const community = await getCommunity(env, projectId);
+    const comments = Array.isArray(community.comments) ? community.comments : [];
+    const idx = comments.findIndex(c => String(c.id) === commentId);
+    if (idx < 0) return json({ok:false, error:"COMMENT_NOT_FOUND"}, 404);
 
-      const catalog = await env.LIBRARY.get("catalog", "json");
-      if (!Array.isArray(catalog) || !catalog.some(p => String(p.id) === projectId)) {
-        return json({error:"project not found"}, 404);
+    const existing = comments[idx];
+    const uid = String(access.user.id);
+    if (String(existing.telegram_id) !== uid && !isMiniwebMod(env, uid)) {
+      return json({ok:false, error:"FORBIDDEN"}, 403);
+    }
+
+    comments.splice(idx, 1);
+    community.comments = comments;
+    community.comment_count = comments.length;
+    await putCommunity(env, projectId, community);
+    return json({ok:true});
+  }
+
+if (url.pathname === "/api/comment" && request.method === "POST") {
+    const access = await requireApiAccess(request, env);
+    if (!access.ok) return json({ok:false, error:"ACCESS_DENIED"}, access.code || 403);
+
+    const body = await request.json();
+    const projectId = String(body.project_id || "").trim();
+    const textValue = String(body.text || "").trim();
+    const commentId = String(body.comment_id || "").trim();
+
+    if (!projectId) return json({ok:false, error:"PROJECT_REQUIRED"}, 400);
+
+    const community = await getCommunity(env, projectId);
+    const comments = Array.isArray(community.comments) ? community.comments : [];
+    const uid = String(access.user.id);
+    const telegramName = [access.user.first_name, access.user.last_name]
+      .filter(Boolean).join(" ").trim();
+
+    // Delete: owner or MINIWEB_MOD_IDS.
+    if (body.action === "delete") {
+      const idx = comments.findIndex(c => String(c.id) === commentId);
+      if (idx < 0) return json({ok:false, error:"COMMENT_NOT_FOUND"}, 404);
+
+      const existing = comments[idx];
+      if (String(existing.telegram_id) !== uid && !isMiniwebMod(env, uid)) {
+        return json({ok:false, error:"FORBIDDEN"}, 403);
       }
 
-      const data = await getCommunity(env, projectId);
-      const comment = {
-        id: crypto.randomUUID(),
-        user_id: String(access.user.id),
-        display_call: displayCallFromUser(access.user),
-        text,
-        created_at: nowSec()
-      };
-
-      data.comments.push(comment);
-      await putCommunity(env, projectId, data);
-
-      return json({ok:true, comment});
+      comments.splice(idx, 1);
+      community.comments = comments;
+      community.comment_count = comments.length;
+      await putCommunity(env, projectId, community);
+      return json({ok:true});
     }
+
+    // Edit: owner only or MINIWEB_MOD_IDS.
+    if (commentId) {
+      const idx = comments.findIndex(c => String(c.id) === commentId);
+      if (idx < 0) return json({ok:false, error:"COMMENT_NOT_FOUND"}, 404);
+
+      const existing = comments[idx];
+      if (String(existing.telegram_id) !== uid && !isMiniwebMod(env, uid)) {
+        return json({ok:false, error:"FORBIDDEN"}, 403);
+      }
+      if (!textValue) return json({ok:false, error:"TEXT_REQUIRED"}, 400);
+
+      existing.text = textValue;
+      existing.edited_at = nowSec();
+      existing.telegram_name = telegramName;
+      existing.first_name = access.user.first_name || "";
+      existing.last_name = access.user.last_name || "";
+      existing.username = access.user.username || "";
+      community.comments = comments;
+      await putCommunity(env, projectId, community);
+      return json({ok:true, comment:existing});
+    }
+
+    if (!textValue) return json({ok:false, error:"TEXT_REQUIRED"}, 400);
+
+    const comment = {
+      id: crypto.randomUUID(),
+      project_id: projectId,
+      telegram_id: uid,
+      username: access.user.username || "",
+      first_name: access.user.first_name || "",
+      last_name: access.user.last_name || "",
+      telegram_name: telegramName,
+      text: textValue,
+      chapter: body.chapter == null || body.chapter === "" ? null : String(body.chapter),
+      created_at: nowSec(),
+      edited_at: null
+    };
+
+    comments.push(comment);
+    community.comments = comments;
+    community.comment_count = comments.length;
+    await putCommunity(env, projectId, community);
+    return json({ok:true, comment});
+  }
 
     // =========================
     // NOTIFICATIONS
