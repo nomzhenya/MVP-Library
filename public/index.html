@@ -561,6 +561,24 @@ html,body{background:var(--bg)}
 
 </style>
 <style>
+/* compact community UI */
+.mvp-community-collapsible.mvp-feature-panel{margin-top:24px!important;font-size:12px}
+.mvp-community-collapsible>summary{font-size:12px!important;font-weight:800!important;min-height:36px}
+.mvp-review-form,.mvp-comment-compose{font-size:11px!important}
+.mvp-review-form textarea,.mvp-comment-compose textarea{font-size:12px!important;min-height:58px!important;max-height:90px!important}
+.mvp-review-card,.mvp-comment-card{background:transparent!important;box-shadow:none!important;border:0!important;padding:5px 0!important;border-radius:0!important}
+.mvp-comment-text,.mvp-review-text{font-size:12px!important;line-height:1.5!important;margin-top:6px!important}
+.mvp-comment-avatar{width:28px!important;height:28px!important;min-width:28px!important;font-size:10px!important}
+.mvp-comment-head{gap:7px!important}
+.mvp-comment-meta{font-size:11px!important}
+.mvp-comment-time{font-size:9px!important}
+.mvp-community-actions{margin-top:6px!important;gap:5px!important}
+.mvp-community-actions button{font-size:9px!important;padding:3px 7px!important}
+.mvp-replies{margin:6px 0 0 28px!important;padding-left:10px!important}
+.mvp-thread-toggle{border:0;background:none;color:var(--accent);font-size:10px;font-weight:800;padding:4px 0;cursor:pointer}
+.mvp-thread-replies{margin-top:3px}
+</style>
+<style>
 .mvp-community-panel{margin-top:16px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px}.mvp-community-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.mvp-review-form,.mvp-comment-compose{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid var(--border)}.mvp-review-stars{display:flex}.mvp-review-stars button{border:0;background:none;color:var(--bato-star);font-size:26px}.mvp-comment-input{width:100%;min-height:80px;resize:vertical;border:1px solid var(--border);border-radius:10px;background:var(--input);color:var(--text);padding:10px;font:inherit}.mvp-comments{display:grid;gap:8px;padding-top:12px}.mvp-review-card,.mvp-comment-card{padding:11px;background:var(--panel2);border:1px solid var(--border);border-radius:10px}.mvp-review-text,.mvp-comment-text{margin-top:6px;font-size:13px;line-height:1.5;white-space:pre-line}.mvp-community-section-title{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;margin:6px 0}.mvp-review-stars-static{color:var(--bato-star)}.mvp-notif-badge{position:absolute;right:-2px;top:-2px;min-width:17px;height:17px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--panel2)}.mvp-notification-list{display:grid;gap:8px}.mvp-notification-item{width:100%;text-align:left;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:12px;padding:12px}.mvp-notification-item.unread{border-color:var(--accent);background:var(--panel2)}.mvp-notification-item div{margin-top:5px;color:var(--muted);font-size:12px}.readerpage{content-visibility:auto;contain-intrinsic-size:100vw 1200px}
 </style>
 </head>
@@ -1487,7 +1505,7 @@ function commentActions(pid,x){
 function commentCard(pid,x,reply){
   var chapter=x.chapter? "<span class='mvp-comment-chapter'>Chapter "+esc(x.chapter)+"</span>":"";
   var name=communityAuthorName(x);
-  var initials=name.split(/\\s+/).filter(Boolean).slice(0,2).map(function(v){return v.charAt(0).toUpperCase();}).join("")||"?";
+  var initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(function(v){return v.charAt(0).toUpperCase();}).join("")||"?";
   var when=x.created_at?timeAgo(x.created_at):"Just now";
   return "<article class='mvp-comment-card "+(reply?"mvp-comment-reply":"")+"' id='comment_"+esc(String(x.id||""))+"'>"+
     "<div class='mvp-comment-head'>"+
@@ -1505,10 +1523,8 @@ async function replyComment(pid,parentId){
   var v=prompt("Balas komentar:");
   if(v===null)return;
   v=v.trim();if(!v)return;
-  try{
-    await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:v,parent_id:parentId})});
-    await loadCommunity(pid);
-  }catch(e){if(tg&&tg.showAlert)tg.showAlert("Balasan gagal dikirim.");}
+  try{await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:v,parent_id:parentId})});await loadCommunity(pid);}
+  catch(e){if(tg&&tg.showAlert)tg.showAlert("Balasan gagal dikirim.");}
 }
 async function editComment(pid,id,current){
   var v=prompt("Edit komentar:",current||"");
@@ -1522,29 +1538,29 @@ async function deleteComment(pid,id){
   try{await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,comment_id:id,action:"delete"})});await loadCommunity(pid);}
   catch(e){if(tg&&tg.showAlert)tg.showAlert("Komentar gagal dihapus.");}
 }
-async function submitComment(pid){
-  var el=document.getElementById("commentInput_"+pid),t=el?el.value.trim():"";
-  if(!t)return;
-  try{await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:t,chapter:null})});el.value="";await loadCommunity(pid);}
-  catch(e){if(tg&&tg.showAlert)tg.showAlert("Komentar gagal disimpan.");}
-}
-async function submitChapterComment(pid,chapter){
-  var el=document.getElementById("chapterCommentInput_"+pid+"_"+chapter),t=el?el.value.trim():"";
-  if(!t)return;
-  try{await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:t,chapter:String(chapter)})});el.value="";await loadCommunity(pid);}
-  catch(e){if(tg&&tg.showAlert)tg.showAlert("Komentar chapter gagal disimpan.");}
-}
 function renderCommentFeed(pid,comments){
-  var roots=comments.filter(function(x){return !x.parent_id;}).sort(function(a,b){return Number(a.created_at||0)-Number(b.created_at||0);});
+  var roots=comments.filter(function(x){return !x.parent_id;}).sort(function(a,b){return Number(b.created_at||0)-Number(a.created_at||0);});
   var byParent={};
   comments.forEach(function(x){if(x.parent_id)(byParent[x.parent_id]||(byParent[x.parent_id]=[])).push(x);});
-  function one(x,reply){
-    var s=commentCard(pid,x,reply);
-    var kids=(byParent[x.id]||[]).sort(function(a,b){return Number(a.created_at||0)-Number(b.created_at||0);});
-    kids.forEach(function(k){s+="<div class='mvp-replies'>"+one(k,true)+"</div>";});
-    return s;
+  function descendants(id){
+    var out=[];
+    (byParent[id]||[]).sort(function(a,b){return Number(a.created_at||0)-Number(b.created_at||0);}).forEach(function(k){out.push(k);out=out.concat(descendants(k.id));});
+    return out;
   }
-  return roots.length?roots.map(function(x){return one(x,false);}).join(""):"<div class='mvp-empty-state'>Belum ada komentar.</div>";
+  return roots.length?roots.map(function(x){
+    var kids=descendants(x.id);
+    var html=commentCard(pid,x,false);
+    if(kids.length){
+      var thread="<div class='mvp-thread-replies' id='thread_"+esc(x.id)+"' style='display:none'>"+kids.map(function(k){return commentCard(pid,k,true);}).join("")+"</div>";
+      html+="<button type='button' class='mvp-thread-toggle' onclick=\"toggleCommentThread('"+esc(x.id)+"',this)\">+ " + kids.length + " balasan</button>"+thread;
+    }
+    return html;
+  }).join(""):"<div class='mvp-empty-state'>Belum ada komentar.</div>";
+}
+function toggleCommentThread(id,btn){
+  var box=document.getElementById("thread_"+id);if(!box)return;
+  var open=box.style.display!=="none";box.style.display=open?"none":"block";
+  btn.textContent=(open?"+ ":"− ")+btn.textContent.replace(/^[+−]\s*/,"");
 }
 function communityPageState(key){
   window.__communityPages = window.__communityPages || {};
@@ -1637,9 +1653,9 @@ async function loadCommunity(pid){
     c.sort(function(a,b){return Number(a.created_at||0)-Number(b.created_at||0);});
 
     var state=communityPageState(pid);
-    state.review=Math.min(state.review,Math.max(1,Math.ceil(r.length/5)));
+    state.review=Math.min(state.review,Math.max(1,Math.ceil(r.length/20)));
     var reviewList=document.getElementById("reviewList_"+pid);
-    if(reviewList)reviewList.innerHTML=renderReviewFeed(pid,r)+communityPagerHtml("review",pid,state.review,Math.max(1,Math.ceil(r.length/5)));
+    if(reviewList)reviewList.innerHTML=renderReviewFeed(pid,r)+communityPagerHtml("review",pid,state.review,Math.max(1,Math.ceil(r.length/20)));
 
     var countEl=document.getElementById("detailCommentCount_"+pid);
     if(countEl)countEl.textContent="💬 "+c.length;
