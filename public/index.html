@@ -457,6 +457,80 @@ html,body{background:var(--bg)}
   color:transparent;
   font-weight:900;
 }
+
+/* Dynamic community panels */
+.mvp-feature-panel{
+  margin-top:22px!important;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:var(--panel);
+  overflow:hidden;
+  box-shadow:0 8px 24px rgba(0,0,0,.08);
+}
+.mvp-feature-panel>summary{
+  list-style:none;
+  cursor:pointer;
+  padding:15px 17px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  font-weight:900;
+  font-size:14px;
+}
+.mvp-feature-panel>summary::-webkit-details-marker{display:none}
+.mvp-feature-panel>summary::after{
+  content:"+";
+  width:25px;height:25px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);
+  border-radius:50%;
+  color:var(--muted);
+  font-size:18px;
+  line-height:1;
+}
+.mvp-feature-panel[open]>summary::after{content:"−";color:var(--accent);border-color:var(--accent)}
+.mvp-feature-panel>.mvp-review-vote-wrap,
+.mvp-feature-panel>.mvp-comments,
+.mvp-feature-panel>.mvp-comment-compose,
+.mvp-feature-panel>.mvp-review-list{
+  margin-left:15px;margin-right:15px;
+}
+.mvp-feature-panel>.mvp-review-vote-wrap{padding-bottom:16px}
+.mvp-feature-panel>.mvp-comments{padding-top:0;padding-bottom:14px}
+.mvp-feature-panel>.mvp-comment-compose{padding-bottom:16px}
+.mvp-review-list{display:grid;gap:10px;padding-bottom:16px}
+.mvp-review-card{
+  padding:14px 15px!important;border-radius:14px!important;
+  background:var(--panel2)!important;box-shadow:0 5px 18px rgba(0,0,0,.06);
+}
+.mvp-comment-card{
+  padding:14px 15px!important;border-radius:15px!important;
+  background:var(--panel2)!important;box-shadow:0 5px 18px rgba(0,0,0,.06);
+}
+.mvp-comments,.mvp-chapter-comment-list{display:grid;gap:10px}
+.mvp-comment-head{display:flex;align-items:center;gap:10px}
+.mvp-comment-avatar{
+  width:36px;height:36px;min-width:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--accent),var(--panel2));
+  color:#fff;font-size:12px;font-weight:900;
+}
+.mvp-comment-author-wrap{min-width:0;flex:1}
+.mvp-comment-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mvp-comment-time{font-size:10px;color:var(--muted);margin-top:2px}
+.mvp-comment-text{margin-top:11px!important;font-size:13px;line-height:1.65}
+.mvp-comment-chapter{
+  display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;
+  background:var(--accent);color:#fff;font-size:9px;font-weight:900;
+}
+.mvp-community-actions{display:flex;gap:7px;margin-top:11px}
+.mvp-community-actions button{
+  border:1px solid var(--border);background:var(--panel);color:var(--muted);
+  border-radius:9px;padding:5px 9px;font-size:10px;cursor:pointer;
+}
+.mvp-community-actions button:hover{border-color:var(--accent);color:var(--accent)}
+
 </style>
 <style>
 .mvp-community-panel{margin-top:16px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px}.mvp-community-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.mvp-review-form,.mvp-comment-compose{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid var(--border)}.mvp-review-stars{display:flex}.mvp-review-stars button{border:0;background:none;color:var(--bato-star);font-size:26px}.mvp-comment-input{width:100%;min-height:80px;resize:vertical;border:1px solid var(--border);border-radius:10px;background:var(--input);color:var(--text);padding:10px;font:inherit}.mvp-comments{display:grid;gap:8px;padding-top:12px}.mvp-review-card,.mvp-comment-card{padding:11px;background:var(--panel2);border:1px solid var(--border);border-radius:10px}.mvp-review-text,.mvp-comment-text{margin-top:6px;font-size:13px;line-height:1.5;white-space:pre-line}.mvp-community-section-title{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;margin:6px 0}.mvp-review-stars-static{color:var(--bato-star)}.mvp-notif-badge{position:absolute;right:-2px;top:-2px;min-width:17px;height:17px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--panel2)}.mvp-notification-list{display:grid;gap:8px}.mvp-notification-item{width:100%;text-align:left;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:12px;padding:12px}.mvp-notification-item.unread{border-color:var(--accent);background:var(--panel2)}.mvp-notification-item div{margin-top:5px;color:var(--muted);font-size:12px}.readerpage{content-visibility:auto;contain-intrinsic-size:100vw 1200px}
@@ -1202,7 +1276,7 @@ async function openProject(id){
             "<button type='button' class='mvp-detail-stat mvp-detail-stat-btn "+(isBm?"bookmark-on":"")+"' onclick=\"toggleBookmark('"+esc(p.id)+"')\">"+
               "<svg width='14' height='14' viewBox='0 0 24 24' fill='"+favIconColor+"' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 0-2 2z'></path></svg>"+pBookmarks+
             "</button>"+
-            "<span class='mvp-detail-stat'>💬 "+pComments+"</span>"+
+            "<span id='detailCommentCount_"+esc(p.id)+"' class='mvp-detail-stat'>💬 "+pComments+"</span>"+
           "</div>"+
           detailStatus+
         "</div>"+
@@ -1308,7 +1382,7 @@ async function openProject(id){
     "</div>";
 
   var projectComments=
-    "<details class='mvp-community-collapsible mvp-project-comments' id='projectComments_"+esc(p.id)+"'>"+
+    "<details class='mvp-community-collapsible mvp-project-comments mvp-feature-panel' id='projectComments_"+esc(p.id)+"'>"+
       "<summary>💬 Komentar</summary>"+
       "<div id='comments_"+esc(p.id)+"' class='mvp-comments'><div class='mvp-empty-state'>Memuat...</div></div>"+
       "<div class='mvp-comment-compose'>"+
@@ -1384,10 +1458,18 @@ function commentActions(pid,x){
 }
 function commentCard(pid,x,reply){
   var chapter=x.chapter? "<span class='mvp-comment-chapter'>Chapter "+esc(x.chapter)+"</span>":"";
+  var name=communityAuthorName(x);
+  var initials=name.split(/\\s+/).filter(Boolean).slice(0,2).map(function(v){return v.charAt(0).toUpperCase();}).join("")||"?";
+  var when=x.created_at?timeAgo(x.created_at):"Just now";
   return "<article class='mvp-comment-card "+(reply?"mvp-comment-reply":"")+"' id='comment_"+esc(String(x.id||""))+"'>"+
-    "<div class='mvp-comment-meta'><b>"+esc(communityAuthorName(x))+"</b>"+(x.username?" <span class='mvp-comment-username'>@"+esc(String(x.username).replace(/^@/,""))+"</span>":"")+chapter+"</div>"+
+    "<div class='mvp-comment-head'>"+
+      "<div class='mvp-comment-avatar'>"+esc(initials)+"</div>"+
+      "<div class='mvp-comment-author-wrap'>"+
+        "<div class='mvp-comment-meta'><b>"+esc(name)+"</b>"+(x.username?" <span class='mvp-comment-username'>@"+esc(String(x.username).replace(/^@/,""))+"</span>":"")+chapter+"</div>"+
+        "<div class='mvp-comment-time'>"+esc(when)+(x.edited_at?" · edited":"")+"</div>"+
+      "</div>"+
+    "</div>"+
     "<div class='mvp-comment-text'>"+esc(x.text||"")+"</div>"+
-    (x.edited_at?"<span class='mvp-comment-edited'>edited</span>":"")+
     commentActions(pid,x)+
   "</article>";
 }
@@ -1451,6 +1533,8 @@ async function loadCommunity(pid){
       }).join(""):"<div class='mvp-empty-state'>Belum ada review.</div>";
       reviewBox.appendChild(list);
     }
+    var countEl=document.getElementById("detailCommentCount_"+pid);
+    if(countEl)countEl.textContent="💬 "+c.length;
     var box=document.getElementById("comments_"+pid);
     if(box)box.innerHTML=renderCommentFeed(pid,c);
 
