@@ -461,19 +461,18 @@ html,body{background:var(--bg)}
 <style>
 .mvp-community-panel{margin-top:16px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px}.mvp-community-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.mvp-review-form,.mvp-comment-compose{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid var(--border)}.mvp-review-stars{display:flex}.mvp-review-stars button{border:0;background:none;color:var(--bato-star);font-size:26px}.mvp-comment-input{width:100%;min-height:80px;resize:vertical;border:1px solid var(--border);border-radius:10px;background:var(--input);color:var(--text);padding:10px;font:inherit}.mvp-comments{display:grid;gap:8px;padding-top:12px}.mvp-review-card,.mvp-comment-card{padding:11px;background:var(--panel2);border:1px solid var(--border);border-radius:10px}.mvp-review-text,.mvp-comment-text{margin-top:6px;font-size:13px;line-height:1.5;white-space:pre-line}.mvp-community-section-title{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;margin:6px 0}.mvp-review-stars-static{color:var(--bato-star)}.mvp-notif-badge{position:absolute;right:-2px;top:-2px;min-width:17px;height:17px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--panel2)}.mvp-notification-list{display:grid;gap:8px}.mvp-notification-item{width:100%;text-align:left;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:12px;padding:12px}.mvp-notification-item.unread{border-color:var(--accent);background:var(--panel2)}.mvp-notification-item div{margin-top:5px;color:var(--muted);font-size:12px}.readerpage{content-visibility:auto;contain-intrinsic-size:100vw 1200px}
 </style>
-<style id="virtual-reader-v3-fixed">
+<style id="mvp-safe-lazy-reader">
 .readerpage{
   display:block;
   width:100%;
   height:auto;
-  min-height:180px;
   background:var(--panel2);
 }
 .readerpage-placeholder{
-  min-height:180px;
+  background:var(--panel2);
 }
 .readerpage-loading{
-  opacity:.72;
+  opacity:.75;
 }
 </style>
 </head>
@@ -1338,135 +1337,64 @@ async function initNotificationBadge(){try{var d=await apiJSON("/api/notificatio
 /* LAZY LOAD READER */
 function enableReaderLazyLoad(p){
   if(!p)return;
-
   var imgs=Array.from(p.querySelectorAll("img.readerpage"));
   if(!imgs.length)return;
 
-  var AHEAD=2;          // load current + 2 below
-  var KEEP=3;           // keep only a small window in memory
-  var ROOT_MARGIN="100% 0px 100% 0px";
-
-  function srcOf(img){
-    return img.dataset.src || "";
-  }
+  var AHEAD=2;
+  var KEEP=4;
+  var busy=false;
 
   function load(img){
     if(!img || img.dataset.loaded==="1" || img.dataset.loading==="1")return;
-    var src=srcOf(img);
+    var src=img.dataset.src;
     if(!src)return;
 
     img.dataset.loading="1";
+    img.src=src;
 
     img.onload=function(){
       img.dataset.loading="0";
       img.dataset.loaded="1";
-      img.classList.remove("readerpage-loading","readerpage-placeholder");
-      if(img.naturalWidth && img.naturalHeight){
-        img.dataset.ratio=String(img.naturalWidth/img.naturalHeight);
-      }
+      img.classList.remove("readerpage-loading");
       img.style.minHeight="";
-      img.style.aspectRatio="";
+      img.style.background="";
     };
 
     img.onerror=function(){
       img.dataset.loading="0";
-      img.classList.remove("readerpage-loading");
-      var err=document.createElement("div");
-      err.className="readererror";
-      err.textContent="Gagal memuat halaman.";
-      if(img.parentNode)img.parentNode.replaceChild(err,img);
     };
-
-    img.classList.add("readerpage-loading");
-    img.src=src;
   }
 
   function unload(img){
     if(!img || img.dataset.loaded!=="1")return;
 
     var r=img.getBoundingClientRect();
-
-    // Never unload anything currently visible.
     if(r.bottom>0 && r.top<window.innerHeight)return;
 
     var distance=r.bottom<0 ? -r.bottom : r.top-window.innerHeight;
-
-    // Keep a buffer around the viewport.
-    if(distance < window.innerHeight*1.25)return;
-
-    var ratio=parseFloat(img.dataset.ratio||"");
-    if(ratio>0){
-      img.style.aspectRatio=String(ratio);
-      img.style.minHeight="0";
-    }else{
-      img.style.minHeight="180px";
-    }
+    if(distance < window.innerHeight*1.5)return;
 
     img.removeAttribute("src");
     img.dataset.loaded="0";
-    img.classList.remove("readerpage-loading");
     img.classList.add("readerpage-placeholder");
   }
 
-  function windowFor(index){
-    var from=Math.max(0,index-1);
-    var to=Math.min(imgs.length-1,index+AHEAD);
-
-    for(var i=from;i<=to;i++)load(imgs[i]);
-
-    for(var j=0;j<imgs.length;j++){
-      if(Math.abs(j-index)>KEEP)unload(imgs[j]);
-    }
-  }
-
-  // Convert every reader image to data-src before anything can request it.
-  imgs.forEach(function(img){
-    if(!img.dataset.src && img.getAttribute("src")){
-      img.dataset.src=img.getAttribute("src");
-      img.removeAttribute("src");
-    }
-    img.classList.add("readerpage-placeholder");
-  });
-
-  // Immediately load only the first page + next page.
-  load(imgs[0]);
-  if(imgs[1])load(imgs[1]);
-
-  if("IntersectionObserver" in window){
-    var io=new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){
-        if(!entry.isIntersecting)return;
-
-        var index=imgs.indexOf(entry.target);
-        if(index<0)return;
-
-        windowFor(index);
-      });
-    },{
-      root:null,
-      rootMargin:ROOT_MARGIN,
-      threshold:0
-    });
-
-    imgs.forEach(function(img){io.observe(img);});
-  }
-
-  // Scroll fallback / active-page detection.
-  var ticking=false;
   function refresh(){
-    if(ticking)return;
-    ticking=true;
+    if(busy)return;
+    busy=true;
 
     requestAnimationFrame(function(){
-      ticking=false;
+      busy=false;
 
       var active=-1;
       var best=Infinity;
 
       imgs.forEach(function(img,i){
         var r=img.getBoundingClientRect();
-        if(r.bottom>0 && r.top<window.innerHeight){
-          var d=Math.abs((r.top+r.height/2)-(window.innerHeight/2));
+        var visible=r.bottom>0 && r.top<window.innerHeight;
+
+        if(visible){
+          var d=Math.abs((r.top+r.bottom)/2-window.innerHeight/2);
           if(d<best){
             best=d;
             active=i;
@@ -1474,12 +1402,68 @@ function enableReaderLazyLoad(p){
         }
       });
 
-      if(active>=0)windowFor(active);
+      if(active<0){
+        // At the very top, make sure page 1 is available.
+        if(window.scrollY<window.innerHeight)active=0;
+        else return;
+      }
+
+      var from=Math.max(0,active-1);
+      var to=Math.min(imgs.length-1,active+AHEAD);
+
+      for(var i=from;i<=to;i++)load(imgs[i]);
+
+      for(var j=0;j<imgs.length;j++){
+        if(Math.abs(j-active)>KEEP)unload(imgs[j]);
+      }
     });
   }
 
+  /*
+   * Important: move every URL to data-src first.
+   * This is the part that prevents the browser from requesting all pages.
+   */
+  imgs.forEach(function(img){
+    if(!img.dataset.src){
+      var current=img.getAttribute("src");
+      if(current){
+        img.dataset.src=current;
+        img.removeAttribute("src");
+      }
+    }
+
+    img.dataset.loaded="0";
+    img.style.minHeight=Math.max(420,Math.round(window.innerWidth*1.25))+"px";
+    img.classList.add("readerpage-placeholder");
+  });
+
+  // First two pages are visible/immediately useful.
+  load(imgs[0]);
+  if(imgs[1])load(imgs[1]);
+
   window.addEventListener("scroll",refresh,{passive:true});
   window.addEventListener("resize",refresh,{passive:true});
+
+  /*
+   * Also use IntersectionObserver only as a trigger.
+   * It does not own the loading logic, so it cannot accidentally load every
+   * page just because the placeholders are visible in the root margin.
+   */
+  if("IntersectionObserver" in window){
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting)refresh();
+      });
+    },{
+      root:null,
+      rootMargin:"300px 0px",
+      threshold:0
+    });
+
+    imgs.forEach(function(img){io.observe(img);});
+  }
+
+  refresh();
 }
 // LOGIKA SCROLL: Progress bar & Auto-hide UI
 window.addEventListener('scroll', function() {
