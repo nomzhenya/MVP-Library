@@ -422,7 +422,8 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       return new Response(JSON.stringify({
         ok: true,
         reviews: data.reviews,
-        comments: data.comments
+        comments: data.comments,
+        comment_count: data.comments.length
       }), {
         headers: cors({"content-type":"application/json; charset=utf-8"})
       });
@@ -434,12 +435,11 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
 
       const body = await request.json().catch(() => ({}));
       const projectId = String(body.project_id || "").trim();
+      const textValue = String(body.text || "").trim();
       const reviewId = String(body.review_id || "").trim();
-      const text = String(body.text || "").trim();
-      const uid = String(access.user.id);
 
-      if (!projectId) return json({error:"missing project_id"}, 400);
-      if (text.length > 2000) return json({error:"review too long"}, 400);
+      if (!projectId) return json({error:"project required"}, 400);
+      if (textValue.length > 2000) return json({error:"review too long"}, 400);
 
       const catalog = await env.LIBRARY.get("catalog", "json");
       if (!Array.isArray(catalog) || !catalog.some(p => String(p.id) === projectId)) {
@@ -447,151 +447,60 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       }
 
       const data = await getCommunity(env, projectId);
-      const reviews = Array.isArray(data.reviews) ? data.reviews : [];
+      data.reviews = Array.isArray(data.reviews) ? data.reviews : [];
+      const uid = String(access.user.id);
+      const now = nowSec();
 
       if (body.action === "delete") {
-        const idx = reviews.findIndex(r => String(r.id) === reviewId);
-        if (idx < 0) return json({error:"review not found"}, 404);
-        if (String(reviews[idx].user_id) !== uid) {
-          return json({error:"forbidden"}, 403);
-        }
-        reviews.splice(idx, 1);
-        data.reviews = reviews;
+        const idx = data.reviews.findIndex(r =>
+          String(r.id) === reviewId &&
+          String(r.user_id || r.telegram_id) === uid
+        );
+        if (idx < 0) return json({error:"review not found or forbidden"}, 404);
+        data.reviews.splice(idx, 1);
         await putCommunity(env, projectId, data);
         return json({ok:true});
+      }
+
+      let existing = data.reviews.find(r => String(r.user_id || r.telegram_id) === uid);
+      if (reviewId) {
+        existing = data.reviews.find(r => String(r.id) === reviewId);
+        if (!existing || String(existing.user_id || existing.telegram_id) !== uid) {
+          return json({error:"review not found or forbidden"}, 404);
+        }
       }
 
       const telegramName = [access.user.first_name, access.user.last_name]
         .filter(Boolean).join(" ").trim();
 
-      // One review per user. A review is text-only.
-      const existing = reviews.find(r => String(r.user_id) === uid);
       if (existing) {
-        existing.text = text;
-        existing.updated_at = nowSec();
+        existing.text = textValue;
+        existing.updated_at = now;
         existing.telegram_name = telegramName;
         existing.first_name = access.user.first_name || "";
         existing.last_name = access.user.last_name || "";
         existing.username = access.user.username || "";
       } else {
-        if (!text) return json({error:"empty review"}, 400);
-        reviews.push({
+        if (!textValue) return json({error:"review text required"}, 400);
+        existing = {
           id: crypto.randomUUID(),
           user_id: uid,
           telegram_id: uid,
-          telegram_name: telegramName,
+          username: access.user.username || "",
           first_name: access.user.first_name || "",
           last_name: access.user.last_name || "",
-          username: access.user.username || "",
-          text,
-          created_at: nowSec(),
-          updated_at: nowSec()
-        });
+          telegram_name: telegramName,
+          text: textValue,
+          created_at: now,
+          updated_at: now
+        };
+        data.reviews.push(existing);
       }
 
-      data.reviews = reviews;
       await putCommunity(env, projectId, data);
-
-      return json({
-        ok:true,
-        review: reviews.find(r => String(r.user_id) === uid)
-      });
+      return json({ok:true, review:existing});
     }
 
-    if (url.pathname === "/api/comment" && (request.method === "POST" || request.method === "DELETE")) {
-      const access = await requireApiAccess(request, env);
-      if (!access.ok) return json({ok:false, error:"ACCESS_DENIED"}, access.code || 403);
-
-      const body = await request.json().catch(() => ({}));
-      const projectId = String(body.project_id || "").trim();
-      const commentId = String(body.comment_id || "").trim();
-      const textValue = String(body.text || "").trim();
-      const uid = String(access.user.id);
-
-      if (!projectId) return json({ok:false, error:"PROJECT_REQUIRED"}, 400);
-      if (textValue.length > 2000) return json({ok:false, error:"COMMENT_TOO_LONG"}, 400);
-
-      const catalog = await env.LIBRARY.get("catalog", "json");
-      if (!Array.isArray(catalog) || !catalog.some(p => String(p.id) === projectId)) {
-        return json({ok:false, error:"PROJECT_NOT_FOUND"}, 404);
-      }
-
-      const community = await getCommunity(env, projectId);
-      const comments = Array.isArray(community.comments) ? community.comments : [];
-
-      function canDelete(c) {
-        return String(c.user_id || c.telegram_id) === uid || isMiniwebMod(env, uid);
-      }
-
-      if (body.action === "delete" || request.method === "DELETE") {
-        const idx = comments.findIndex(c => String(c.id) === commentId);
-        if (idx < 0) return json({ok:false, error:"COMMENT_NOT_FOUND"}, 404);
-        if (!canDelete(comments[idx])) return json({ok:false, error:"FORBIDDEN"}, 403);
-
-        const removeIds = new Set([String(commentId)]);
-        let changed = true;
-        while (changed) {
-          changed = false;
-          for (const c of comments) {
-            if (c.parent_id && removeIds.has(String(c.parent_id)) && !removeIds.has(String(c.id))) {
-              removeIds.add(String(c.id));
-              changed = true;
-            }
-          }
-        }
-        community.comments = comments.filter(c => !removeIds.has(String(c.id)));
-        community.comment_count = community.comments.length;
-        await putCommunity(env, projectId, community);
-        return json({ok:true});
-      }
-
-      // Edit existing comment.
-      if (commentId) {
-        const existing = comments.find(c => String(c.id) === commentId);
-        if (!existing) return json({ok:false, error:"COMMENT_NOT_FOUND"}, 404);
-        if (String(existing.user_id || existing.telegram_id) !== uid) {
-          return json({ok:false, error:"FORBIDDEN"}, 403);
-        }
-        if (!textValue) return json({ok:false, error:"TEXT_REQUIRED"}, 400);
-
-        existing.text = textValue;
-        existing.edited_at = nowSec();
-        await putCommunity(env, projectId, community);
-        return json({ok:true, comment:existing});
-      }
-
-      if (!textValue) return json({ok:false, error:"TEXT_REQUIRED"}, 400);
-
-      const parentId = body.parent_id ? String(body.parent_id) : null;
-      if (parentId && !comments.some(c => String(c.id) === parentId)) {
-        return json({ok:false, error:"PARENT_NOT_FOUND"}, 404);
-      }
-
-      const telegramName = [access.user.first_name, access.user.last_name]
-        .filter(Boolean).join(" ").trim();
-
-      const comment = {
-        id: crypto.randomUUID(),
-        project_id: projectId,
-        user_id: uid,
-        telegram_id: uid,
-        username: access.user.username || "",
-        first_name: access.user.first_name || "",
-        last_name: access.user.last_name || "",
-        telegram_name: telegramName,
-        text: textValue,
-        chapter: body.chapter == null || body.chapter === "" ? null : String(body.chapter),
-        parent_id: parentId,
-        created_at: nowSec(),
-        edited_at: null
-      };
-
-      comments.push(comment);
-      community.comments = comments;
-      community.comment_count = comments.length;
-      await putCommunity(env, projectId, community);
-      return json({ok:true, comment});
-    }
 
     // =========================
     // NOTIFICATIONS
