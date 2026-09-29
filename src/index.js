@@ -492,8 +492,10 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const interaction = await getInteraction(env, projectId);
 
       if (body.action === "delete") {
-        const idx = data.reviews.findIndex(r => String(r.id) === reviewId && String(r.user_id || r.telegram_id) === uid);
+        const idx = data.reviews.findIndex(r => String(r.id) === reviewId);
         if (idx < 0) return json({error:"review not found or forbidden"}, 404);
+        const owner = String(data.reviews[idx].user_id || data.reviews[idx].telegram_id || "");
+        if (owner !== uid && !isModUser(env, uid)) return json({error:"review not found or forbidden"}, 403);
         data.reviews.splice(idx, 1);
         await putCommunity(env, projectId, data);
         const summary = summarizeInteraction(interaction, uid, data.comments.length);
@@ -559,9 +561,23 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const telegramName = [access.user.first_name, access.user.last_name].filter(Boolean).join(" ").trim();
 
       if (body.action === "delete") {
-        const idx = data.comments.findIndex(c => String(c.id) === commentId && String(c.user_id || c.telegram_id) === uid);
+        const idx = data.comments.findIndex(c => String(c.id) === commentId);
         if (idx < 0) return json({error:"comment not found or forbidden"}, 404);
-        data.comments.splice(idx, 1);
+        const owner = String(data.comments[idx].user_id || data.comments[idx].telegram_id || "");
+        if (owner !== uid && !isModUser(env, uid)) return json({error:"comment not found or forbidden"}, 403);
+        // Removing a parent removes its whole reply tree so no orphaned replies remain.
+        const removeIds = new Set([commentId]);
+        let changed = true;
+        while (changed) {
+          changed = false;
+          for (const c of data.comments) {
+            if (c.parent_id && removeIds.has(String(c.parent_id)) && !removeIds.has(String(c.id))) {
+              removeIds.add(String(c.id));
+              changed = true;
+            }
+          }
+        }
+        data.comments = data.comments.filter(c => !removeIds.has(String(c.id)));
         await putCommunity(env, projectId, data);
         const interaction = await getInteraction(env, projectId);
         interaction.comments = data.comments.length;
