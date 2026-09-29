@@ -466,7 +466,7 @@ html,body{background:var(--bg)}
 
 </style>
 <style>
-.mvp-community-panel{margin-top:16px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px}.mvp-community-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.mvp-review-form,.mvp-comment-compose{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid var(--border)}.mvp-review-stars{display:flex}.mvp-review-stars button{border:0;background:none;color:var(--bato-star);font-size:26px}.mvp-comment-input{width:100%;min-height:80px;resize:vertical;border:1px solid var(--border);border-radius:10px;background:var(--input);color:var(--text);padding:10px;font:inherit}.mvp-comments{display:grid;gap:8px;padding-top:12px}.mvp-review-card,.mvp-comment-card{padding:11px;background:var(--panel2);border:1px solid var(--border);border-radius:10px}.mvp-review-text,.mvp-comment-text{margin-top:6px;font-size:13px;line-height:1.5;white-space:pre-line}.mvp-community-section-title{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;margin:6px 0}.mvp-review-stars-static{color:var(--bato-star)}.mvp-notif-badge{position:absolute;right:-2px;top:-2px;min-width:17px;height:17px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--panel2)}.mvp-notification-list{display:grid;gap:8px}.mvp-notification-item{width:100%;text-align:left;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:12px;padding:12px}.mvp-notification-item.unread{border-color:var(--accent);background:var(--panel2)}.mvp-notification-item div{margin-top:5px;color:var(--muted);font-size:12px}.readerpage{content-visibility:auto;contain-intrinsic-size:100vw 1200px}
+.mvp-community-panel{margin-top:16px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px}.mvp-community-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.mvp-review-form,.mvp-comment-compose{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid var(--border)}.mvp-comment-input{width:100%;min-height:80px;resize:vertical;border:1px solid var(--border);border-radius:10px;background:var(--input);color:var(--text);padding:10px;font:inherit}.mvp-comments{display:grid;gap:8px;padding-top:12px}.mvp-review-card,.mvp-comment-card{padding:11px;background:var(--panel2);border:1px solid var(--border);border-radius:10px}.mvp-review-text,.mvp-comment-text{margin-top:6px;font-size:13px;line-height:1.5;white-space:pre-line}.mvp-community-section-title{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;margin:6px 0}.mvp-review-stars-static{color:var(--bato-star)}.mvp-notif-badge{position:absolute;right:-2px;top:-2px;min-width:17px;height:17px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--panel2)}.mvp-notification-list{display:grid;gap:8px}.mvp-notification-item{width:100%;text-align:left;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:12px;padding:12px}.mvp-notification-item.unread{border-color:var(--accent);background:var(--panel2)}.mvp-notification-item div{margin-top:5px;color:var(--muted);font-size:12px}.readerpage{content-visibility:auto;contain-intrinsic-size:100vw 1200px}
 
 .mvp-collapsible{margin-top:12px;border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden}
 .mvp-collapsible summary{list-style:none;cursor:pointer;padding:14px 16px;font-weight:900;display:flex;align-items:center;justify-content:space-between}
@@ -1261,10 +1261,6 @@ async function openProject(id){
     "</div>";
   }).join("");
 
-  var reviewStars=[1,2,3,4,5].map(function(n){
-    return "<button type='button' onclick=\"selectReviewScore('"+esc(p.id)+"',"+n+")\">☆</button>";
-  }).join("");
-
   var reviewSection=
     "<details class='mvp-collapsible' id='reviewSection_"+esc(p.id)+"'>"+
       "<summary>⭐ Review</summary>"+
@@ -1358,32 +1354,25 @@ async function openProject(id){
 }
 
 /* COMMUNITY / NOTIFICATIONS */
-var selectedReviewScore={};
 var pendingCommentChapter={};
 
 function apiJSON(url,opt){opt=opt||{};opt.headers=Object.assign({},opt.headers||{},accessHeaders());return fetch(url,opt).then(function(r){return r.json().catch(function(){return {};}).then(function(d){if(!r.ok)throw new Error(d.error||"request");return d;});});}
 
-function selectReviewScore(pid,n){
-  selectedReviewScore[pid]=n;
-  var b=document.querySelectorAll("#reviewSection_"+pid+" .mvp-review-stars button");
-  b.forEach(function(x,i){x.textContent=i<n?"★":"☆";});
-}
-
 async function submitReview(pid){
-  var n=selectedReviewScore[pid]||0;
   var el=document.getElementById("reviewText_"+pid);
-  var t=el?el.value.trim():"";
-  if(!n && !t){
-    if(tg&&tg.showAlert)tg.showAlert("Isi bintang atau review dulu.");
+  var value=el?el.value.trim():"";
+  if(!value){
+    if(tg&&tg.showAlert)tg.showAlert("Tulis review dulu.");
     return;
   }
   try{
     await apiJSON("/api/review",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({project_id:pid,score:n,text:t})
+      body:JSON.stringify({project_id:pid,text:value})
     });
-    loadCommunity(pid);
+    if(el)el.value="";
+    await loadCommunity(pid);
     if(tg&&tg.showAlert)tg.showAlert("Review tersimpan.");
   }catch(e){
     if(tg&&tg.showAlert)tg.showAlert("Review gagal disimpan.");
