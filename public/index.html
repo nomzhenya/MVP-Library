@@ -461,16 +461,13 @@ html,body{background:var(--bg)}
 <style>
 .mvp-community-panel{margin-top:16px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px}.mvp-community-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.mvp-review-form,.mvp-comment-compose{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid var(--border)}.mvp-review-stars{display:flex}.mvp-review-stars button{border:0;background:none;color:var(--bato-star);font-size:26px}.mvp-comment-input{width:100%;min-height:80px;resize:vertical;border:1px solid var(--border);border-radius:10px;background:var(--input);color:var(--text);padding:10px;font:inherit}.mvp-comments{display:grid;gap:8px;padding-top:12px}.mvp-review-card,.mvp-comment-card{padding:11px;background:var(--panel2);border:1px solid var(--border);border-radius:10px}.mvp-review-text,.mvp-comment-text{margin-top:6px;font-size:13px;line-height:1.5;white-space:pre-line}.mvp-community-section-title{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;margin:6px 0}.mvp-review-stars-static{color:var(--bato-star)}.mvp-notif-badge{position:absolute;right:-2px;top:-2px;min-width:17px;height:17px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--panel2)}.mvp-notification-list{display:grid;gap:8px}.mvp-notification-item{width:100%;text-align:left;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:12px;padding:12px}.mvp-notification-item.unread{border-color:var(--accent);background:var(--panel2)}.mvp-notification-item div{margin-top:5px;color:var(--muted);font-size:12px}.readerpage{content-visibility:auto;contain-intrinsic-size:100vw 1200px}
 </style>
-
-<style id="virtual-reader-v3">
+<style id="virtual-reader-v3-fixed">
 .readerpage{
   display:block;
   width:100%;
   height:auto;
   min-height:180px;
   background:var(--panel2);
-  content-visibility:auto;
-  contain:layout paint;
 }
 .readerpage-placeholder{
   min-height:180px;
@@ -478,11 +475,7 @@ html,body{background:var(--bg)}
 .readerpage-loading{
   opacity:.72;
 }
-.readerpage-unloaded{
-  opacity:1;
-}
 </style>
-
 </head>
 <body oncontextmenu="return false">
 
@@ -1349,51 +1342,42 @@ function enableReaderLazyLoad(p){
   var imgs=Array.from(p.querySelectorAll("img.readerpage"));
   if(!imgs.length)return;
 
-  /*
-   * V3 Virtual Lazy Reader
-   * - gambar yang terlihat = load
-   * - 1-2 halaman di bawah = preload
-   * - halaman jauh di atas/bawah = src dilepas agar RAM/network tidak menahan gambar
-   * - rasio gambar yang sudah pernah diketahui disimpan agar unloading tidak
-   *   membuat layout meloncat
-   */
-  var AHEAD=2;
-  var KEEP=3;
+  var AHEAD=2;          // load current + 2 below
+  var KEEP=3;           // keep only a small window in memory
   var ROOT_MARGIN="100% 0px 100% 0px";
 
-  function realSrc(img){
-    return img.dataset.src || img.getAttribute("data-src") || "";
-  }
-
-  function setPlaceholder(img){
-    if(!img.style.minHeight) img.style.minHeight="180px";
-    img.classList.add("readerpage-placeholder");
+  function srcOf(img){
+    return img.dataset.src || "";
   }
 
   function load(img){
-    if(!img)return;
-    var src=realSrc(img);
-    if(!src || img.dataset.loading==="1" || img.dataset.loaded==="1")return;
+    if(!img || img.dataset.loaded==="1" || img.dataset.loading==="1")return;
+    var src=srcOf(img);
+    if(!src)return;
 
     img.dataset.loading="1";
-    img.classList.add("readerpage-loading");
 
     img.onload=function(){
       img.dataset.loading="0";
       img.dataset.loaded="1";
       img.classList.remove("readerpage-loading","readerpage-placeholder");
-      img.style.minHeight="";
-
       if(img.naturalWidth && img.naturalHeight){
-        img.dataset.ratio=(img.naturalWidth/img.naturalHeight).toString();
+        img.dataset.ratio=String(img.naturalWidth/img.naturalHeight);
       }
+      img.style.minHeight="";
+      img.style.aspectRatio="";
     };
 
     img.onerror=function(){
       img.dataset.loading="0";
       img.classList.remove("readerpage-loading");
+      var err=document.createElement("div");
+      err.className="readererror";
+      err.textContent="Gagal memuat halaman.";
+      if(img.parentNode)img.parentNode.replaceChild(err,img);
     };
 
+    img.classList.add("readerpage-loading");
     img.src=src;
   }
 
@@ -1402,31 +1386,29 @@ function enableReaderLazyLoad(p){
 
     var r=img.getBoundingClientRect();
 
-    /* Never unload a page that is currently on screen. */
+    // Never unload anything currently visible.
     if(r.bottom>0 && r.top<window.innerHeight)return;
 
     var distance=r.bottom<0 ? -r.bottom : r.top-window.innerHeight;
 
-    /* Keep a small buffer around the viewport. */
+    // Keep a buffer around the viewport.
     if(distance < window.innerHeight*1.25)return;
 
-    /* Keep the image ratio so removing src does not collapse the page. */
     var ratio=parseFloat(img.dataset.ratio||"");
     if(ratio>0){
-      img.style.aspectRatio=ratio;
+      img.style.aspectRatio=String(ratio);
       img.style.minHeight="0";
-      img.style.height="auto";
     }else{
       img.style.minHeight="180px";
     }
 
     img.removeAttribute("src");
     img.dataset.loaded="0";
-    img.classList.remove("readerpage-loaded");
-    img.classList.add("readerpage-unloaded");
+    img.classList.remove("readerpage-loading");
+    img.classList.add("readerpage-placeholder");
   }
 
-  function loadWindow(index){
+  function windowFor(index){
     var from=Math.max(0,index-1);
     var to=Math.min(imgs.length-1,index+AHEAD);
 
@@ -1437,87 +1419,67 @@ function enableReaderLazyLoad(p){
     }
   }
 
+  // Convert every reader image to data-src before anything can request it.
+  imgs.forEach(function(img){
+    if(!img.dataset.src && img.getAttribute("src")){
+      img.dataset.src=img.getAttribute("src");
+      img.removeAttribute("src");
+    }
+    img.classList.add("readerpage-placeholder");
+  });
+
+  // Immediately load only the first page + next page.
+  load(imgs[0]);
+  if(imgs[1])load(imgs[1]);
+
   if("IntersectionObserver" in window){
     var io=new IntersectionObserver(function(entries){
       entries.forEach(function(entry){
         if(!entry.isIntersecting)return;
 
-        var img=entry.target;
-        var index=imgs.indexOf(img);
+        var index=imgs.indexOf(entry.target);
         if(index<0)return;
 
-        loadWindow(index);
+        windowFor(index);
       });
     },{
       root:null,
       rootMargin:ROOT_MARGIN,
-      threshold:0.01
+      threshold:0
     });
 
-    imgs.forEach(function(img,index){
-      /*
-       * Do NOT put src on all pages.
-       * Only the first page and the next page are immediately requested.
-       */
-      if(!realSrc(img)){
-        var original=img.getAttribute("src");
-        if(original){
-          img.dataset.src=original;
-          img.removeAttribute("src");
-        }
-      }
+    imgs.forEach(function(img){io.observe(img);});
+  }
 
-      setPlaceholder(img);
-      io.observe(img);
+  // Scroll fallback / active-page detection.
+  var ticking=false;
+  function refresh(){
+    if(ticking)return;
+    ticking=true;
 
-      if(index<2)load(img);
-    });
+    requestAnimationFrame(function(){
+      ticking=false;
 
-    var ticking=false;
-    function refresh(){
-      if(ticking)return;
-      ticking=true;
+      var active=-1;
+      var best=Infinity;
 
-      requestAnimationFrame(function(){
-        ticking=false;
-
-        var active=-1;
-        var best=Infinity;
-
-        imgs.forEach(function(img,i){
-          var r=img.getBoundingClientRect();
-          if(r.bottom>0 && r.top<window.innerHeight){
-            var d=Math.abs((r.top+r.height/2)-(window.innerHeight/2));
-            if(d<best){
-              best=d;
-              active=i;
-            }
+      imgs.forEach(function(img,i){
+        var r=img.getBoundingClientRect();
+        if(r.bottom>0 && r.top<window.innerHeight){
+          var d=Math.abs((r.top+r.height/2)-(window.innerHeight/2));
+          if(d<best){
+            best=d;
+            active=i;
           }
-        });
-
-        if(active>=0)loadWindow(active);
-      });
-    }
-
-    window.addEventListener("scroll",refresh,{passive:true});
-    window.addEventListener("resize",refresh,{passive:true});
-
-    /* Start from the first page. */
-    loadWindow(0);
-  }else{
-    /* Fallback for old browsers: native lazy loading. */
-    imgs.forEach(function(img,index){
-      if(!realSrc(img)){
-        var original=img.getAttribute("src");
-        if(original){
-          img.dataset.src=original;
-          img.removeAttribute("src");
         }
-      }
-      if(index<2)load(img);
-      else img.loading="lazy";
+      });
+
+      if(active>=0)windowFor(active);
     });
   }
+
+  window.addEventListener("scroll",refresh,{passive:true});
+  window.addEventListener("resize",refresh,{passive:true});
 }
 // LOGIKA SCROLL: Progress bar & Auto-hide UI
 window.addEventListener('scroll', function() {
