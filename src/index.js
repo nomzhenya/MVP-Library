@@ -603,22 +603,25 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
         const parent = data.comments.find(c => String(c.id) === parentId);
         const parentOwner = parent ? String(parent.user_id || parent.telegram_id || "") : "";
         if (parentOwner && parentOwner !== uid) {
+          const rootCommentId = (() => {
+            let r = parent;
+            let guard = 0;
+            while (r && r.parent_id && guard++ < 100) {
+              const next = data.comments.find(c => String(c.id) === String(r.parent_id));
+              if (!next) break;
+              r = next;
+            }
+            return r ? String(r.id) : parentId;
+          })();
+          const targetChapter = comment.chapter ?? parent.chapter ?? null;
           await addNotification(env, parentOwner, {
             type: "comment_reply",
+            target_type: "comment",
             project_id: projectId,
             comment_id: comment.id,
             parent_id: parentId,
-            root_comment_id: (() => {
-              let r = parent;
-              let guard = 0;
-              while (r && r.parent_id && guard++ < 100) {
-                const next = data.comments.find(c => String(c.id) === String(r.parent_id));
-                if (!next) break;
-                r = next;
-              }
-              return r ? String(r.id) : parentId;
-            })(),
-            chapter: comment.chapter ?? parent.chapter ?? null,
+            root_comment_id: rootCommentId,
+            chapter: targetChapter,
             actor_id: uid,
             actor_name: telegramName || access.user.username || "Reader",
             text: `${telegramName || access.user.username || "Reader"} membalas komentarmu: ${text.slice(0, 180)}`
