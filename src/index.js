@@ -199,6 +199,15 @@ async function requireApiAccess(request, env) {
   return await checkAccess(request, env);
 }
 
+function readerCodeKey(code) { return `reader_code:${safeId(code)}`; }
+function randomReaderCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  return [...bytes].map(b => chars[b % chars.length]).join("");
+}
+function readerSession(request) { return (request.headers.get("X-Reader-Session") || "").slice(0, 80); }
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -224,6 +233,66 @@ export default {
       }), {
         headers: cors({"content-type": "application/json; charset=utf-8"})
       });
+    }
+
+    if (url.pathname === "/api/reader-code" && request.method === "GET") {
+      const access = await checkAccess(request, env);
+      if (!access.ok) return json({ok:false, code:access.code}, access.code);
+      const session = readerSession(request) || "default";
+      const indexKey = `reader_session:${String(access.user.id)}:${safeId(session)}`;
+      let code = await env.LIBRARY.get(indexKey);
+      if (!code) {
+        for (let i=0;i<5;i++) {
+          const candidate = randomReaderCode();
+          const exists = await env.LIBRARY.get(readerCodeKey(candidate));
+          if (!exists) { code=candidate; break; }
+        }
+        if (!code) return json({error:"code generation failed"},503);
+        await env.LIBRARY.put(indexKey, code);
+      }
+      const key = readerCodeKey(code);
+      const existing = await env.LIBRARY.get(key, "json");
+      const record = {
+        code, user_id:String(access.user.id), username:access.user.username||"",
+        first_name:access.user.first_name||"", session_id:session,
+        issued_at:Number(existing?.issued_at||nowSec()), last_seen_at:nowSec()
+      };
+      await env.LIBRARY.put(key, JSON.stringify(record));
+      return json({ok:true,code});
+    }
+
+    if (url.pathname === "/api/admin/watermark" && request.method === "GET") {
+      const secret = request.headers.get("X-Library-Secret") || "";
+      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) return json({ok:false,reason:"unauthorized"},401);
+      const code = String(url.searchParams.get("code")||"").trim().toUpperCase();
+      if (!/^[A-Z0-9]{8}$/.test(code)) return json({ok:false,reason:"invalid_code"},400);
+      const data = await env.LIBRARY.get(readerCodeKey(code),"json");
+      if (!data) return json({ok:false,reason:"not_found"},404);
+      return json({ok:true,watermark:data});
+    }
+
+    if (url.pathname === "/api/tile" && request.method === "GET") {
+      const access = await checkAccess(request, env);
+      if (!access.ok) return json({ok:false,code:access.code},access.code);
+      if (!env.READER_TILES) return new Response("Tile storage is not configured",{status:503,headers:cors()});
+      const key = String(url.searchParams.get("key")||"").replace(/[^a-zA-Z0-9_\-\/\.]/g,"");
+      if (!key || key.includes("..")) return new Response("Invalid tile",{status:400,headers:cors()});
+      const obj = await env.READER_TILES.get(key);
+      if (!obj) return new Response("Tile not found",{status:404,headers:cors()});
+      const headers = cors({"cache-control":"public, max-age=31536000, immutable","content-type":obj.httpMetadata?.contentType||"image/webp","etag":obj.httpEtag||""});
+      return new Response(obj.body,{status:200,headers});
+    }
+
+    if (url.pathname === "/api/admin/tile" && request.method === "PUT") {
+      const secret = request.headers.get("X-Library-Secret") || "";
+      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) return json({ok:false,reason:"unauthorized"},401);
+      if (!env.READER_TILES) return json({ok:false,reason:"tile storage not configured"},503);
+      const key = String(url.searchParams.get("key")||"").replace(/[^a-zA-Z0-9_\-\/\.]/g,"");
+      if (!key || key.includes("..")) return json({ok:false,reason:"invalid_key"},400);
+      const body = request.body;
+      if (!body) return json({ok:false,reason:"empty_body"},400);
+      await env.READER_TILES.put(key, body, {httpMetadata:{contentType:request.headers.get("content-type")||"image/webp"}});
+      return json({ok:true,key});
     }
 
     if (url.pathname === "/api/catalog" && request.method === "GET") {
