@@ -460,6 +460,23 @@ html,body{background:var(--bg)}
 </style>
 <style>
 .mvp-community-panel{margin-top:16px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px}.mvp-community-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.mvp-review-form,.mvp-comment-compose{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid var(--border)}.mvp-review-stars{display:flex}.mvp-review-stars button{border:0;background:none;color:var(--bato-star);font-size:26px}.mvp-comment-input{width:100%;min-height:80px;resize:vertical;border:1px solid var(--border);border-radius:10px;background:var(--input);color:var(--text);padding:10px;font:inherit}.mvp-comments{display:grid;gap:8px;padding-top:12px}.mvp-review-card,.mvp-comment-card{padding:11px;background:var(--panel2);border:1px solid var(--border);border-radius:10px}.mvp-review-text,.mvp-comment-text{margin-top:6px;font-size:13px;line-height:1.5;white-space:pre-line}.mvp-community-section-title{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;margin:6px 0}.mvp-review-stars-static{color:var(--bato-star)}.mvp-notif-badge{position:absolute;right:-2px;top:-2px;min-width:17px;height:17px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--panel2)}.mvp-notification-list{display:grid;gap:8px}.mvp-notification-item{width:100%;text-align:left;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:12px;padding:12px}.mvp-notification-item.unread{border-color:var(--accent);background:var(--panel2)}.mvp-notification-item div{margin-top:5px;color:var(--muted);font-size:12px}.readerpage{content-visibility:auto;contain-intrinsic-size:100vw 1200px}
+
+.mvp-collapsible{margin-top:12px;border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden}
+.mvp-collapsible summary{list-style:none;cursor:pointer;padding:14px 16px;font-weight:900;display:flex;align-items:center;justify-content:space-between}
+.mvp-collapsible summary::-webkit-details-marker{display:none}
+.mvp-collapsible summary:after{content:"＋";color:var(--muted);font-size:16px}
+.mvp-collapsible[open] summary:after{content:"−"}
+.mvp-collapsible-body{padding:0 14px 14px}
+.chapter-bato-wrap{border-bottom:1px solid var(--border)}
+.chapter-bato-wrap:last-child{border-bottom:none}
+.chapter-bato-wrap .chapter-bato{border-bottom:0}
+.chapter-comment-link{width:100%;border:0;border-top:1px dashed var(--border);background:transparent;color:var(--muted);text-align:left;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer}
+.chapter-comment-link:active{background:var(--panel2)}
+.mvp-comment-target{margin:8px 0;padding:9px 11px;border-radius:9px;background:var(--panel2);border:1px solid var(--accent);font-size:12px;color:var(--text)}
+.mvp-comment-target .mvp-clear-chapter{float:right;border:0;background:none;color:var(--muted);cursor:pointer;font-size:16px}
+.mvp-comment-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mvp-comment-chapter{font-size:10px;font-weight:900;color:var(--accent);background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:3px 7px}
+
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -1209,7 +1226,7 @@ async function openProject(id){
       "</div>"+
     "</section>";
 
-  // PART 2 — ordered clickable tags + voting + distribution.
+  // PART 2 — tags + unified Review & Rating section + unified Comments section.
   var tagsArr=sortedTags(p.tags);
   var tagsHtml=tagsArr.length
     ? "<div class='mvp-detail-tags'><div class='tags'>"+tagsArr.map(function(t){return tagButtonHtml(t,tagPriority(t)===0?"tag-major":(tagPriority(t)===1?"tag-secondary":""));}).join("")+"</div></div>"
@@ -1237,29 +1254,52 @@ async function openProject(id){
     "</div>";
   }).join("");
 
-  var ratingPanel=
-    "<div class='mvp-vote-panel'>"+
-      "<div class='mvp-vote-top'><div class='mvp-vote-label'>BERIKAN VOTE (1–10)</div><div style='font-size:11px;color:var(--muted)'>"+pVotes+" vote"+(pVotes===1?"":"s")+"</div></div>"+
-      "<div class='mvp-vote-stars'>"+starsHtml+"</div>"+
-      "<div class='mvp-rating-summary'>"+
-        "<div class='mvp-rating-score'><div class='num'>"+pRating+"</div><div class='stars'>★★★★★</div><div class='votes'>"+pVotes+" vote"+(pVotes===1?"":"s")+"</div></div>"+
-        "<div class='mvp-rating-bars'>"+ratingBars+"</div>"+
+  var reviewStars=[1,2,3,4,5].map(function(n){
+    return "<button type='button' onclick=\"selectReviewScore('"+esc(p.id)+"',"+n+")\">☆</button>";
+  }).join("");
+
+  var reviewSection=
+    "<details class='mvp-collapsible' id='reviewSection_"+esc(p.id)+"'>"+
+      "<summary>⭐ Review & Rating</summary>"+
+      "<div class='mvp-collapsible-body'>"+
+        "<div class='mvp-vote-panel'>"+
+          "<div class='mvp-vote-top'><div class='mvp-vote-label'>RATING (1–10)</div><div style='font-size:11px;color:var(--muted)'>"+pVotes+" vote"+(pVotes===1?"":"s")+"</div></div>"+
+          "<div class='mvp-vote-stars'>"+starsHtml+"</div>"+
+          "<div class='mvp-rating-summary'>"+
+            "<div class='mvp-rating-score'><div class='num'>"+pRating+"</div><div class='stars'>★★★★★</div><div class='votes'>"+pVotes+" vote"+(pVotes===1?"":"s")+"</div></div>"+
+            "<div class='mvp-rating-bars'>"+ratingBars+"</div>"+
+          "</div>"+
+        "</div>"+
+        "<div class='mvp-review-form'>"+
+          "<b>Review kamu</b>"+
+          "<div class='mvp-review-stars'>"+reviewStars+"</div>"+
+          "<textarea id='reviewText_"+esc(p.id)+"' class='mvp-comment-input' maxlength='1000' placeholder='Tulis review...'></textarea>"+
+          "<button class='btn primary' onclick=\"submitReview('"+esc(p.id)+"')\">Kirim Review</button>"+
+        "</div>"+
+        "<div id='reviews_"+esc(p.id)+"' class='mvp-reviews-feed'></div>"+
       "</div>"+
-    "</div>";
+    "</details>";
+
+  var commentSection=
+    "<details class='mvp-collapsible' id='commentSection_"+esc(p.id)+"'>"+
+      "<summary>💬 Komentar</summary>"+
+      "<div class='mvp-collapsible-body'>"+
+        "<div id='chapterCommentTarget_"+esc(p.id)+"' class='mvp-comment-target hidden'></div>"+
+        "<div id='comments_"+esc(p.id)+"' class='mvp-comments'><div class='mvp-empty-state'>Memuat...</div></div>"+
+        "<div class='mvp-comment-compose'>"+
+          "<textarea id='commentInput_"+esc(p.id)+"' class='mvp-comment-input' maxlength='1000' placeholder='Tulis komentar...'></textarea>"+
+          "<button class='btn primary' onclick=\"submitComment('"+esc(p.id)+"')\">Kirim Komentar</button>"+
+        "</div>"+
+      "</div>"+
+    "</details>";
 
   var part2=
     "<section class='mvp-detail-part'>"+
       "<div class='mvp-detail-part-title'>Tags</div>"+
       tagsHtml+
-      ratingPanel+
-      "<div id='community_"+esc(p.id)+"' class='mvp-community-panel'>"+
-      "<div class='mvp-community-head'><b>Community</b><button class='btn' onclick=\"loadCommunity('"+esc(p.id)+"')\">Refresh</button></div>"+
-      "<div class='mvp-review-form'><b>Review kamu</b><div class='mvp-review-stars'>"+[1,2,3,4,5].map(function(n){return "<button type='button' onclick=\"selectReviewScore('"+esc(p.id)+"',"+n+")\">☆</button>";}).join("")+"</div>"+
-      "<textarea id='reviewText_"+esc(p.id)+"' class='mvp-comment-input' maxlength='1000' placeholder='Tulis review...'></textarea><button class='btn primary' onclick=\"submitReview('"+esc(p.id)+"')\">Kirim Review</button></div>"+
-      "<div id='comments_"+esc(p.id)+"' class='mvp-comments'><div class='mvp-empty-state'>Memuat...</div></div>"+
-      "<div class='mvp-comment-compose'><textarea id='commentInput_"+esc(p.id)+"' class='mvp-comment-input' maxlength='1000' placeholder='Tulis komentar...'></textarea><button class='btn primary' onclick=\"submitComment('"+esc(p.id)+"')\">Kirim Komentar</button></div>"+
-      "</div></section>";
-
+      reviewSection+
+      commentSection+
+    "</section>";
   // PART 3 — description.
   var trakteerDetail=p.trakteer ? "<a href='"+esc(p.trakteer)+"' target='_blank' class='btn' style='background:#e74c3c;color:#fff;width:100%;margin-top:14px;border-radius:24px;'>☕ "+esc(p.trakteer_label || "Traktir Kopi")+"</a>" : "";
   var detailTranslator=String(p.translator||"").trim() || "MVP";
@@ -1281,11 +1321,15 @@ async function openProject(id){
   var chaptersHtml=mappedChaps.map(function(item){
     var timeStr=item.c.updated_at?timeAgo(item.c.updated_at):"Just now";
     var chTitle=chapterDisplayTitle(item.c);
+    var ch=item.c.chapter;
     var chTranslator=chapterTranslator(p,item.c);
-    return "<div class='chapter-bato' onclick=\"openReader('"+esc(p.id)+"','"+esc(item.c.chapter)+"',"+Number(item.c.decensored||0)+")\">"+
-      "<div class='mvp-chapter-bato-body'><div style='font-weight:800;font-size:14px;color:var(--accent);'>Chapter "+esc(item.c.chapter)+decBadge(item.c.decensored)+"</div>"+
-      (chTitle?"<div class='mvp-chapter-title'>"+esc(chTitle)+"</div>":"")+"</div>"+
-      "<div class='mvp-chapter-bato-meta'>🕒 "+timeStr+"</div>"+
+    return "<div class='chapter-bato-wrap'>"+
+      "<div class='chapter-bato' onclick=\"openReader('"+esc(p.id)+"','"+esc(ch)+"',"+Number(item.c.decensored||0)+")\">"+
+        "<div class='mvp-chapter-bato-body'><div style='font-weight:800;font-size:14px;color:var(--accent);'>Chapter "+esc(ch)+decBadge(item.c.decensored)+"</div>"+
+        (chTitle?"<div class='mvp-chapter-title'>"+esc(chTitle)+"</div>":"")+"</div>"+
+        "<div class='mvp-chapter-bato-meta'>🕒 "+timeStr+"</div>"+
+      "</div>"+
+      "<button type='button' class='chapter-comment-link' onclick=\"event.stopPropagation();focusChapterComment('"+esc(p.id)+"','"+esc(ch)+"')\">💬 Komentar Chapter "+esc(ch)+"</button>"+
     "</div>";
   }).join("");
 
@@ -1308,11 +1352,117 @@ async function openProject(id){
 
 /* COMMUNITY / NOTIFICATIONS */
 var selectedReviewScore={};
+var pendingCommentChapter={};
+
 function apiJSON(url,opt){opt=opt||{};opt.headers=Object.assign({},opt.headers||{},accessHeaders());return fetch(url,opt).then(function(r){return r.json().catch(function(){return {};}).then(function(d){if(!r.ok)throw new Error(d.error||"request");return d;});});}
-function selectReviewScore(pid,n){selectedReviewScore[pid]=n;var b=document.querySelectorAll("#community_"+pid+" .mvp-review-stars button");b.forEach(function(x,i){x.textContent=i<n?"★":"☆";});}
-async function submitReview(pid){var n=selectedReviewScore[pid]||0,t=(document.getElementById("reviewText_"+pid)||{}).value||"";if(!n){if(tg&&tg.showAlert)tg.showAlert("Pilih rating 1–5 dulu.");return;}try{await apiJSON("/api/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,score:n,text:t.trim()})});loadCommunity(pid);if(tg&&tg.showAlert)tg.showAlert("Review tersimpan.");}catch(e){if(tg&&tg.showAlert)tg.showAlert("Review gagal disimpan.");}}
-async function submitComment(pid){var el=document.getElementById("commentInput_"+pid),t=el?el.value.trim():"";if(!t)return;try{await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:t})});el.value="";loadCommunity(pid);}catch(e){if(tg&&tg.showAlert)tg.showAlert("Komentar gagal disimpan.");}}
-async function loadCommunity(pid){var box=document.getElementById("comments_"+pid);if(!box)return;try{var d=await apiJSON("/api/community?project_id="+encodeURIComponent(pid)),r=d.reviews||[],c=d.comments||[],o="";if(r.length){o+="<div class='mvp-community-section-title'>Reviews</div>";o+=r.map(function(x){var n=Number(x.score)||0;return "<article class='mvp-review-card'><b>"+esc(x.telegram_name||x.first_name||x.username||"Reader")+"</b><span class='mvp-review-stars-static'> "+("★★★★★".slice(0,n))+"</span>"+(x.text?"<div class='mvp-review-text'>"+esc(x.text)+"</div>":"")+"</article>";}).join("");}o+="<div class='mvp-community-section-title'>Comments</div>";o+=c.length?c.map(function(x){return "<article class='mvp-comment-card'><b>"+esc(x.telegram_name||x.first_name||x.username||"Reader")+"</b><div class='mvp-comment-text'>"+esc(x.text||"")+"</div></article>";}).join(""):"<div class='mvp-empty-state'>Belum ada komentar.</div>";box.innerHTML=o;}catch(e){box.innerHTML="<div class='mvp-empty-state'>Komentar/review belum tersedia.</div>";}}
+
+function selectReviewScore(pid,n){
+  selectedReviewScore[pid]=n;
+  var b=document.querySelectorAll("#reviewSection_"+pid+" .mvp-review-stars button");
+  b.forEach(function(x,i){x.textContent=i<n?"★":"☆";});
+}
+
+async function submitReview(pid){
+  var n=selectedReviewScore[pid]||0;
+  var el=document.getElementById("reviewText_"+pid);
+  var t=el?el.value.trim():"";
+  if(!n && !t){
+    if(tg&&tg.showAlert)tg.showAlert("Isi bintang atau review dulu.");
+    return;
+  }
+  try{
+    await apiJSON("/api/review",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({project_id:pid,score:n,text:t})
+    });
+    loadCommunity(pid);
+    if(tg&&tg.showAlert)tg.showAlert("Review tersimpan.");
+  }catch(e){
+    if(tg&&tg.showAlert)tg.showAlert("Review gagal disimpan.");
+  }
+}
+
+function focusChapterComment(pid,chapter){
+  pendingCommentChapter[pid]=String(chapter||"");
+  var section=document.getElementById("commentSection_"+pid);
+  if(section) section.open=true;
+  var target=document.getElementById("chapterCommentTarget_"+pid);
+  if(target){
+    target.classList.remove("hidden");
+    target.innerHTML="💬 Komentar untuk <b>Chapter "+esc(chapter)+"</b> <button type='button' class='mvp-clear-chapter' onclick=\"clearChapterComment('"+esc(pid)+"')\">×</button>";
+  }
+  var input=document.getElementById("commentInput_"+pid);
+  if(input){
+    input.placeholder="Tulis komentar untuk Chapter "+chapter+"...";
+    input.focus();
+    input.scrollIntoView({behavior:"smooth",block:"center"});
+  }
+}
+
+function clearChapterComment(pid){
+  pendingCommentChapter[pid]="";
+  var target=document.getElementById("chapterCommentTarget_"+pid);
+  if(target){target.classList.add("hidden");target.innerHTML="";}
+  var input=document.getElementById("commentInput_"+pid);
+  if(input)input.placeholder="Tulis komentar...";
+}
+
+async function submitComment(pid){
+  var el=document.getElementById("commentInput_"+pid);
+  var t=el?el.value.trim():"";
+  if(!t)return;
+  var chapter=pendingCommentChapter[pid]||"";
+  try{
+    await apiJSON("/api/comment",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({project_id:pid,text:t,chapter:chapter||null})
+    });
+    el.value="";
+    clearChapterComment(pid);
+    loadCommunity(pid);
+  }catch(e){
+    if(tg&&tg.showAlert)tg.showAlert("Komentar gagal disimpan.");
+  }
+}
+
+async function loadCommunity(pid){
+  var box=document.getElementById("comments_"+pid);
+  var reviewBox=document.getElementById("reviews_"+pid);
+  if(!box)return;
+  try{
+    var d=await apiJSON("/api/community?project_id="+encodeURIComponent(pid));
+    var r=Array.isArray(d.reviews)?d.reviews:[];
+    var c=Array.isArray(d.comments)?d.comments:[];
+    c.sort(function(a,b){return Number(a.created_at||0)-Number(b.created_at||0);});
+
+    if(reviewBox){
+      reviewBox.innerHTML=r.length?r.map(function(x){
+        var n=Number(x.score)||0;
+        return "<article class='mvp-review-card'>"+
+          "<b>"+esc(x.telegram_name||x.first_name||x.username||"Reader")+"</b>"+
+          (n?"<span class='mvp-review-stars-static'> "+("★★★★★".slice(0,n))+"</span>":"")+
+          (x.text?"<div class='mvp-review-text'>"+esc(x.text)+"</div>":"")+
+        "</article>";
+      }).join(""):"<div class='mvp-empty-state'>Belum ada review.</div>";
+    }
+
+    box.innerHTML=c.length?c.map(function(x){
+      var ch=x.chapter;
+      return "<article class='mvp-comment-card' id='comment_"+esc(String(x.id||""))+"'>"+
+        "<div class='mvp-comment-meta'><b>"+esc(x.telegram_name||x.first_name||x.username||"Reader")+"</b>"+
+        (ch?"<span class='mvp-comment-chapter'>Chapter "+esc(ch)+"</span>":"")+
+        "</div>"+
+        "<div class='mvp-comment-text'>"+esc(x.text||"")+"</div>"+
+      "</article>";
+    }).join(""):"<div class='mvp-empty-state'>Belum ada komentar.</div>";
+  }catch(e){
+    box.innerHTML="<div class='mvp-empty-state'>Komentar belum tersedia.</div>";
+    if(reviewBox)reviewBox.innerHTML="<div class='mvp-empty-state'>Review belum tersedia.</div>";
+  }
+}
+
 function updateNotificationBadge(a){var b=$("notificationBadge");if(!b)return;var n=(a||[]).filter(function(x){return !x.read;}).length;b.textContent=n>99?"99+":n;b.classList.toggle("hidden",!n);}
 async function loadNotifications(){try{var d=await apiJSON("/api/notifications?limit=50"),a=Array.isArray(d)?d:(d.notifications||[]);$("notificationList").innerHTML=a.length?a.map(function(n){return "<button class='mvp-notification-item "+(n.read?"":"unread")+"' onclick='openNotification("+JSON.stringify(n).replace(/'/g,"&#39;")+")'><b>"+esc(n.type==="review"?"Review baru":n.type==="comment_reply"?"Balasan komentar":"Komentar baru")+"</b><div>"+esc(n.text||n.message||"")+"</div></button>";}).join(""):"<div class='mvp-empty-state'>Belum ada notifikasi.</div>";updateNotificationBadge(a);}catch(e){$("notificationList").innerHTML="<div class='mvp-empty-state'>Notifikasi belum tersedia.</div>";}}
 async function openNotifications(){["home","detail","reader","browseLayer","catalogLayer","lapakLayer","guestLayer"].forEach(function(id){var e=$(id);if(e)e.classList.add("hidden");});$("notificationsLayer").classList.remove("hidden");$("notificationsLayer").classList.add("active");window.scrollTo(0,0);loadNotifications();}
