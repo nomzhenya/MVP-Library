@@ -845,6 +845,37 @@ html,body{background:var(--bg)}
 </style>
 <style>
 .mvp-love-button svg{vertical-align:-2px;transition:.15s}.mvp-love-button.is-loved svg{fill:currentColor;stroke:currentColor}
+
+
+/* Thread layout: replies are nested, never on the same visual level as the parent. */
+.mvp-thread-replies{
+  margin:4px 0 0 24px!important;
+  padding-left:14px!important;
+  border-left:1px solid var(--border)!important;
+}
+.mvp-thread-replies .mvp-thread-replies{
+  margin-left:18px!important;
+  padding-left:12px!important;
+}
+.mvp-comment-card.mvp-comment-reply{
+  margin:0!important;
+  padding:8px 0 9px!important;
+  border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)!important;
+}
+.mvp-reply-to{
+  margin:5px 0 0 37px!important;
+  color:var(--accent)!important;
+  font-size:10px!important;
+  font-weight:800!important;
+}
+.mvp-comment-card.mvp-comment-reply .mvp-comment-text{
+  margin-top:3px!important;
+}
+.mvp-thread-toggle{
+  display:block!important;
+  margin-left:37px!important;
+  padding:5px 0!important;
+}
 </style></head>
 <body oncontextmenu="return false">
 
@@ -1048,9 +1079,15 @@ var uiTimeout;
 var decBadge = function(d) { return Number(d) === 1 ? " [Decensored]" : (Number(d) === 2 ? " [Uncensored]" : ""); };
 
 // WAKTU BACA DARI DATABASE
+function safeNum(v, fallback){
+  var n=Number(v);
+  return Number.isFinite(n)?n:(fallback==null?0:fallback);
+}
 function timeAgo(ts) {
-  if (!ts) return "Just now";
-  var seconds = Math.floor((Date.now() / 1000) - ts);
+  var t=safeNum(ts,0);
+  if (!t) return "Just now";
+  var seconds = Math.floor((Date.now() / 1000) - t);
+  if (!Number.isFinite(seconds) || seconds < 0) return "Just now";
   if (seconds < 60) return "Just now";
   var minutes = Math.floor(seconds / 60);
   if (minutes < 60) return minutes + " mins ago";
@@ -1321,7 +1358,7 @@ function chapterTranslator(p,ch){
 }
 function renderBatoItem(p,chaptersToShow,homeContext){
   var cover=p.cover_file_id?`<img class="b-cover" src="${fileUrl(p.cover_file_id)}" loading="lazy">`:`<div class="b-cover"></div>`;
-  var pRating=(p.rating!=null?Number(p.rating).toFixed(1):"0.0"),pBookmarks=p.bookmarks||"0",pReviews=Number(p.reviews||p.review_count||0),pComments=Number(p.comments||0);
+  var pRating=(p.rating!=null?safeNum(p.rating,0).toFixed(1):"0.0"),pBookmarks=safeNum(p.bookmarks,0),pReviews=safeNum(p.reviews!=null?p.reviews:p.review_count,0),pComments=safeNum(p.comments,0);
   var chHtml=(chaptersToShow||[]).map(function(ch){
     var timeStr=ch.updated_at?timeAgo(ch.updated_at):(ch.ts?timeAgo(Math.floor(ch.ts/1000)):"Just now"),title=chapterDisplayTitle(ch),trans=chapterTranslator(p,ch);
     return `<div class="b-chap" onclick="event.stopPropagation();openReader('${esc(p.id)}','${esc(ch.chapter)}',${Number(ch.decensored||0)})"><div style="min-width:0;flex:1"><div class="b-chap-name">Chapter ${esc(ch.chapter)}${decBadge(ch.decensored)}</div>${title?`<div class="mvp-chapter-title">${esc(title)}</div>`:""}</div><div class="b-chap-meta">${timeStr}</div></div>`;
@@ -1563,10 +1600,10 @@ async function openProject(id){
     : "<div class='detailcover'></div>";
 
   var isBm=isBookmark(p.id);
-  var pRating=(p.rating!=null?Number(p.rating).toFixed(1):"0.0");
-  var pVotes=Number(p.votes||0);
-  var pBookmarks=p.bookmarks||"0";
-  var pComments=Number(p.comments||0);
+  var pRating=(p.rating!=null?safeNum(p.rating,0).toFixed(1):"0.0");
+  var pVotes=safeNum(p.votes,0);
+  var pBookmarks=safeNum(p.bookmarks,0);
+  var pComments=safeNum(p.comments,0);
 
   // PART 1 — cover + title + alternative title + author + rating/bookmark.
   var altTitle=p.alternative_title||p.alt_title||p.altTitle||p.alternatif_title||"";
@@ -1615,7 +1652,7 @@ async function openProject(id){
             "<button type='button' class='mvp-detail-stat mvp-detail-stat-btn "+(isBm?"bookmark-on":"")+"' onclick=\"toggleBookmark('"+esc(p.id)+"')\">"+
               miniIcon("bookmark",14)+" <span id='detailBookmarkCount_"+esc(p.id)+"'>"+pBookmarks+"</span>"+
             "</button>"+
-            "<span id='detailReviewCount_"+esc(p.id)+"' class='mvp-detail-stat'>"+miniIcon("review",14)+" <span>"+Number(p.reviews||p.review_count||0)+"</span></span>"+
+            "<span id='detailReviewCount_"+esc(p.id)+"' class='mvp-detail-stat'>"+miniIcon("review",14)+" <span>"+safeNum(p.reviews!=null?p.reviews:p.review_count,0)+"</span></span>"+
             "<span id='detailCommentCount_"+esc(p.id)+"' class='mvp-detail-stat'>"+miniIcon("comment",14)+" <span>"+pComments+"</span></span>"+
           "</div>"+
           detailStatus+
@@ -1629,7 +1666,7 @@ async function openProject(id){
     ? "<div class='mvp-detail-tags'><div class='tags'>"+tagsArr.map(function(t){return tagButtonHtml(t,tagPriority(t)===0?"tag-major":(tagPriority(t)===1?"tag-secondary":""));}).join("")+"</div></div>"
     : "<div class='mvp-empty-state'>Belum ada tag.</div>";
 
-  var savedVote=Number(p.user_vote||"0");
+  var savedVote=safeNum(p.user_vote,0);
   var starsArr=[1,2,3,4,5,6,7,8,9,10];
   var starsHtml=starsArr.map(function(n){
     var filled=n<=savedVote;
@@ -1791,7 +1828,7 @@ async function submitReview(pid){
   var el=document.getElementById("reviewText_"+pid),t=el?el.value.trim():"";
   if(!t)return;
   var p=catalog.find(function(x){return String(x.id)===String(pid);});
-  var score=Number(p&&p.user_vote||0);
+  var score=safeNum(p&&p.user_vote,0);
   if(!score){if(tg&&tg.showAlert)tg.showAlert("Pilih rating dulu sebelum menulis review.");return;}
   try{
     var data=await apiJSON("/api/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:t,score:score})});
@@ -1842,17 +1879,19 @@ async function submitChapterComment(pid,ch){
 
 function commentActions(pid,x){
   var html="<div class='mvp-comment-tools'>"+
-    "<button type='button' aria-label='Love' class='mvp-love-button "+(x.user_loved?"is-loved":"")+"' onclick=\"event.stopPropagation();toggleLove('"+esc(pid)+"','comment','"+esc(x.id)+"',this)\">"+miniIcon("love",13)+" <span>"+Number(x.love_count||x.likes||x.loves||0)+"</span></button>"+
+    "<button type='button' aria-label='Love' class='mvp-love-button "+(x.user_loved?"is-loved":"")+"' onclick=\"event.stopPropagation();toggleLove('"+esc(pid)+"','comment','"+esc(x.id)+"',this)\">"+miniIcon("love",13)+" <span>"+safeNum(x.love_count!=null?x.love_count:(x.likes!=null?x.likes:x.loves),0)+"</span></button>"+
     "<button type='button' class='mvp-reply-button' onclick=\"replyComment('"+esc(pid)+"','"+esc(x.id)+"')\">"+miniIcon("reply",13)+" reply</button>";
   if(communityIsMine(x)) html+="<button type='button' class='mvp-small-action' onclick=\"editComment('"+esc(pid)+"','"+esc(x.id)+"',"+JSON.stringify(x.text||"")+")\">Edit</button>";
   if(communityCanDelete(x)) html+="<button type='button' class='mvp-small-action' onclick=\"deleteComment('"+esc(pid)+"','"+esc(x.id)+"')\">Hapus</button>";
   html+="</div>";
   return html;
 }
-function commentCard(pid,x,reply){
+function commentCard(pid,x,reply,parent){
   var chapter=x.chapter? "<div class='mvp-comment-chapter-line'>▣ Chapter "+esc(x.chapter)+"</div>":"";
   var name=communityAuthorName(x);
   var when=x.created_at?timeAgo(x.created_at):"Just now";
+  var parentName=parent?communityAuthorName(parent):"";
+  var replyMention=parent ? "<div class='mvp-reply-to'>@"+esc(String(parent.username||parentName).replace(/^@/,""))+"</div>" : "";
   return "<article class='mvp-comment-card "+(reply?"mvp-comment-reply":"")+"' id='comment_"+esc(String(x.id||""))+"'>"+
     "<div class='mvp-comment-head'>"+
       "<div class='mvp-comment-avatar'>"+communityAvatar(x)+"</div>"+
@@ -1862,6 +1901,7 @@ function commentCard(pid,x,reply){
       "</div>"+
     "</div>"+
     chapter+
+    replyMention+
     "<div class='mvp-comment-text'>"+esc(x.text||"")+"</div>"+
     commentActions(pid,x)+
   "</article>";
@@ -1887,23 +1927,31 @@ async function deleteComment(pid,id){
   catch(e){if(tg&&tg.showAlert)tg.showAlert("Komentar gagal dihapus.");}
 }
 function renderCommentFeed(pid,comments){
-  var roots=comments.filter(function(x){return !x.parent_id;}).sort(function(a,b){return Number(b.created_at||0)-Number(a.created_at||0);});
   var byParent={};
-  comments.forEach(function(x){if(x.parent_id)(byParent[x.parent_id]||(byParent[x.parent_id]=[])).push(x);});
-  function descendants(id){
-    var out=[];
-    (byParent[id]||[]).sort(function(a,b){return Number(a.created_at||0)-Number(b.created_at||0);}).forEach(function(k){out.push(k);out=out.concat(descendants(k.id));});
-    return out;
-  }
-  return roots.length?roots.map(function(x){
-    var kids=descendants(x.id);
-    var html=commentCard(pid,x,false);
-    if(kids.length){
-      var thread="<div class='mvp-thread-replies' id='thread_"+esc(x.id)+"' style='display:none'>"+kids.map(function(k){return commentCard(pid,k,true);}).join("")+"</div>";
-      html+="<button type='button' class='mvp-thread-toggle' onclick=\"toggleCommentThread('"+esc(x.id)+"',this)\">+ " + kids.length + " balasan</button>"+thread;
+  comments.forEach(function(x){
+    var key=x.parent_id?String(x.parent_id):"__root__";
+    (byParent[key]||(byParent[key]=[])).push(x);
+  });
+  Object.keys(byParent).forEach(function(k){
+    byParent[k].sort(function(a,b){return safeNum(a.created_at,0)-safeNum(b.created_at,0);});
+  });
+  var roots=(byParent["__root__"]||[]).slice().sort(function(a,b){return safeNum(b.created_at,0)-safeNum(a.created_at,0);});
+  var lookup={};
+  comments.forEach(function(x){lookup[String(x.id)]=x;});
+
+  function node(x, parent, depth){
+    var children=byParent[String(x.id)]||[];
+    var html=commentCard(pid,x,depth>0,parent);
+    if(children.length){
+      var threadId="thread_"+String(x.id);
+      html+="<button type='button' class='mvp-thread-toggle' onclick=\"toggleCommentThread('"+esc(String(x.id))+"',this)\">+ "+children.length+" balasan</button>";
+      html+="<div class='mvp-thread-replies mvp-thread-depth-"+Math.min(depth+1,6)+"' id='"+esc(threadId)+"' style='display:none'>";
+      html+=children.map(function(k){return node(k,x,depth+1);}).join("");
+      html+="</div>";
     }
     return html;
-  }).join(""):"<div class='mvp-empty-state'>Belum ada komentar.</div>";
+  }
+  return roots.length?roots.map(function(x){return node(x,null,0);}).join(""):"<div class='mvp-empty-state'>Belum ada komentar.</div>";
 }
 function toggleCommentThread(id,btn){
   var box=document.getElementById("thread_"+id);if(!box)return;
@@ -1941,8 +1989,8 @@ function renderReviewFeed(pid,reviews){
   return pg.items.length?pg.items.map(function(x){
     var name=communityAuthorName(x);
     var stars="";
-    if(Number(x.score)>0){
-      var sc=Math.max(0,Math.min(10,Number(x.score)));
+    if(safeNum(x.score,0)>0){
+      var sc=Math.max(0,Math.min(10,safeNum(x.score,0)));
       var starHtml="";
       for(var si=1;si<=5;si++){
         var unit=si*2;
@@ -1961,7 +2009,7 @@ function renderReviewFeed(pid,reviews){
       "</div>"+
       stars+
       (x.text?"<div class='mvp-review-text'>"+esc(x.text)+"</div>":"")+
-      "<div class='mvp-review-tools'><button type='button' aria-label='Love' class='mvp-love-button "+(x.user_loved?"is-loved":"")+"' onclick=\"toggleLove('"+esc(pid)+"','review','"+esc(x.id)+"',this)\">"+miniIcon("love",13)+" <span>"+Number(x.love_count||x.likes||x.loves||0)+"</span></button>"+reviewActions(pid,x)+"</div>"+
+      "<div class='mvp-review-tools'><button type='button' aria-label='Love' class='mvp-love-button "+(x.user_loved?"is-loved":"")+"' onclick=\"toggleLove('"+esc(pid)+"','review','"+esc(x.id)+"',this)\">"+miniIcon("love",13)+" <span>"+safeNum(x.love_count!=null?x.love_count:(x.likes!=null?x.likes:x.loves),0)+"</span></button>"+reviewActions(pid,x)+"</div>"+
     "</article>";
   }).join(""):"<div class='mvp-empty-state'>Belum ada review.</div>";
 }
@@ -1969,7 +2017,7 @@ function renderReviewFeed(pid,reviews){
 function threadRoots(comments){
   var map={};
   comments.forEach(function(x){map[String(x.id)]=x;});
-  return comments.filter(function(x){return !x.parent_id;}).sort(function(a,b){return Number(b.created_at||0)-Number(a.created_at||0);});
+  return comments.filter(function(x){return !x.parent_id;}).sort(function(a,b){return safeNum(b.created_at,0)-safeNum(a.created_at,0);});
 }
 function threadPageItems(comments,page,size){
   var roots=threadRoots(comments);
@@ -2011,8 +2059,8 @@ async function loadCommunity(pid){
     var d=await apiJSON("/api/community?project_id="+encodeURIComponent(pid));
     var r=Array.isArray(d.reviews)?d.reviews:[];
     var c=Array.isArray(d.comments)?d.comments:[];
-    r.sort(function(a,b){return Number(b.created_at||0)-Number(a.created_at||0);});
-    c.sort(function(a,b){return Number(a.created_at||0)-Number(b.created_at||0);});
+    r.sort(function(a,b){return safeNum(b.created_at,0)-safeNum(a.created_at,0);});
+    c.sort(function(a,b){return safeNum(a.created_at,0)-safeNum(b.created_at,0);});
 
     var state=communityPageState(pid);
     state.review=Math.min(state.review,Math.max(1,Math.ceil(r.length/20)));
@@ -2054,7 +2102,47 @@ function updateNotificationBadge(a){var b=$("notificationBadge");if(!b)return;va
 async function loadNotifications(){try{var d=await apiJSON("/api/notifications?limit=50"),a=Array.isArray(d)?d:(d.notifications||[]);$("notificationList").innerHTML=a.length?a.map(function(n){return "<button class='mvp-notification-item "+(n.read?"":"unread")+"' onclick='openNotification("+JSON.stringify(n).replace(/'/g,"&#39;")+")'><b>"+esc(n.type==="review"?"Review baru":n.type==="comment_reply"?"Balasan komentar":"Komentar baru")+"</b><div>"+esc(n.text||n.message||"")+"</div></button>";}).join(""):"<div class='mvp-empty-state'>Belum ada notifikasi.</div>";updateNotificationBadge(a);}catch(e){$("notificationList").innerHTML="<div class='mvp-empty-state'>Notifikasi belum tersedia.</div>";}}
 async function openNotifications(){["home","detail","reader","browseLayer","catalogLayer","lapakLayer","guestLayer"].forEach(function(id){var e=$(id);if(e)e.classList.add("hidden");});$("notificationsLayer").classList.remove("hidden");$("notificationsLayer").classList.add("active");window.scrollTo(0,0);loadNotifications();}
 function closeNotifications(){$("notificationsLayer").classList.remove("active");$("notificationsLayer").classList.add("hidden");$("home").classList.remove("hidden");}
-async function openNotification(n){try{if(n.id)await apiJSON("/api/notifications/read",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:n.id})});}catch(e){}if(n.project_id){closeNotifications();openProject(String(n.project_id));}loadNotifications();}
+function revealNotificationComment(commentId){
+  if(!commentId)return;
+  var el=document.getElementById("comment_"+String(commentId));
+  if(!el)return;
+  var box=el.closest(".mvp-thread-replies");
+  while(box){
+    box.style.display="block";
+    var toggle=box.previousElementSibling;
+    if(toggle && toggle.classList.contains("mvp-thread-toggle")){
+      var raw=String(toggle.textContent||"").replace(/^[+−-]\s*/,"");
+      toggle.textContent="− "+raw;
+    }
+    box=box.parentElement ? box.parentElement.closest(".mvp-thread-replies") : null;
+  }
+  setTimeout(function(){
+    el.scrollIntoView({behavior:"smooth",block:"center"});
+  },80);
+}
+async function openNotification(n){
+  try{
+    if(n.id)await apiJSON("/api/notifications/read",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:n.id})});
+  }catch(e){}
+  loadNotifications();
+
+  var type=String(n.type||"").toLowerCase();
+  if(["update","new_update","chapter_update","catalog_update","new_chapter"].includes(type)){
+    closeNotifications();
+    openLapakList();
+    return;
+  }
+
+  if(n.project_id){
+    closeNotifications();
+    await openProject(String(n.project_id));
+    setTimeout(function(){
+      if(n.comment_id)revealNotificationComment(n.comment_id);
+      else if(n.parent_id)revealNotificationComment(n.parent_id);
+    },120);
+    return;
+  }
+}
 async function initNotificationBadge(){try{var d=await apiJSON("/api/notifications?limit=50"),a=Array.isArray(d)?d:(d.notifications||[]);updateNotificationBadge(a);}catch(e){}}
 setInterval(function(){if(!accessDenied) initNotificationBadge();},15000);
 
