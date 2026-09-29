@@ -833,7 +833,19 @@ html,body{background:var(--bg)}
 }
 </style>
 
-</head>
+
+<style>
+.b-stats svg,.mvp-detail-stats svg{width:14px;height:14px;vertical-align:-2px;display:inline-block}
+.b-stats{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.mvp-review-stars{display:flex;gap:1px;margin:5px 0 4px 39px!important;font-size:13px!important;line-height:1}
+.mvp-review-star{display:inline-block;line-height:1}
+.mvp-review-star.full{color:var(--bato-star)}
+.mvp-review-star.empty{color:var(--border2)}
+.mvp-review-star.half{background:linear-gradient(90deg,var(--bato-star) 50%,var(--border2) 50%);-webkit-background-clip:text;background-clip:text;color:transparent}
+</style>
+<style>
+.mvp-love-button svg{vertical-align:-2px;transition:.15s}.mvp-love-button.is-loved svg{fill:currentColor;stroke:currentColor}
+</style></head>
 <body oncontextmenu="return false">
 
 <div id="progressContainer"><div id="progressBar"></div></div>
@@ -846,14 +858,28 @@ html,body{background:var(--bg)}
       openProject(pid);
   };
 
+  function applyInteractionToCatalog(pid, data){
+    var p=catalog.find(function(x){return String(x.id)===String(pid);});
+    if(!p||!data)return;
+    var i=data.interaction||data;
+    if(i.rating!=null)p.rating=i.rating;
+    if(i.votes!=null)p.votes=i.votes;
+    if(i.vote_distribution)p.vote_distribution=i.vote_distribution;
+    if(i.bookmarks!=null)p.bookmarks=i.bookmarks;
+    if(i.comments!=null)p.comments=i.comments;
+    if(data.reviews!=null)p.reviews=data.reviews;
+    if(data.review_count!=null)p.review_count=data.review_count;
+    if(i.user_vote!=null)p.user_vote=i.user_vote;
+    if(i.bookmarked!=null)p.bookmarked=i.bookmarked;
+  }
+
   // VOTE 1-10 GLOBAL
   window.doVote = async function(pid, score) {
     try {
       var r = await fetch("/api/vote", {method:"POST",headers:Object.assign({"Content-Type":"application/json"},accessHeaders()),body:JSON.stringify({project_id:pid,score:score})});
       var data = await r.json().catch(function(){return {};});
       if(!r.ok) throw new Error(data.error || "vote");
-      var p = catalog.find(function(x){return x.id===pid;});
-      if(p){p.rating=data.rating;p.votes=data.votes;p.vote_distribution=data.vote_distribution;p.bookmarks=data.bookmarks;p.comments=data.comments;p.user_vote=data.user_vote;p.bookmarked=data.bookmarked;}
+      applyInteractionToCatalog(pid,data);
       for(var i=1;i<=10;i++){var st=document.getElementById("star_"+pid+"_"+i);if(st){st.textContent=i<=score?"★":"☆";st.style.color=i<=score?"var(--accent)":"var(--border2)";}}
       openProject(pid);
     } catch(e) {
@@ -883,7 +909,7 @@ html,body{background:var(--bg)}
         <p class="muted" style="margin-top:2px; font-size:13px; font-weight:600;">Baca sepuasnya, rebahan selamanya.</p>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
-<button id="notificationBtn" class="theme-toggle" onclick="openNotifications()" style="position:relative">🔔<span id="notificationBadge" class="mvp-notif-badge hidden">0</span></button>
+<button id="notificationBtn" class="theme-toggle" onclick="openNotifications()" style="position:relative"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg><span id="notificationBadge" class="mvp-notif-badge hidden">0</span></button>
 <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()"></button>
 </div>
     </div>
@@ -1074,7 +1100,7 @@ async function toggleBookmark(id) {
     var r=await fetch("/api/bookmark",{method:"POST",headers:Object.assign({"Content-Type":"application/json"},accessHeaders()),body:JSON.stringify({project_id:id,bookmarked:next})});
     var data=await r.json().catch(function(){return {};});
     if(!r.ok) throw new Error(data.error||"bookmark");
-    if(p){p.rating=data.rating;p.votes=data.votes;p.vote_distribution=data.vote_distribution;p.bookmarks=data.bookmarks;p.comments=data.comments;p.user_vote=data.user_vote;p.bookmarked=data.bookmarked;}
+    applyInteractionToCatalog(id,data);
     if(!$('detail').classList.contains('hidden')) openProject(id); else renderHome();
   }catch(e){if(tg&&tg.showAlert)tg.showAlert("Bookmark gagal disimpan.");}
 }
@@ -1295,13 +1321,13 @@ function chapterTranslator(p,ch){
 }
 function renderBatoItem(p,chaptersToShow,homeContext){
   var cover=p.cover_file_id?`<img class="b-cover" src="${fileUrl(p.cover_file_id)}" loading="lazy">`:`<div class="b-cover"></div>`;
-  var pRating=(p.rating!=null?Number(p.rating).toFixed(1):"0.0"),pBookmarks=p.bookmarks||"0",pComments=Number(p.comments||0);
+  var pRating=(p.rating!=null?Number(p.rating).toFixed(1):"0.0"),pBookmarks=p.bookmarks||"0",pReviews=Number(p.reviews||p.review_count||0),pComments=Number(p.comments||0);
   var chHtml=(chaptersToShow||[]).map(function(ch){
     var timeStr=ch.updated_at?timeAgo(ch.updated_at):(ch.ts?timeAgo(Math.floor(ch.ts/1000)):"Just now"),title=chapterDisplayTitle(ch),trans=chapterTranslator(p,ch);
     return `<div class="b-chap" onclick="event.stopPropagation();openReader('${esc(p.id)}','${esc(ch.chapter)}',${Number(ch.decensored||0)})"><div style="min-width:0;flex:1"><div class="b-chap-name">Chapter ${esc(ch.chapter)}${decBadge(ch.decensored)}</div>${title?`<div class="mvp-chapter-title">${esc(title)}</div>`:""}</div><div class="b-chap-meta">${timeStr}</div></div>`;
   }).join("");
   var homeLines=homeContext?`<div class="mvp-home-history">${homeContext.history?`<div class="mvp-home-line history" onclick="event.stopPropagation();openReader('${esc(p.id)}','${esc(homeContext.history.chapter)}',${Number(homeContext.history.decensored||0)})" style="cursor:pointer;"><span class="label">↻ Terakhir dibaca</span><div class="value">Ch. ${esc(homeContext.history.chapter)}${chapterDisplayTitle(homeContext.history)?` · ${esc(chapterDisplayTitle(homeContext.history))}`:""} · ${timeAgo(Math.floor(Number(homeContext.history.ts||0)/1000))}</div></div>`:""}${homeContext.latest?`<div class="mvp-home-line latest" onclick="event.stopPropagation();openReader('${esc(p.id)}','${esc(homeContext.latest.chapter)}',${Number(homeContext.latest.decensored||0)})" style="cursor:pointer;"><span class="label">✦ Chapter terbaru</span><div class="value">Ch. ${esc(homeContext.latest.chapter)}${chapterDisplayTitle(homeContext.latest)?` · ${esc(chapterDisplayTitle(homeContext.latest))}`:""} · ${timeAgo(Number(homeContext.latest.updated_at||0))}</div></div>`:""}</div>`:`<div class="b-chaps">${chHtml}</div>`;
-  return `<div class="b-item" onclick="openProject('${esc(p.id)}')">${cover}<div class="b-info"><div class="b-item-title"><span class="txt">${esc(p.title)}</span></div><div class="b-stats"><span><span style="color:var(--bato-star)">⭐</span> ${pRating}</span><span class="bookmark-stat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>${pBookmarks}</span><span>💬 ${pComments}</span></div><div class="b-tags">${getTags(p)}</div>${homeLines}</div></div>`;
+  return `<div class="b-item" onclick="openProject('${esc(p.id)}')">${cover}<div class="b-info"><div class="b-item-title"><span class="txt">${esc(p.title)}</span></div><div class="b-stats"><span>${miniIcon("star",14)} ${pRating}</span><span class="bookmark-stat">${miniIcon("bookmark",14)} ${pBookmarks}</span><span>${miniIcon("review",14)} ${pReviews}</span><span>${miniIcon("comment",14)} ${pComments}</span></div><div class="b-tags">${getTags(p)}</div>${homeLines}</div></div>`;
 }
 function translatorName(project){
   var name = String((project && (project.translator || project.TRANSLATOR)) || "").trim();
@@ -1508,7 +1534,11 @@ function miniIcon(name, size){
   var common="width=\""+size+"\" height=\""+size+"\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"";
   if(name==="bookmark") return "<svg "+common+"><path d=\"M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z\"></path></svg>";
   if(name==="review") return "<svg "+common+"><path d=\"M4 4h16v12H8l-4 4z\"></path><path d=\"M8 13l5-5 2 2-5 5-3 1z\"></path></svg>";
-  if(name==="comment") return "<svg "+common+"><path d=\"M21 11.5a7.5 7.5 0 0 1-7.5 7.5H9l-5 3v-5.1A7.5 7.5 0 1 1 21 11.5z\"></path><path d=\"M8 8.5h8M8 12h5\"></path></svg>";
+  if(name==="comment") return "<svg "+common+"><path d=\"M7 4h10a5 5 0 0 1 5 5v4a5 5 0 0 1-5 5H11l-5 3v-3.1A5 5 0 0 1 2 13V9a5 5 0 0 1 5-5z\"></path><path d=\"M8 9h8M8 12h5\"></path></svg>";
+  if(name==="star") return "<svg "+common+"><path d=\"m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3z\"></path></svg>";
+  if(name==="bell") return "<svg "+common+"><path d=\"M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9\"></path><path d=\"M10 21h4\"></path></svg>";
+  if(name==="love") return "<svg "+common+"><path d=\"M20.8 8.7c0 5-8.8 10-8.8 10s-8.8-5-8.8-10A4.7 4.7 0 0 1 12 5.9a4.7 4.7 0 0 1 8.8 2.8z\"></path></svg>";
+  if(name==="reply") return "<svg "+common+"><path d=\"M9 17 4 12l5-5\"></path><path d=\"M4 12h10a6 6 0 0 1 6 6v1\"></path></svg>";
   if(name==="eye") return "<svg "+common+"><path d=\"M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.5\"></circle></svg>";
   if(name==="heart") return "<svg "+common+"><path d=\"M20.8 8.7c0 5-8.8 10-8.8 10s-8.8-5-8.8-10A4.7 4.7 0 0 1 12 5.9a4.7 4.7 0 0 1 8.8 2.8z\"></path></svg>";
   return "";
@@ -1581,11 +1611,11 @@ async function openProject(id){
           authorHtml+
           ""+
           "<div class='mvp-detail-stats'>"+
-            "<span class='mvp-detail-stat'><span style='color:var(--bato-star)'>★</span> "+pRating+"</span>"+
+            "<span class='mvp-detail-stat'>"+miniIcon("star",14)+" <span>"+pRating+"</span></span>"+
             "<button type='button' class='mvp-detail-stat mvp-detail-stat-btn "+(isBm?"bookmark-on":"")+"' onclick=\"toggleBookmark('"+esc(p.id)+"')\">"+
               miniIcon("bookmark",14)+" <span id='detailBookmarkCount_"+esc(p.id)+"'>"+pBookmarks+"</span>"+
             "</button>"+
-            "<span id='detailReviewCount_"+esc(p.id)+"' class='mvp-detail-stat'>"+miniIcon("review",14)+" <span>0</span></span>"+
+            "<span id='detailReviewCount_"+esc(p.id)+"' class='mvp-detail-stat'>"+miniIcon("review",14)+" <span>"+Number(p.reviews||p.review_count||0)+"</span></span>"+
             "<span id='detailCommentCount_"+esc(p.id)+"' class='mvp-detail-stat'>"+miniIcon("comment",14)+" <span>"+pComments+"</span></span>"+
           "</div>"+
           detailStatus+
@@ -1668,7 +1698,7 @@ async function openProject(id){
         "<div class='mvp-chapter-bato-meta'>🕒 "+timeStr+"</div>"+
       "</div>"+
       "<details class='mvp-chapter-comments'>"+
-        "<summary>💬 Komentar Chapter "+esc(chKey)+"</summary>"+
+        "<summary>"+miniIcon("comment",13)+" Komentar Chapter "+esc(chKey)+"</summary>"+
         "<div class='mvp-comment-compose'>"+
           "<textarea id='chapterCommentInput_"+esc(p.id)+"_"+esc(chKey)+"' class='mvp-comment-input' maxlength='2000' placeholder='Tulis komentar untuk Chapter "+esc(chKey)+"...'></textarea>"+
           "<button class='btn primary' onclick=\"event.stopPropagation();submitChapterComment('"+esc(p.id)+"','"+esc(chKey)+"')\">Kirim Komentar</button>"+
@@ -1684,7 +1714,7 @@ async function openProject(id){
 
   var reviewPanel=
     "<details class='mvp-community-collapsible mvp-review-panel mvp-feature-panel' id='reviewPanel_"+esc(p.id)+"'>"+
-      "<summary id='reviewSummary_"+esc(p.id)+"'>✎ Reviews (0)</summary>"+
+      "<summary id='reviewSummary_"+esc(p.id)+"'>"+miniIcon("review",13)+" Reviews (0)</summary>"+
       "<div class='mvp-review-vote-wrap'>"+
         "<div class='mvp-review-form'>"+
           "<b>Review kamu</b>"+
@@ -1697,7 +1727,7 @@ async function openProject(id){
 
   var projectComments=
     "<details class='mvp-community-collapsible mvp-project-comments mvp-feature-panel' id='projectComments_"+esc(p.id)+"'>"+
-      "<summary id='commentSummary_"+esc(p.id)+"'>💬 Comments (0)</summary>"+
+      "<summary id='commentSummary_"+esc(p.id)+"'>"+miniIcon("comment",13)+" Comments (0)</summary>"+
       "<div class='mvp-comment-compose'>"+
         "<textarea id='commentInput_"+esc(p.id)+"' class='mvp-comment-input' maxlength='2000' placeholder='Tulis komentar...'></textarea>"+
         "<button class='btn primary' onclick=\"submitComment('"+esc(p.id)+"')\">Kirim Komentar</button>"+
@@ -1749,12 +1779,12 @@ async function editReview(pid,id,current){
   var v=prompt("Edit review:",current||"");
   if(v===null)return;
   v=v.trim(); if(!v)return;
-  try{await apiJSON("/api/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,review_id:id,text:v})});await loadCommunity(pid);}
+  try{var data=await apiJSON("/api/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,review_id:id,text:v})});applyInteractionToCatalog(pid,data);await loadCommunity(pid);}
   catch(e){if(tg&&tg.showAlert)tg.showAlert("Review gagal diedit.");}
 }
 async function deleteReview(pid,id){
   if(!confirm("Hapus review ini?"))return;
-  try{await apiJSON("/api/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,review_id:id,action:"delete"})});await loadCommunity(pid);}
+  try{var data=await apiJSON("/api/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,review_id:id,action:"delete"})});applyInteractionToCatalog(pid,data);await loadCommunity(pid);}
   catch(e){if(tg&&tg.showAlert)tg.showAlert("Review gagal dihapus.");}
 }
 async function submitReview(pid){
@@ -1765,8 +1795,10 @@ async function submitReview(pid){
   if(!score){if(tg&&tg.showAlert)tg.showAlert("Pilih rating dulu sebelum menulis review.");return;}
   try{
     var data=await apiJSON("/api/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:t,score:score})});
-    if(p&&data.interaction){p.rating=data.interaction.rating;p.votes=data.interaction.votes;p.vote_distribution=data.interaction.vote_distribution;p.user_vote=data.interaction.user_vote;}
-    el.value="";await loadCommunity(pid);if(tg&&tg.showAlert)tg.showAlert("Review tersimpan.");
+    applyInteractionToCatalog(pid,data);
+    el.value="";
+    await loadCommunity(pid);
+    if(tg&&tg.showAlert)tg.showAlert("Review tersimpan.");
   }catch(e){if(tg&&tg.showAlert)tg.showAlert("Review gagal disimpan.");}
 }
 
@@ -1781,14 +1813,37 @@ function communityAvatar(x){
 async function toggleLove(pid,targetType,targetId,btn){
   try{
     var data=await apiJSON("/api/love",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,target_type:targetType,target_id:targetId})});
+    if(data&&data.interaction)applyInteractionToCatalog(pid,data);
     await loadCommunity(pid);
   }catch(e){if(tg&&tg.showAlert)tg.showAlert("Love gagal disimpan.");}
 }
 
+async function submitComment(pid){
+  var el=document.getElementById("commentInput_"+pid),v=el?el.value.trim():"";
+  if(!v)return;
+  try{
+    var data=await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:v})});
+    applyInteractionToCatalog(pid,data);
+    if(el)el.value="";
+    await loadCommunity(pid);
+  }catch(e){if(tg&&tg.showAlert)tg.showAlert("Komentar gagal dikirim.");}
+}
+async function submitChapterComment(pid,ch){
+  var key="chapterCommentInput_"+pid+"_"+ch;
+  var el=document.getElementById(key),v=el?el.value.trim():"";
+  if(!v)return;
+  try{
+    var data=await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:v,chapter:String(ch)})});
+    applyInteractionToCatalog(pid,data);
+    if(el)el.value="";
+    await loadCommunity(pid);
+  }catch(e){if(tg&&tg.showAlert)tg.showAlert("Komentar gagal dikirim.");}
+}
+
 function commentActions(pid,x){
   var html="<div class='mvp-comment-tools'>"+
-    "<button type='button' class='mvp-love-button "+(x.user_loved?"is-loved":"")+"' onclick=\"event.stopPropagation();toggleLove('"+esc(pid)+"','comment','"+esc(x.id)+"',this)\">"+(x.user_loved?"♥":"♡")+" <span>"+Number(x.love_count||x.likes||x.loves||0)+"</span></button>"+
-    "<button type='button' class='mvp-reply-button' onclick=\"replyComment('"+esc(pid)+"','"+esc(x.id)+"')\">↩ reply</button>";
+    "<button type='button' aria-label='Love' class='mvp-love-button "+(x.user_loved?"is-loved":"")+"' onclick=\"event.stopPropagation();toggleLove('"+esc(pid)+"','comment','"+esc(x.id)+"',this)\">"+miniIcon("love",13)+" <span>"+Number(x.love_count||x.likes||x.loves||0)+"</span></button>"+
+    "<button type='button' class='mvp-reply-button' onclick=\"replyComment('"+esc(pid)+"','"+esc(x.id)+"')\">"+miniIcon("reply",13)+" reply</button>";
   if(communityIsMine(x)) html+="<button type='button' class='mvp-small-action' onclick=\"editComment('"+esc(pid)+"','"+esc(x.id)+"',"+JSON.stringify(x.text||"")+")\">Edit</button>";
   if(communityCanDelete(x)) html+="<button type='button' class='mvp-small-action' onclick=\"deleteComment('"+esc(pid)+"','"+esc(x.id)+"')\">Hapus</button>";
   html+="</div>";
@@ -1816,19 +1871,19 @@ async function replyComment(pid,parentId){
   var v=prompt("Balas komentar:");
   if(v===null)return;
   v=v.trim();if(!v)return;
-  try{await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:v,parent_id:parentId})});await loadCommunity(pid);}
+  try{var data=await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:v,parent_id:parentId})});applyInteractionToCatalog(pid,data);await loadCommunity(pid);}
   catch(e){if(tg&&tg.showAlert)tg.showAlert("Balasan gagal dikirim.");}
 }
 async function editComment(pid,id,current){
   var v=prompt("Edit komentar:",current||"");
   if(v===null)return;
   v=v.trim();if(!v)return;
-  try{await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,comment_id:id,text:v})});await loadCommunity(pid);}
+  try{var data=await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,comment_id:id,text:v})});applyInteractionToCatalog(pid,data);await loadCommunity(pid);}
   catch(e){if(tg&&tg.showAlert)tg.showAlert("Komentar gagal diedit.");}
 }
 async function deleteComment(pid,id){
   if(!confirm("Hapus komentar ini?"))return;
-  try{await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,comment_id:id,action:"delete"})});await loadCommunity(pid);}
+  try{var data=await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,comment_id:id,action:"delete"})});applyInteractionToCatalog(pid,data);await loadCommunity(pid);}
   catch(e){if(tg&&tg.showAlert)tg.showAlert("Komentar gagal dihapus.");}
 }
 function renderCommentFeed(pid,comments){
@@ -1888,7 +1943,13 @@ function renderReviewFeed(pid,reviews){
     var stars="";
     if(Number(x.score)>0){
       var sc=Math.max(0,Math.min(10,Number(x.score)));
-      stars="<div class='mvp-review-stars'>"+Array.from({length:10},function(_,i){return i<sc?"★":"☆";}).join("")+"</div>";
+      var starHtml="";
+      for(var si=1;si<=5;si++){
+        var unit=si*2;
+        var cls=sc>=unit?"full":(sc===unit-1?"half":"empty");
+        starHtml+="<span class='mvp-review-star "+cls+"'>★</span>";
+      }
+      stars="<div class='mvp-review-stars'>"+starHtml+"</div>";
     }
     return "<article class='mvp-review-card'>"+
       "<div class='mvp-comment-head'>"+
@@ -1900,7 +1961,7 @@ function renderReviewFeed(pid,reviews){
       "</div>"+
       stars+
       (x.text?"<div class='mvp-review-text'>"+esc(x.text)+"</div>":"")+
-      "<div class='mvp-review-tools'><button type='button' class='mvp-love-button "+(x.user_loved?"is-loved":"")+"' onclick=\"toggleLove('"+esc(pid)+"','review','"+esc(x.id)+"',this)\">"+(x.user_loved?"♥":"♡")+" <span>"+Number(x.love_count||x.likes||x.loves||0)+"</span></button>"+reviewActions(pid,x)+"</div>"+
+      "<div class='mvp-review-tools'><button type='button' aria-label='Love' class='mvp-love-button "+(x.user_loved?"is-loved":"")+"' onclick=\"toggleLove('"+esc(pid)+"','review','"+esc(x.id)+"',this)\">"+miniIcon("love",13)+" <span>"+Number(x.love_count||x.likes||x.loves||0)+"</span></button>"+reviewActions(pid,x)+"</div>"+
     "</article>";
   }).join(""):"<div class='mvp-empty-state'>Belum ada review.</div>";
 }
@@ -1956,11 +2017,11 @@ async function loadCommunity(pid){
     var state=communityPageState(pid);
     state.review=Math.min(state.review,Math.max(1,Math.ceil(r.length/20)));
     var reviewSummary=document.getElementById("reviewSummary_"+pid);
-    if(reviewSummary)reviewSummary.textContent="Reviews ("+r.length+")";
+    if(reviewSummary)reviewSummary.innerHTML=miniIcon("review",13)+" Reviews ("+r.length+")";
     var reviewCount=document.getElementById("detailReviewCount_"+pid);
     if(reviewCount)reviewCount.innerHTML=miniIcon("review",14)+" <span>"+r.length+"</span>";
     var commentSummary=document.getElementById("commentSummary_"+pid);
-    if(commentSummary)commentSummary.textContent="Comments ("+c.length+")";
+    if(commentSummary)commentSummary.innerHTML=miniIcon("comment",13)+" Comments ("+c.length+")";
 
     var reviewList=document.getElementById("reviewList_"+pid);
     if(reviewList)reviewList.innerHTML=renderReviewFeed(pid,r)+communityPagerHtml("review",pid,state.review,Math.max(1,Math.ceil(r.length/20)));
@@ -1968,6 +2029,7 @@ async function loadCommunity(pid){
     var countEl=document.getElementById("detailCommentCount_"+pid);
     if(countEl)countEl.innerHTML=miniIcon("comment",14)+" <span>"+c.length+"</span>";
     var pNow=catalog.find(function(x){return String(x.id)===String(pid);});
+    if(pNow){pNow.comments=c.length;pNow.reviews=r.length;pNow.review_count=r.length;}
     var bmEl=document.getElementById("detailBookmarkCount_"+pid);
     if(bmEl&&pNow)bmEl.textContent=String(pNow.bookmarks||0);
 
@@ -1994,6 +2056,7 @@ async function openNotifications(){["home","detail","reader","browseLayer","cata
 function closeNotifications(){$("notificationsLayer").classList.remove("active");$("notificationsLayer").classList.add("hidden");$("home").classList.remove("hidden");}
 async function openNotification(n){try{if(n.id)await apiJSON("/api/notifications/read",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:n.id})});}catch(e){}if(n.project_id){closeNotifications();openProject(String(n.project_id));}loadNotifications();}
 async function initNotificationBadge(){try{var d=await apiJSON("/api/notifications?limit=50"),a=Array.isArray(d)?d:(d.notifications||[]);updateNotificationBadge(a);}catch(e){}}
+setInterval(function(){if(!accessDenied) initNotificationBadge();},15000);
 
 /* LAZY LOAD READER */
 function enableReaderLazyLoad(p){
