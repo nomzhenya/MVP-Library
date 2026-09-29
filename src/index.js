@@ -406,13 +406,32 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       if (!projectId) return json({error:"missing project_id"}, 400);
 
       const data = await getCommunity(env, projectId);
-      data.reviews.sort((a,b) => Number(b.created_at || 0) - Number(a.created_at || 0));
-      data.comments.sort((a,b) => Number(b.created_at || 0) - Number(a.created_at || 0));
+      const uid = String(access.user.id);
+      const interaction = await getInteraction(env, projectId);
+      const cleanReview = data.reviews.map(r => {
+        const loves = r.loved_by && typeof r.loved_by === "object" ? r.loved_by : {};
+        const {loved_by, ...safeReview} = r;
+        return {
+          ...safeReview,
+          score: Number(interaction.votes[String(r.user_id || r.telegram_id)] || r.score || 0),
+          love_count: Object.keys(loves).length,
+          user_loved: !!loves[uid]
+        };
+      }).sort((a,b) => Number(b.created_at || 0) - Number(a.created_at || 0));
+      const cleanComments = data.comments.map(c => {
+        const loves = c.loved_by && typeof c.loved_by === "object" ? c.loved_by : {};
+        const {loved_by, ...safeComment} = c;
+        return {
+          ...safeComment,
+          love_count: Object.keys(loves).length,
+          user_loved: !!loves[uid]
+        };
+      }).sort((a,b) => Number(b.created_at || 0) - Number(a.created_at || 0));
 
       return new Response(JSON.stringify({
         ok: true,
-        reviews: data.reviews,
-        comments: data.comments
+        reviews: cleanReview,
+        comments: cleanComments
       }), {
         headers: cors({"content-type":"application/json; charset=utf-8"})
       });
@@ -426,8 +445,12 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const projectId = String(body.project_id || "").trim();
       const text = String(body.text || "").trim();
       const reviewId = String(body.review_id || "").trim();
+      const requestedScore = body.score == null || body.score === "" ? null : Number(body.score);
       if (!projectId) return json({error:"project required"}, 400);
       if (text.length > 2000) return json({error:"review too long"}, 400);
+      if (requestedScore !== null && (!Number.isInteger(requestedScore) || requestedScore < 1 || requestedScore > 10)) {
+        return json({error:"invalid review rating"}, 400);
+      }
 
       const catalog = await env.LIBRARY.get("catalog", "json");
       if (!Array.isArray(catalog) || !catalog.some(p => String(p.id) === projectId)) return json({error:"project not found"}, 404);
@@ -437,6 +460,7 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const uid = String(access.user.id);
       const now = nowSec();
       const telegramName = [access.user.first_name, access.user.last_name].filter(Boolean).join(" ").trim();
+      const interaction = await getInteraction(env, projectId);
 
       if (body.action === "delete") {
         const idx = data.reviews.findIndex(r => String(r.id) === reviewId && String(r.user_id || r.telegram_id) === uid);
@@ -453,7 +477,11 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       }
 
       if (existing) {
+        if (!text && !reviewId) return json({error:"review text required"}, 400);
         existing.text = text;
+        existing.score = requestedScore !== null ? requestedScore : Number(interaction.votes[uid] || existing.score || 0);
+        if (existing.score < 1 || existing.score > 10) return json({error:"review rating required"}, 400);
+        interaction.votes[uid] = existing.score;
         existing.updated_at = now;
         existing.telegram_name = telegramName;
         existing.first_name = access.user.first_name || "";
@@ -461,16 +489,20 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
         existing.username = access.user.username || "";
       } else {
         if (!text) return json({error:"review text required"}, 400);
+        const score = requestedScore !== null ? requestedScore : Number(interaction.votes[uid] || 0);
+        if (!score || score < 1 || score > 10) return json({error:"review rating required"}, 400);
+        interaction.votes[uid] = score;
         existing = {
           id: crypto.randomUUID(), user_id: uid, telegram_id: uid,
           username: access.user.username || "", first_name: access.user.first_name || "",
           last_name: access.user.last_name || "", telegram_name: telegramName,
-          text, created_at: now, updated_at: now
+          score, text, created_at: now, updated_at: now, loved_by: {}
         };
         data.reviews.push(existing);
       }
       await putCommunity(env, projectId, data);
-      return json({ok:true, review:existing});
+      await saveInteraction(env, projectId, interaction);
+      return json({ok:true, review:existing, interaction:summarizeInteraction(interaction, access.user.id)});
     }
 
     if (url.pathname === "/api/comment" && request.method === "POST") {
@@ -520,7 +552,7 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
         username: access.user.username || "", first_name: access.user.first_name || "",
         last_name: access.user.last_name || "", telegram_name: telegramName,
         text, chapter: parentId ? (data.comments.find(c => String(c.id) === parentId)?.chapter ?? chapter) : chapter,
-        parent_id: parentId || null, created_at: nowSec(), updated_at: nowSec()
+        parent_id: parentId || null, created_at: nowSec(), updated_at: nowSec(), loved_by: {}
       };
       data.comments.push(comment);
       await putCommunity(env, projectId, data);
@@ -543,6 +575,27 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       }
 
       return json({ok:true, comment});
+    }
+
+    if (url.pathname === "/api/love" && request.method === "POST") {
+      const access = await requireApiAccess(request, env);
+      if (!access.ok) return json({ok:false, code:access.code}, access.code);
+      const body = await request.json().catch(() => ({}));
+      const projectId = String(body.project_id || "").trim();
+      const targetType = String(body.target_type || "").trim();
+      const targetId = String(body.target_id || "").trim();
+      if (!projectId || !["comment","review"].includes(targetType) || !targetId) return json({error:"invalid love target"}, 400);
+
+      const data = await getCommunity(env, projectId);
+      const list = targetType === "comment" ? data.comments : data.reviews;
+      const item = list.find(x => String(x.id) === targetId);
+      if (!item) return json({error:"target not found"}, 404);
+      item.loved_by = item.loved_by && typeof item.loved_by === "object" ? item.loved_by : {};
+      const uid = String(access.user.id);
+      const loved = !!item.loved_by[uid];
+      if (loved) delete item.loved_by[uid]; else item.loved_by[uid] = true;
+      await putCommunity(env, projectId, data);
+      return json({ok:true, loved:!loved, love_count:Object.keys(item.loved_by).length});
     }
 
     // =========================
