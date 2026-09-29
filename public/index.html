@@ -457,33 +457,9 @@ html,body{background:var(--bg)}
   color:transparent;
   font-weight:900;
 }
-
-<style>
-.mvp-comment-actions{display:flex;gap:6px;margin-top:8px}
-.mvp-comment-actions button{border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:8px;padding:4px 8px;font-size:11px;cursor:pointer}
-.mvp-comment-username{font-size:11px;color:var(--muted)}
-</style>
-
 </style>
 <style>
-.mvp-community-panel{margin-top:16px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px}.mvp-community-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.mvp-review-form,.mvp-comment-compose{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid var(--border)}.mvp-comment-input{width:100%;min-height:80px;resize:vertical;border:1px solid var(--border);border-radius:10px;background:var(--input);color:var(--text);padding:10px;font:inherit}.mvp-comments{display:grid;gap:8px;padding-top:12px}.mvp-review-card,.mvp-comment-card{padding:11px;background:var(--panel2);border:1px solid var(--border);border-radius:10px}.mvp-review-text,.mvp-comment-text{margin-top:6px;font-size:13px;line-height:1.5;white-space:pre-line}.mvp-community-section-title{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;margin:6px 0}.mvp-review-stars-static{color:var(--bato-star)}.mvp-notif-badge{position:absolute;right:-2px;top:-2px;min-width:17px;height:17px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--panel2)}.mvp-notification-list{display:grid;gap:8px}.mvp-notification-item{width:100%;text-align:left;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:12px;padding:12px}.mvp-notification-item.unread{border-color:var(--accent);background:var(--panel2)}.mvp-notification-item div{margin-top:5px;color:var(--muted);font-size:12px}.readerpage{content-visibility:auto;contain-intrinsic-size:100vw 1200px}
-
-.mvp-collapsible{margin-top:12px;border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden}
-.mvp-collapsible summary{list-style:none;cursor:pointer;padding:14px 16px;font-weight:900;display:flex;align-items:center;justify-content:space-between}
-.mvp-collapsible summary::-webkit-details-marker{display:none}
-.mvp-collapsible summary:after{content:"＋";color:var(--muted);font-size:16px}
-.mvp-collapsible[open] summary:after{content:"−"}
-.mvp-collapsible-body{padding:0 14px 14px}
-.chapter-bato-wrap{border-bottom:1px solid var(--border)}
-.chapter-bato-wrap:last-child{border-bottom:none}
-.chapter-bato-wrap .chapter-bato{border-bottom:0}
-.chapter-comment-link{width:100%;border:0;border-top:1px dashed var(--border);background:transparent;color:var(--muted);text-align:left;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer}
-.chapter-comment-link:active{background:var(--panel2)}
-.mvp-comment-target{margin:8px 0;padding:9px 11px;border-radius:9px;background:var(--panel2);border:1px solid var(--accent);font-size:12px;color:var(--text)}
-.mvp-comment-target .mvp-clear-chapter{float:right;border:0;background:none;color:var(--muted);cursor:pointer;font-size:16px}
-.mvp-comment-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.mvp-comment-chapter{font-size:10px;font-weight:900;color:var(--accent);background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:3px 7px}
-
+.mvp-community-panel{margin-top:16px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px}.mvp-community-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.mvp-review-form,.mvp-comment-compose{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid var(--border)}.mvp-review-stars{display:flex}.mvp-review-stars button{border:0;background:none;color:var(--bato-star);font-size:26px}.mvp-comment-input{width:100%;min-height:80px;resize:vertical;border:1px solid var(--border);border-radius:10px;background:var(--input);color:var(--text);padding:10px;font:inherit}.mvp-comments{display:grid;gap:8px;padding-top:12px}.mvp-review-card,.mvp-comment-card{padding:11px;background:var(--panel2);border:1px solid var(--border);border-radius:10px}.mvp-review-text,.mvp-comment-text{margin-top:6px;font-size:13px;line-height:1.5;white-space:pre-line}.mvp-community-section-title{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;margin:6px 0}.mvp-review-stars-static{color:var(--bato-star)}.mvp-notif-badge{position:absolute;right:-2px;top:-2px;min-width:17px;height:17px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--panel2)}.mvp-notification-list{display:grid;gap:8px}.mvp-notification-item{width:100%;text-align:left;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:12px;padding:12px}.mvp-notification-item.unread{border-color:var(--accent);background:var(--panel2)}.mvp-notification-item div{margin-top:5px;color:var(--muted);font-size:12px}.readerpage{content-visibility:auto;contain-intrinsic-size:100vw 1200px}
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -505,7 +481,7 @@ html,body{background:var(--bg)}
       var data = await r.json().catch(function(){return {};});
       if(!r.ok) throw new Error(data.error || "vote");
       var p = catalog.find(function(x){return x.id===pid;});
-      if(p){p.p.votes=data.votes;p.vote_distribution=data.vote_distribution;p.bookmarks=data.bookmarks;p.comments=data.comments;p.user_vote=data.user_vote;p.bookmarked=data.bookmarked;}
+      if(p){p.rating=data.rating;p.votes=data.votes;p.vote_distribution=data.vote_distribution;p.bookmarks=data.bookmarks;p.comments=data.comments;p.user_vote=data.user_vote;p.bookmarked=data.bookmarked;}
       for(var i=1;i<=10;i++){var st=document.getElementById("star_"+pid+"_"+i);if(st){st.textContent=i<=score?"★":"☆";st.style.color=i<=score?"var(--accent)":"var(--border2)";}}
       openProject(pid);
     } catch(e) {
@@ -726,7 +702,7 @@ async function toggleBookmark(id) {
     var r=await fetch("/api/bookmark",{method:"POST",headers:Object.assign({"Content-Type":"application/json"},accessHeaders()),body:JSON.stringify({project_id:id,bookmarked:next})});
     var data=await r.json().catch(function(){return {};});
     if(!r.ok) throw new Error(data.error||"bookmark");
-    if(p){p.p.votes=data.votes;p.vote_distribution=data.vote_distribution;p.bookmarks=data.bookmarks;p.comments=data.comments;p.user_vote=data.user_vote;p.bookmarked=data.bookmarked;}
+    if(p){p.rating=data.rating;p.votes=data.votes;p.vote_distribution=data.vote_distribution;p.bookmarks=data.bookmarks;p.comments=data.comments;p.user_vote=data.user_vote;p.bookmarked=data.bookmarked;}
     if(!$('detail').classList.contains('hidden')) openProject(id); else renderHome();
   }catch(e){if(tg&&tg.showAlert)tg.showAlert("Bookmark gagal disimpan.");}
 }
@@ -1233,7 +1209,7 @@ async function openProject(id){
       "</div>"+
     "</section>";
 
-  // PART 2 — tags + unified Review section + unified Comments section.
+  // PART 2 — ordered clickable tags + voting + distribution.
   var tagsArr=sortedTags(p.tags);
   var tagsHtml=tagsArr.length
     ? "<div class='mvp-detail-tags'><div class='tags'>"+tagsArr.map(function(t){return tagButtonHtml(t,tagPriority(t)===0?"tag-major":(tagPriority(t)===1?"tag-secondary":""));}).join("")+"</div></div>"
@@ -1261,35 +1237,31 @@ async function openProject(id){
     "</div>";
   }).join("");
 
-  var reviewSection=
-    "<details class='mvp-collapsible' id='reviewSection_"+esc(p.id)+"'>"+
-      "<summary>📝 Review</summary>"+
-      "<div class='mvp-collapsible-body'>"+
-        "<div class='mvp-vote-panel'>"+
-          "<div class='mvp-vote-top'><div class='mvp-vote-label'>RATING (1–10)</div><div style='font-size:11px;color:var(--muted)'>"+pVotes+" vote"+(pVotes===1?"":"s")+"</div></div>"+
-          ""+
-          "<div class='mvp-rating-summary'>"+
-            "<div class='mvp-rating-score'><div class='num'>"+pRating+"</div><div class='votes'>"+pVotes+" vote"+(pVotes===1?"":"s")+"</div></div>"+
-            "<div class='mvp-rating-bars'>"+ratingBars+"</div>"+
-          "</div>"+
-        "</div>"+
-        "<div class='mvp-review-form'>"+
-          "<b>Review kamu</b>"+
-          ""+
-          "<textarea id='reviewText_"+esc(p.id)+"' class='mvp-comment-input' maxlength='1000' placeholder='Tulis review...'></textarea>"+
-          "<button class='btn primary' onclick=\"submitReview('"+esc(p.id)+"')\">Kirim Review</button>"+
-        "</div>"+
-        "<div id='reviews_"+esc(p.id)+"' class='mvp-reviews-feed'></div>"+
+  var ratingPanel=
+    "<div class='mvp-vote-panel'>"+
+      "<div class='mvp-vote-top'><div class='mvp-vote-label'>BERIKAN VOTE (1–10)</div><div style='font-size:11px;color:var(--muted)'>"+pVotes+" vote"+(pVotes===1?"":"s")+"</div></div>"+
+      "<div class='mvp-vote-stars'>"+starsHtml+"</div>"+
+      "<div class='mvp-rating-summary'>"+
+        "<div class='mvp-rating-score'><div class='num'>"+pRating+"</div><div class='stars'>★★★★★</div><div class='votes'>"+pVotes+" vote"+(pVotes===1?"":"s")+"</div></div>"+
+        "<div class='mvp-rating-bars'>"+ratingBars+"</div>"+
       "</div>"+
-    "</details>";
-
-
+    "</div>";
 
   var part2=
     "<section class='mvp-detail-part'>"+
       "<div class='mvp-detail-part-title'>Tags</div>"+
       tagsHtml+
-      reviewSection+
+      "<details class='mvp-community-collapsible' open>"+
+        "<summary>⭐ Review & Voting</summary>"+
+        "<div class='mvp-review-vote-wrap'>"+
+          ratingPanel+
+          "<div class='mvp-review-form'>"+
+            "<b>Review kamu</b>"+
+            "<textarea id='reviewText_"+esc(p.id)+"' class='mvp-comment-input' maxlength='2000' placeholder='Tulis review...'></textarea>"+
+            "<button class='btn primary' onclick=\"submitReview('"+esc(p.id)+"')\">Kirim Review</button>"+
+          "</div>"+
+        "</div>"+
+      "</details>"+
     "</section>";
   // PART 3 — description.
   var trakteerDetail=p.trakteer ? "<a href='"+esc(p.trakteer)+"' target='_blank' class='btn' style='background:#e74c3c;color:#fff;width:100%;margin-top:14px;border-radius:24px;'>☕ "+esc(p.trakteer_label || "Traktir Kopi")+"</a>" : "";
@@ -1312,21 +1284,38 @@ async function openProject(id){
   var chaptersHtml=mappedChaps.map(function(item){
     var timeStr=item.c.updated_at?timeAgo(item.c.updated_at):"Just now";
     var chTitle=chapterDisplayTitle(item.c);
-    var ch=item.c.chapter;
     var chTranslator=chapterTranslator(p,item.c);
+    var chKey=String(item.c.chapter);
     return "<div class='chapter-bato-wrap'>"+
-      "<div class='chapter-bato' onclick=\"openReader('"+esc(p.id)+"','"+esc(ch)+"',"+Number(item.c.decensored||0)+")\">"+
-        "<div class='mvp-chapter-bato-body'><div style='font-weight:800;font-size:14px;color:var(--accent);'>Chapter "+esc(ch)+decBadge(item.c.decensored)+"</div>"+
+      "<div class='chapter-bato' onclick=\"openReader('"+esc(p.id)+"','"+esc(item.c.chapter)+"',"+Number(item.c.decensored||0)+")\">"+
+        "<div class='mvp-chapter-bato-body'><div style='font-weight:800;font-size:14px;color:var(--accent);'>Chapter "+esc(item.c.chapter)+decBadge(item.c.decensored)+"</div>"+
         (chTitle?"<div class='mvp-chapter-title'>"+esc(chTitle)+"</div>":"")+"</div>"+
         "<div class='mvp-chapter-bato-meta'>🕒 "+timeStr+"</div>"+
       "</div>"+
-      "<button type='button' class='chapter-comment-link' onclick=\"event.stopPropagation();focusChapterComment('"+esc(p.id)+"','"+esc(ch)+"')\">💬 Komentar Chapter "+esc(ch)+"</button>"+
+      "<details class='mvp-chapter-comments'>"+
+        "<summary>💬 Komentar Chapter "+esc(chKey)+"</summary>"+
+        "<div id='chapterComments_"+esc(p.id)+"_"+esc(chKey)+"' class='mvp-chapter-comment-list'><div class='mvp-empty-state'>Memuat...</div></div>"+
+        "<div class='mvp-comment-compose'>"+
+          "<textarea id='chapterCommentInput_"+esc(p.id)+"_"+esc(chKey)+"' class='mvp-comment-input' maxlength='2000' placeholder='Tulis komentar untuk Chapter "+esc(chKey)+"...'></textarea>"+
+          "<button class='btn primary' onclick=\"event.stopPropagation();submitChapterComment('"+esc(p.id)+"','"+esc(chKey)+"')\">Kirim Komentar</button>"+
+        "</div>"+
+      "</details>"+
     "</div>";
   }).join("");
 
   var chaptersWrap="<div class='chapter-scroll-box'>"+
     (chaptersHtml||"<div class='mvp-empty-state'>Belum ada chapter.</div>")+
     "</div>";
+
+  var projectComments=
+    "<details class='mvp-community-collapsible mvp-project-comments' id='projectComments_"+esc(p.id)+"'>"+
+      "<summary>💬 Komentar</summary>"+
+      "<div id='comments_"+esc(p.id)+"' class='mvp-comments'><div class='mvp-empty-state'>Memuat...</div></div>"+
+      "<div class='mvp-comment-compose'>"+
+        "<textarea id='commentInput_"+esc(p.id)+"' class='mvp-comment-input' maxlength='2000' placeholder='Tulis komentar...'></textarea>"+
+        "<button class='btn primary' onclick=\"submitComment('"+esc(p.id)+"')\">Kirim Komentar</button>"+
+      "</div>"+
+    "</details>";
 
   var part4=
     "<section class='mvp-detail-part'>"+
@@ -1335,136 +1324,145 @@ async function openProject(id){
         "<button class='btn' style='padding:6px 12px;font-size:12px;background:var(--panel2);color:var(--text);border:1px solid var(--border);pointer-events:auto;border-radius:24px;' onclick=\"toggleChapterSort('"+esc(p.id)+"')\">⇅ Sortir</button>"+
       "</div>"+
       chaptersWrap+
+      projectComments+
     "</section>";
-
-  var commentSection=
-    "<details class='mvp-collapsible' id='commentSection_"+esc(p.id)+"'>"+
-      "<summary>💬 Komentar</summary>"+
-      "<div class='mvp-collapsible-body'>"+
-        "<div id='chapterCommentTarget_"+esc(p.id)+"' class='mvp-comment-target hidden'></div>"+
-        "<div id='comments_"+esc(p.id)+"' class='mvp-comments'><div class='mvp-empty-state'>Memuat...</div></div>"+
-        "<div class='mvp-comment-compose'>"+
-          "<textarea id='commentInput_"+esc(p.id)+"' class='mvp-comment-input' maxlength='1000' placeholder='Tulis komentar...'></textarea>"+
-          "<button class='btn primary' onclick=\"submitComment('"+esc(p.id)+"')\">Kirim Komentar</button>"+
-        "</div>"+
-      "</div>"+
-    "</details>";
 
   $("detailContent").innerHTML=topBar+part1+part2+part3+part4;
   loadCommunity(p.id);
 }
 
 /* COMMUNITY / NOTIFICATIONS */
-var pendingCommentChapter={};
-
 function apiJSON(url,opt){opt=opt||{};opt.headers=Object.assign({},opt.headers||{},accessHeaders());return fetch(url,opt).then(function(r){return r.json().catch(function(){return {};}).then(function(d){if(!r.ok)throw new Error(d.error||"request");return d;});});}
 
+function communityAuthorName(x){
+  return x.telegram_name || [x.first_name,x.last_name].filter(Boolean).join(" ").trim() || x.username || "Unknown User";
+}
+function communityIsMine(x){
+  var id=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user)?String(tg.initDataUnsafe.user.id):"";
+  return id && String(x.user_id||x.telegram_id||"")===id;
+}
+function communityModIds(){
+  return String(window.MINIWEB_MOD_IDS||"").split(",").map(function(x){return x.trim();}).filter(Boolean);
+}
+function communityCanDelete(x){
+  var id=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user)?String(tg.initDataUnsafe.user.id):"";
+  return communityIsMine(x)||communityModIds().indexOf(id)>=0;
+}
+
+function reviewActions(pid,x){
+  if(!communityIsMine(x)) return "";
+  return "<div class='mvp-community-actions'>"+
+    "<button type='button' onclick=\"editReview('"+esc(pid)+"','"+esc(x.id)+"',"+JSON.stringify(x.text||"")+")\">Edit</button>"+
+    "<button type='button' onclick=\"deleteReview('"+esc(pid)+"','"+esc(x.id)+"')\">Hapus</button>"+
+  "</div>";
+}
+async function editReview(pid,id,current){
+  var v=prompt("Edit review:",current||"");
+  if(v===null)return;
+  v=v.trim(); if(!v)return;
+  try{await apiJSON("/api/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,review_id:id,text:v})});await loadCommunity(pid);}
+  catch(e){if(tg&&tg.showAlert)tg.showAlert("Review gagal diedit.");}
+}
+async function deleteReview(pid,id){
+  if(!confirm("Hapus review ini?"))return;
+  try{await apiJSON("/api/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,review_id:id,action:"delete"})});await loadCommunity(pid);}
+  catch(e){if(tg&&tg.showAlert)tg.showAlert("Review gagal dihapus.");}
+}
 async function submitReview(pid){
-  var el=document.getElementById("reviewText_"+pid);
-  var value=el?el.value.trim():"";
-  if(!value){
-    if(tg&&tg.showAlert)tg.showAlert("Tulis review dulu.");
-    return;
-  }
-  try{
-    await apiJSON("/api/review",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({project_id:pid,text:value})
-    });
-    if(el)el.value="";
-    await loadCommunity(pid);
-    if(tg&&tg.showAlert)tg.showAlert("Review tersimpan.");
-  }catch(e){
-    if(tg&&tg.showAlert)tg.showAlert("Review gagal disimpan.");
-  }
-}
-
-function focusChapterComment(pid,chapter){
-  pendingCommentChapter[pid]=String(chapter||"");
-  var section=document.getElementById("commentSection_"+pid);
-  if(section) section.open=true;
-  var target=document.getElementById("chapterCommentTarget_"+pid);
-  if(target){
-    target.classList.remove("hidden");
-    target.innerHTML="💬 Komentar untuk <b>Chapter "+esc(chapter)+"</b> <button type='button' class='mvp-clear-chapter' onclick=\"clearChapterComment('"+esc(pid)+"')\">×</button>";
-  }
-  var input=document.getElementById("commentInput_"+pid);
-  if(input){
-    input.placeholder="Tulis komentar untuk Chapter "+chapter+"...";
-    input.focus();
-    input.scrollIntoView({behavior:"smooth",block:"center"});
-  }
-}
-
-function clearChapterComment(pid){
-  pendingCommentChapter[pid]="";
-  var target=document.getElementById("chapterCommentTarget_"+pid);
-  if(target){target.classList.add("hidden");target.innerHTML="";}
-  var input=document.getElementById("commentInput_"+pid);
-  if(input)input.placeholder="Tulis komentar...";
-}
-
-async function submitComment(pid){
-  var el=document.getElementById("commentInput_"+pid);
-  var t=el?el.value.trim():"";
+  var el=document.getElementById("reviewText_"+pid),t=el?el.value.trim():"";
   if(!t)return;
-  var chapter=pendingCommentChapter[pid]||"";
-  try{
-    await apiJSON("/api/comment",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({project_id:pid,text:t,chapter:chapter||null})
-    });
-    el.value="";
-    clearChapterComment(pid);
-    loadCommunity(pid);
-  }catch(e){
-    if(tg&&tg.showAlert)tg.showAlert("Komentar gagal disimpan.");
-  }
+  try{await apiJSON("/api/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:t})});el.value="";await loadCommunity(pid);if(tg&&tg.showAlert)tg.showAlert("Review tersimpan.");}
+  catch(e){if(tg&&tg.showAlert)tg.showAlert("Review gagal disimpan.");}
 }
 
-async function loadCommunity(pid){
-  var box=document.getElementById("comments_"+pid);
-  var reviewBox=document.getElementById("reviews_"+pid);
-  if(!box)return;
+function commentActions(pid,x){
+  var html="<div class='mvp-community-actions'>";
+  if(communityIsMine(x)) html+="<button type='button' onclick=\"editComment('"+esc(pid)+"','"+esc(x.id)+"',"+JSON.stringify(x.text||"")+")\">Edit</button>";
+  if(communityCanDelete(x)) html+="<button type='button' onclick=\"deleteComment('"+esc(pid)+"','"+esc(x.id)+"')\">Hapus</button>";
+  html+="<button type='button' onclick=\"replyComment('"+esc(pid)+"','"+esc(x.id)+"')\">Balas</button></div>";
+  return html;
+}
+function commentCard(pid,x,reply){
+  var chapter=x.chapter? "<span class='mvp-comment-chapter'>Chapter "+esc(x.chapter)+"</span>":"";
+  return "<article class='mvp-comment-card "+(reply?"mvp-comment-reply":"")+"' id='comment_"+esc(String(x.id||""))+"'>"+
+    "<div class='mvp-comment-meta'><b>"+esc(communityAuthorName(x))+"</b>"+(x.username?" <span class='mvp-comment-username'>@"+esc(String(x.username).replace(/^@/,""))+"</span>":"")+chapter+"</div>"+
+    "<div class='mvp-comment-text'>"+esc(x.text||"")+"</div>"+
+    (x.edited_at?"<span class='mvp-comment-edited'>edited</span>":"")+
+    commentActions(pid,x)+
+  "</article>";
+}
+async function replyComment(pid,parentId){
+  var v=prompt("Balas komentar:");
+  if(v===null)return;
+  v=v.trim();if(!v)return;
   try{
-    var d=await apiJSON("/api/community?project_id="+encodeURIComponent(pid));
-    var r=Array.isArray(d.reviews)?d.reviews:[];
-    var c=Array.isArray(d.comments)?d.comments:[];
-    c.sort(function(a,b){return Number(a.created_at||0)-Number(b.created_at||0);});
-
+    await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:v,parent_id:parentId})});
+    await loadCommunity(pid);
+  }catch(e){if(tg&&tg.showAlert)tg.showAlert("Balasan gagal dikirim.");}
+}
+async function editComment(pid,id,current){
+  var v=prompt("Edit komentar:",current||"");
+  if(v===null)return;
+  v=v.trim();if(!v)return;
+  try{await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,comment_id:id,text:v})});await loadCommunity(pid);}
+  catch(e){if(tg&&tg.showAlert)tg.showAlert("Komentar gagal diedit.");}
+}
+async function deleteComment(pid,id){
+  if(!confirm("Hapus komentar ini?"))return;
+  try{await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,comment_id:id,action:"delete"})});await loadCommunity(pid);}
+  catch(e){if(tg&&tg.showAlert)tg.showAlert("Komentar gagal dihapus.");}
+}
+async function submitComment(pid){
+  var el=document.getElementById("commentInput_"+pid),t=el?el.value.trim():"";
+  if(!t)return;
+  try{await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:t,chapter:null})});el.value="";await loadCommunity(pid);}
+  catch(e){if(tg&&tg.showAlert)tg.showAlert("Komentar gagal disimpan.");}
+}
+async function submitChapterComment(pid,chapter){
+  var el=document.getElementById("chapterCommentInput_"+pid+"_"+chapter),t=el?el.value.trim():"";
+  if(!t)return;
+  try{await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:t,chapter:String(chapter)})});el.value="";await loadCommunity(pid);}
+  catch(e){if(tg&&tg.showAlert)tg.showAlert("Komentar chapter gagal disimpan.");}
+}
+function renderCommentFeed(pid,comments){
+  var roots=comments.filter(function(x){return !x.parent_id;}).sort(function(a,b){return Number(a.created_at||0)-Number(b.created_at||0);});
+  var byParent={};
+  comments.forEach(function(x){if(x.parent_id)(byParent[x.parent_id]||(byParent[x.parent_id]=[])).push(x);});
+  function one(x,reply){
+    var s=commentCard(pid,x,reply);
+    var kids=(byParent[x.id]||[]).sort(function(a,b){return Number(a.created_at||0)-Number(b.created_at||0);});
+    kids.forEach(function(k){s+="<div class='mvp-replies'>"+one(k,true)+"</div>";});
+    return s;
+  }
+  return roots.length?roots.map(function(x){return one(x,false);}).join(""):"<div class='mvp-empty-state'>Belum ada komentar.</div>";
+}
+async function loadCommunity(pid){
+  try{
+    var d=await apiJSON("/api/community?project_id="+encodeURIComponent(pid)),r=d.reviews||[],c=d.comments||[];
+    var reviewBox=document.querySelector("#community_"+CSS.escape(pid)+" .mvp-review-vote-wrap");
     if(reviewBox){
-      reviewBox.innerHTML=r.length?r.map(function(x){return "<article class='mvp-review-card'>"+
-          "<b>"+esc(x.telegram_name||x.first_name||x.last_name||x.username||"Unknown User")+"</b>"+
-          (n?"":"")+
-          (x.text?"<div class='mvp-review-text'>"+esc(x.text)+"</div>":"")+
-        "</article>";
+      var form=reviewBox.querySelector(".mvp-review-form");
+      var old=reviewBox.querySelector(".mvp-review-list");
+      if(old)old.remove();
+      var list=document.createElement("div");list.className="mvp-review-list";
+      list.innerHTML=r.length?r.map(function(x){
+        return "<article class='mvp-review-card'><div><b>"+esc(communityAuthorName(x))+"</b>"+(x.username?" <span class='mvp-comment-username'>@"+esc(String(x.username).replace(/^@/,""))+"</span>":"")+"</div>"+
+          (x.text?"<div class='mvp-review-text'>"+esc(x.text)+"</div>":"")+reviewActions(pid,x)+"</article>";
       }).join(""):"<div class='mvp-empty-state'>Belum ada review.</div>";
+      reviewBox.appendChild(list);
     }
+    var box=document.getElementById("comments_"+pid);
+    if(box)box.innerHTML=renderCommentFeed(pid,c);
 
-    box.innerHTML=c.length?c.map(function(x){
-      var ch=x.chapter;
-      var myId=String((tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user&&tg.initDataUnsafe.user.id)||"");
-      var modIds=String(window.MINIWEB_MOD_IDS||"").split(",").map(function(s){return s.trim();}).filter(Boolean);
-      var canEdit=myId && String(x.telegram_id||"")===myId;
-      var canDelete=canEdit || modIds.indexOf(myId)>=0;
-      var actions=canEdit||canDelete ? "<div class='mvp-comment-actions'>"+
-        (canEdit?"<button type='button' onclick='editCommunityComment("+JSON.stringify(String(x.id||""))+","+JSON.stringify(String(pid))+","+JSON.stringify(String(x.text||""))+")'>Edit</button>":"")+
-        (canDelete?"<button type='button' onclick='deleteCommunityComment("+JSON.stringify(String(x.id||""))+","+JSON.stringify(String(pid))+")'>Hapus</button>":"")+
-        "</div>" : "";
-      return "<article class='mvp-comment-card' id='comment_"+esc(String(x.id||""))+"'>"+
-        "<div class='mvp-comment-meta'><b>"+esc(communityAuthorName(x))+"</b>"+
-        (x.username?" <span class='mvp-comment-username'>@"+esc(String(x.username).replace(/^@/,""))+"</span>":"")+
-        (ch?"<span class='mvp-comment-chapter'>Chapter "+esc(ch)+"</span>":"")+
-        "</div>"+
-        "<div class='mvp-comment-text'>"+esc(x.text||"")+"</div>"+
-        actions+
-      "</article>";
-    }).join(""):"<div class='mvp-empty-state'>Belum ada komentar.</div>";
+    var chapters=document.querySelectorAll("[id^='chapterComments_"+CSS.escape(pid)+"_']");
+    chapters.forEach(function(box){
+      var ch=box.id.split("_").slice(2).join("_");
+      var arr=c.filter(function(x){return String(x.chapter||"")===String(ch);});
+      box.innerHTML=renderCommentFeed(pid,arr);
+    });
   }catch(e){
-    box.innerHTML="<div class='mvp-empty-state'>Komentar belum tersedia.</div>";
-    if(reviewBox)reviewBox.innerHTML="<div class='mvp-empty-state'>Review belum tersedia.</div>";
+    var box=document.getElementById("comments_"+pid);
+    if(box)box.innerHTML="<div class='mvp-empty-state'>Komentar/review belum tersedia.</div>";
   }
 }
 
@@ -1916,41 +1914,5 @@ html,body{background:var(--bg)}
 
 .mvp-tag-link.status.ongoing{color:#10b981}.mvp-tag-link.status.completed{color:var(--accent)}
 </style>
-
-<script>
-function communityAuthorName(x){
-  return x.telegram_name || [x.first_name, x.last_name].filter(Boolean).join(" ").trim() || x.username || "Unknown User";
-}
-async function editCommunityComment(commentId, projectId, currentText){
-  var next=prompt("Edit komentar:", currentText||"");
-  if(next===null)return;
-  next=next.trim();
-  if(!next)return;
-  try{
-    await apiJSON("/api/comment",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({comment_id:commentId,project_id:projectId,text:next})
-    });
-    await loadCommunity(projectId);
-  }catch(e){
-    if(tg&&tg.showAlert)tg.showAlert("Komentar gagal diedit.");
-  }
-}
-async function deleteCommunityComment(commentId, projectId){
-  if(!confirm("Hapus komentar ini?"))return;
-  try{
-    await apiJSON("/api/comment",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({action:"delete",comment_id:commentId,project_id:projectId})
-    });
-    await loadCommunity(projectId);
-  }catch(e){
-    if(tg&&tg.showAlert)tg.showAlert("Komentar gagal dihapus.");
-  }
-}
-</script>
-
 </body>
 </html>
