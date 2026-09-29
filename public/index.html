@@ -458,23 +458,6 @@ html,body{background:var(--bg)}
   font-weight:900;
 }
 </style>
-<style>
-.mvp-community-panel{margin-top:16px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px}.mvp-community-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.mvp-review-form,.mvp-comment-compose{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid var(--border)}.mvp-review-stars{display:flex}.mvp-review-stars button{border:0;background:none;color:var(--bato-star);font-size:26px}.mvp-comment-input{width:100%;min-height:80px;resize:vertical;border:1px solid var(--border);border-radius:10px;background:var(--input);color:var(--text);padding:10px;font:inherit}.mvp-comments{display:grid;gap:8px;padding-top:12px}.mvp-review-card,.mvp-comment-card{padding:11px;background:var(--panel2);border:1px solid var(--border);border-radius:10px}.mvp-review-text,.mvp-comment-text{margin-top:6px;font-size:13px;line-height:1.5;white-space:pre-line}.mvp-community-section-title{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;margin:6px 0}.mvp-review-stars-static{color:var(--bato-star)}.mvp-notif-badge{position:absolute;right:-2px;top:-2px;min-width:17px;height:17px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--panel2)}.mvp-notification-list{display:grid;gap:8px}.mvp-notification-item{width:100%;text-align:left;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:12px;padding:12px}.mvp-notification-item.unread{border-color:var(--accent);background:var(--panel2)}.mvp-notification-item div{margin-top:5px;color:var(--muted);font-size:12px}.readerpage{content-visibility:auto;contain-intrinsic-size:100vw 1200px}
-</style>
-<style id="mvp-safe-lazy-reader">
-.readerpage{
-  display:block;
-  width:100%;
-  height:auto;
-  background:var(--panel2);
-}
-.readerpage-placeholder{
-  background:var(--panel2);
-}
-.readerpage-loading{
-  opacity:.75;
-}
-</style>
 </head>
 <body oncontextmenu="return false">
 
@@ -524,10 +507,7 @@ html,body{background:var(--bg)}
         <h1 style="font-size:24px; font-weight:900; letter-spacing:-0.5px; background:linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">MVP Miniweb</h1>
         <p class="muted" style="margin-top:2px; font-size:13px; font-weight:600;">Baca sepuasnya, rebahan selamanya.</p>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
-<button id="notificationBtn" class="theme-toggle" onclick="openNotifications()" style="position:relative">🔔<span id="notificationBadge" class="mvp-notif-badge hidden">0</span></button>
-<button id="themeToggle" class="theme-toggle" onclick="toggleTheme()"></button>
-</div>
+      <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()"></button>
     </div>
     <div style="display:flex;gap:8px;overflow-x:auto;padding:12px 0 2px;scrollbar-width:none">
       <button class="btn primary" style="border-radius:24px;white-space:nowrap;padding:9px 14px" onclick="showHome()">Home</button>
@@ -637,10 +617,6 @@ html,body{background:var(--bg)}
   <div id="guestListContent" class="mvp-translator-list"></div>
 </div>
 
-<div id="notificationsLayer" class="wrap hidden mvp-simple-page">
-<div class="mvp-browse-top"><button class="back" onclick="closeNotifications()">←</button><div><div class="mvp-browse-title">Notifications</div><div class="mvp-browse-sub">Komentar, balasan, dan review terbaru.</div></div></div>
-<div id="notificationList" class="mvp-notification-list"></div>
-</div>
 <div id="detail" class="wrap hidden"><div id="detailContent"></div></div>
 
 <div id="reader" class="wrap hidden">
@@ -1266,13 +1242,7 @@ async function openProject(id){
       "<div class='mvp-detail-part-title'>Tags</div>"+
       tagsHtml+
       ratingPanel+
-      "<div id='community_"+esc(p.id)+"' class='mvp-community-panel'>"+
-      "<div class='mvp-community-head'><b>Community</b><button class='btn' onclick="loadCommunity('"+esc(p.id)+"')">Refresh</button></div>"+
-      "<div class='mvp-review-form'><b>Review kamu</b><div class='mvp-review-stars'>"+[1,2,3,4,5].map(function(n){return "<button type='button' onclick="selectReviewScore('"+esc(p.id)+"',"+n+")">☆</button>";}).join("")+"</div>"+
-      "<textarea id='reviewText_"+esc(p.id)+"' class='mvp-comment-input' maxlength='1000' placeholder='Tulis review...'></textarea><button class='btn primary' onclick="submitReview('"+esc(p.id)+"')">Kirim Review</button></div>"+
-      "<div id='comments_"+esc(p.id)+"' class='mvp-comments'><div class='mvp-empty-state'>Memuat...</div></div>"+
-      "<div class='mvp-comment-compose'><textarea id='commentInput_"+esc(p.id)+"' class='mvp-comment-input' maxlength='1000' placeholder='Tulis komentar...'></textarea><button class='btn primary' onclick="submitComment('"+esc(p.id)+"')">Kirim Komentar</button></div>"+
-      "</div></section>";
+    "</section>";
 
   // PART 3 — description.
   var trakteerDetail=p.trakteer ? "<a href='"+esc(p.trakteer)+"' target='_blank' class='btn' style='background:#e74c3c;color:#fff;width:100%;margin-top:14px;border-radius:24px;'>☕ "+esc(p.trakteer_label || "Traktir Kopi")+"</a>" : "";
@@ -1317,154 +1287,8 @@ async function openProject(id){
     "</section>";
 
   $("detailContent").innerHTML=topBar+part1+part2+part3+part4;
-  loadCommunity(p.id);
 }
 
-/* COMMUNITY / NOTIFICATIONS */
-var selectedReviewScore={};
-function apiJSON(url,opt){opt=opt||{};opt.headers=Object.assign({},opt.headers||{},accessHeaders());return fetch(url,opt).then(function(r){return r.json().catch(function(){return {};}).then(function(d){if(!r.ok)throw new Error(d.error||"request");return d;});});}
-function selectReviewScore(pid,n){selectedReviewScore[pid]=n;var b=document.querySelectorAll("#community_"+pid+" .mvp-review-stars button");b.forEach(function(x,i){x.textContent=i<n?"★":"☆";});}
-async function submitReview(pid){var n=selectedReviewScore[pid]||0,t=(document.getElementById("reviewText_"+pid)||{}).value||"";if(!n){if(tg&&tg.showAlert)tg.showAlert("Pilih rating 1–5 dulu.");return;}try{await apiJSON("/api/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,score:n,text:t.trim()})});loadCommunity(pid);if(tg&&tg.showAlert)tg.showAlert("Review tersimpan.");}catch(e){if(tg&&tg.showAlert)tg.showAlert("Review gagal disimpan.");}}
-async function submitComment(pid){var el=document.getElementById("commentInput_"+pid),t=el?el.value.trim():"";if(!t)return;try{await apiJSON("/api/comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project_id:pid,text:t})});el.value="";loadCommunity(pid);}catch(e){if(tg&&tg.showAlert)tg.showAlert("Komentar gagal disimpan.");}}
-async function loadCommunity(pid){var box=document.getElementById("comments_"+pid);if(!box)return;try{var d=await apiJSON("/api/community?project_id="+encodeURIComponent(pid)),r=d.reviews||[],c=d.comments||[],o="";if(r.length){o+="<div class='mvp-community-section-title'>Reviews</div>";o+=r.map(function(x){var n=Number(x.score)||0;return "<article class='mvp-review-card'><b>"+esc(x.display_call||x.username||"Reader")+"</b><span class='mvp-review-stars-static'> "+("★★★★★".slice(0,n))+"</span>"+(x.text?"<div class='mvp-review-text'>"+esc(x.text)+"</div>":"")+"</article>";}).join("");}o+="<div class='mvp-community-section-title'>Comments</div>";o+=c.length?c.map(function(x){return "<article class='mvp-comment-card'><b>"+esc(x.display_call||x.username||"Reader")+"</b><div class='mvp-comment-text'>"+esc(x.text||"")+"</div></article>";}).join(""):"<div class='mvp-empty-state'>Belum ada komentar.</div>";box.innerHTML=o;}catch(e){box.innerHTML="<div class='mvp-empty-state'>Komentar/review belum tersedia.</div>";}}
-function updateNotificationBadge(a){var b=$("notificationBadge");if(!b)return;var n=(a||[]).filter(function(x){return !x.read;}).length;b.textContent=n>99?"99+":n;b.classList.toggle("hidden",!n);}
-async function loadNotifications(){try{var d=await apiJSON("/api/notifications?limit=50"),a=Array.isArray(d)?d:(d.notifications||[]);$("notificationList").innerHTML=a.length?a.map(function(n){return "<button class='mvp-notification-item "+(n.read?"":"unread")+"' onclick='openNotification("+JSON.stringify(n).replace(/'/g,"&#39;")+")'><b>"+esc(n.type==="review"?"Review baru":n.type==="comment_reply"?"Balasan komentar":"Komentar baru")+"</b><div>"+esc(n.text||n.message||"")+"</div></button>";}).join(""):"<div class='mvp-empty-state'>Belum ada notifikasi.</div>";updateNotificationBadge(a);}catch(e){$("notificationList").innerHTML="<div class='mvp-empty-state'>Notifikasi belum tersedia.</div>";}}
-async function openNotifications(){["home","detail","reader","browseLayer","catalogLayer","lapakLayer","guestLayer"].forEach(function(id){var e=$(id);if(e)e.classList.add("hidden");});$("notificationsLayer").classList.remove("hidden");$("notificationsLayer").classList.add("active");window.scrollTo(0,0);loadNotifications();}
-function closeNotifications(){$("notificationsLayer").classList.remove("active");$("notificationsLayer").classList.add("hidden");$("home").classList.remove("hidden");}
-async function openNotification(n){try{if(n.id)await apiJSON("/api/notifications/read",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:n.id})});}catch(e){}if(n.project_id){closeNotifications();openProject(String(n.project_id));}loadNotifications();}
-async function initNotificationBadge(){try{var d=await apiJSON("/api/notifications?limit=50"),a=Array.isArray(d)?d:(d.notifications||[]);updateNotificationBadge(a);}catch(e){}}
-
-/* LAZY LOAD READER */
-function enableReaderLazyLoad(p){
-  if(!p)return;
-  var imgs=Array.from(p.querySelectorAll("img.readerpage"));
-  if(!imgs.length)return;
-
-  var AHEAD=2;
-  var KEEP=4;
-  var busy=false;
-
-  function load(img){
-    if(!img || img.dataset.loaded==="1" || img.dataset.loading==="1")return;
-    var src=img.dataset.src;
-    if(!src)return;
-
-    img.dataset.loading="1";
-    img.src=src;
-
-    img.onload=function(){
-      img.dataset.loading="0";
-      img.dataset.loaded="1";
-      img.classList.remove("readerpage-loading");
-      img.style.minHeight="";
-      img.style.background="";
-    };
-
-    img.onerror=function(){
-      img.dataset.loading="0";
-    };
-  }
-
-  function unload(img){
-    if(!img || img.dataset.loaded!=="1")return;
-
-    var r=img.getBoundingClientRect();
-    if(r.bottom>0 && r.top<window.innerHeight)return;
-
-    var distance=r.bottom<0 ? -r.bottom : r.top-window.innerHeight;
-    if(distance < window.innerHeight*1.5)return;
-
-    img.removeAttribute("src");
-    img.dataset.loaded="0";
-    img.classList.add("readerpage-placeholder");
-  }
-
-  function refresh(){
-    if(busy)return;
-    busy=true;
-
-    requestAnimationFrame(function(){
-      busy=false;
-
-      var active=-1;
-      var best=Infinity;
-
-      imgs.forEach(function(img,i){
-        var r=img.getBoundingClientRect();
-        var visible=r.bottom>0 && r.top<window.innerHeight;
-
-        if(visible){
-          var d=Math.abs((r.top+r.bottom)/2-window.innerHeight/2);
-          if(d<best){
-            best=d;
-            active=i;
-          }
-        }
-      });
-
-      if(active<0){
-        // At the very top, make sure page 1 is available.
-        if(window.scrollY<window.innerHeight)active=0;
-        else return;
-      }
-
-      var from=Math.max(0,active-1);
-      var to=Math.min(imgs.length-1,active+AHEAD);
-
-      for(var i=from;i<=to;i++)load(imgs[i]);
-
-      for(var j=0;j<imgs.length;j++){
-        if(Math.abs(j-active)>KEEP)unload(imgs[j]);
-      }
-    });
-  }
-
-  /*
-   * Important: move every URL to data-src first.
-   * This is the part that prevents the browser from requesting all pages.
-   */
-  imgs.forEach(function(img){
-    if(!img.dataset.src){
-      var current=img.getAttribute("src");
-      if(current){
-        img.dataset.src=current;
-        img.removeAttribute("src");
-      }
-    }
-
-    img.dataset.loaded="0";
-    img.style.minHeight=Math.max(420,Math.round(window.innerWidth*1.25))+"px";
-    img.classList.add("readerpage-placeholder");
-  });
-
-  // First two pages are visible/immediately useful.
-  load(imgs[0]);
-  if(imgs[1])load(imgs[1]);
-
-  window.addEventListener("scroll",refresh,{passive:true});
-  window.addEventListener("resize",refresh,{passive:true});
-
-  /*
-   * Also use IntersectionObserver only as a trigger.
-   * It does not own the loading logic, so it cannot accidentally load every
-   * page just because the placeholders are visible in the root margin.
-   */
-  if("IntersectionObserver" in window){
-    var io=new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){
-        if(entry.isIntersecting)refresh();
-      });
-    },{
-      root:null,
-      rootMargin:"300px 0px",
-      threshold:0
-    });
-
-    imgs.forEach(function(img){io.observe(img);});
-  }
-
-  refresh();
-}
 // LOGIKA SCROLL: Progress bar & Auto-hide UI
 window.addEventListener('scroll', function() {
   if (!$("reader").classList.contains("hidden")) {
@@ -1485,18 +1309,18 @@ window.addEventListener('scroll', function() {
   }
 });
 
-function getReaderWatermarkCode(){
-  var key="mvp_reader_code",code="";
-  try{code=localStorage.getItem(key)||"";}catch(e){}
-  if(!/^[A-Z0-9]{8}$/.test(code)){
-    var chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",a=new Uint8Array(8);
-    try{crypto.getRandomValues(a);}catch(e){for(var i=0;i<a.length;i++)a[i]=Math.random()*256;}
-    code="";for(var j=0;j<a.length;j++)code+=chars[a[j]%chars.length];
-    try{localStorage.setItem(key,code);}catch(e){}
-  }return code;
+function getTelegramIdentity(){
+  var user = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
+  if(!user) return {id:"", username:""};
+  return { id: String(user.id || ""), username: user.username ? ("@" + user.username) : "" };
 }
+
 function showReaderWatermark(){
-  $("readerWatermarkUser").textContent="Reader • "+getReaderWatermarkCode();
+  var u = getTelegramIdentity();
+  var parts = [];
+  if (u.id) parts.push(u.id);
+  if (u.username) parts.push(u.username);
+  $("readerWatermarkUser").textContent = parts.join(" | ");
   $("readerWatermark").classList.remove("hidden");
 }
 
@@ -1686,8 +1510,8 @@ async function openReader(projectId, chapterName, decensored){
       var img = document.createElement("img");
       img.className = "readerpage";
       img.alt = p.title + " Chapter " + chapterName + " Page " + (i+1);
-      img.loading = "lazy";
-      img.dataset.src = fileUrl(fid);
+      img.loading = i < 2 ? "eager" : "lazy";
+      img.src = fileUrl(fid);
       img.onerror = function() {
         var err = document.createElement("div");
         err.className = "readererror";
@@ -1696,7 +1520,6 @@ async function openReader(projectId, chapterName, decensored){
       };
       pages.appendChild(img);
     });
-    enableReaderLazyLoad(pages);
   }
 }
 
@@ -1778,7 +1601,6 @@ function toggleTheme(){
     $("home").classList.remove("hidden"); 
     
     renderHome();
-    initNotificationBadge();
 
     var startParam = (tg && tg.initDataUnsafe) ? tg.initDataUnsafe.start_param : null;
     if (startParam) {
