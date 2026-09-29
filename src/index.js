@@ -23,7 +23,7 @@ function cors(headers = {}) {
   return {
     ...headers,
     "access-control-allow-origin": "*",
-    "access-control-allow-methods": "GET,POST,PUT,OPTIONS",
+    "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
     "access-control-allow-headers": "Content-Type,X-Library-Secret,X-Telegram-Init-Data"
   };
 }
@@ -162,6 +162,41 @@ async function enrichCatalog(env, catalog, userId) {
     const summary = summarizeInteraction(data, userId, 0);
     return {...p, rating: summary.rating, bookmarks: summary.bookmarks, user_vote: summary.user_vote, bookmarked: summary.bookmarked};
   }));
+}
+
+
+function safeId(value) {
+  return String(value || "").replace(/[^a-zA-Z0-9_.:-]/g, "_").slice(0, 180);
+}
+function nowSec() { return Math.floor(Date.now() / 1000); }
+
+async function getCommunity(env, projectId) {
+  const data = await env.LIBRARY.get(`community:${safeId(projectId)}`, "json");
+  return {
+    reviews: Array.isArray(data?.reviews) ? data.reviews : [],
+    comments: Array.isArray(data?.comments) ? data.comments : []
+  };
+}
+
+async function putCommunity(env, projectId, data) {
+  await env.LIBRARY.put(`community:${safeId(projectId)}`, JSON.stringify(data));
+}
+
+async function getNotifications(env, userId) {
+  const data = await env.LIBRARY.get(`notifications:${String(userId)}`, "json");
+  return Array.isArray(data) ? data : [];
+}
+
+async function putNotifications(env, userId, data) {
+  await env.LIBRARY.put(`notifications:${String(userId)}`, JSON.stringify(data.slice(0, 100)));
+}
+
+function displayCallFromUser(user) {
+  return user.username ? `@${user.username}` : (user.first_name || "Reader");
+}
+
+async function requireApiAccess(request, env) {
+  return await checkAccess(request, env);
 }
 
 export default {
@@ -340,6 +375,152 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
         "content-type": file.headers.get("content-type") || "image/jpeg"
       }));
       return new Response(file.body, {status: 200, headers});
+    }
+
+
+    // =========================
+    // COMMUNITY: REVIEWS / COMMENTS
+    // =========================
+
+    if (url.pathname === "/api/community" && request.method === "GET") {
+      const access = await requireApiAccess(request, env);
+      if (!access.ok) return json({ok:false, code:access.code}, access.code);
+
+      const projectId = String(url.searchParams.get("project_id") || "").trim();
+      if (!projectId) return json({error:"missing project_id"}, 400);
+
+      const data = await getCommunity(env, projectId);
+      data.reviews.sort((a,b) => Number(b.created_at || 0) - Number(a.created_at || 0));
+      data.comments.sort((a,b) => Number(b.created_at || 0) - Number(a.created_at || 0));
+
+      return new Response(JSON.stringify({
+        ok: true,
+        reviews: data.reviews,
+        comments: data.comments
+      }), {
+        headers: cors({"content-type":"application/json; charset=utf-8"})
+      });
+    }
+
+    if (url.pathname === "/api/review" && request.method === "POST") {
+      const access = await requireApiAccess(request, env);
+      if (!access.ok) return json({ok:false, code:access.code}, access.code);
+
+      const body = await request.json().catch(() => ({}));
+      const projectId = String(body.project_id || "").trim();
+      const score = Number(body.score);
+      const text = String(body.text || "").trim();
+
+      if (!projectId || !Number.isInteger(score) || score < 1 || score > 5) {
+        return json({error:"invalid review"}, 400);
+      }
+      if (text.length > 2000) return json({error:"review too long"}, 400);
+
+      const catalog = await env.LIBRARY.get("catalog", "json");
+      if (!Array.isArray(catalog) || !catalog.some(p => String(p.id) === projectId)) {
+        return json({error:"project not found"}, 404);
+      }
+
+      const data = await getCommunity(env, projectId);
+      const uid = String(access.user.id);
+      const now = nowSec();
+
+      const existing = data.reviews.find(r => String(r.user_id) === uid);
+      if (existing) {
+        existing.score = score;
+        existing.text = text;
+        existing.updated_at = now;
+      } else {
+        data.reviews.push({
+          id: crypto.randomUUID(),
+          user_id: uid,
+          display_call: displayCallFromUser(access.user),
+          score,
+          text,
+          created_at: now,
+          updated_at: now
+        });
+      }
+
+      await putCommunity(env, projectId, data);
+
+      return json({
+        ok:true,
+        review: data.reviews.find(r => String(r.user_id) === uid)
+      });
+    }
+
+    if (url.pathname === "/api/comment" && request.method === "POST") {
+      const access = await requireApiAccess(request, env);
+      if (!access.ok) return json({ok:false, code:access.code}, access.code);
+
+      const body = await request.json().catch(() => ({}));
+      const projectId = String(body.project_id || "").trim();
+      const text = String(body.text || "").trim();
+
+      if (!projectId) return json({error:"missing project_id"}, 400);
+      if (!text) return json({error:"empty comment"}, 400);
+      if (text.length > 2000) return json({error:"comment too long"}, 400);
+
+      const catalog = await env.LIBRARY.get("catalog", "json");
+      if (!Array.isArray(catalog) || !catalog.some(p => String(p.id) === projectId)) {
+        return json({error:"project not found"}, 404);
+      }
+
+      const data = await getCommunity(env, projectId);
+      const comment = {
+        id: crypto.randomUUID(),
+        user_id: String(access.user.id),
+        display_call: displayCallFromUser(access.user),
+        text,
+        created_at: nowSec()
+      };
+
+      data.comments.push(comment);
+      await putCommunity(env, projectId, data);
+
+      return json({ok:true, comment});
+    }
+
+    // =========================
+    // NOTIFICATIONS
+    // =========================
+
+    if (url.pathname === "/api/notifications" && request.method === "GET") {
+      const access = await requireApiAccess(request, env);
+      if (!access.ok) return json({ok:false, code:access.code}, access.code);
+
+      const notifications = await getNotifications(env, access.user.id);
+      return json({
+        ok: true,
+        notifications: notifications.slice(0, 100)
+      });
+    }
+
+    if (url.pathname === "/api/notifications/read" && request.method === "POST") {
+      const access = await requireApiAccess(request, env);
+      if (!access.ok) return json({ok:false, code:access.code}, access.code);
+
+      const body = await request.json().catch(() => ({}));
+      const notificationId = String(body.id || "").trim();
+      if (!notificationId) return json({error:"missing notification id"}, 400);
+
+      const notifications = await getNotifications(env, access.user.id);
+      let found = false;
+
+      for (const item of notifications) {
+        if (String(item.id) === notificationId) {
+          item.read = true;
+          found = true;
+          break;
+        }
+      }
+
+      if (found) {
+        await putNotifications(env, access.user.id, notifications);
+      }
+
+      return json({ok:true, found});
     }
 
     return env.ASSETS.fetch(request);
