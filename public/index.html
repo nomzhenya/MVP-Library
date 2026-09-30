@@ -236,7 +236,7 @@ h1,h2,h3,p{margin:0}
 
 /* WATERMARK SECURITY */
 .reader-watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;pointer-events:none;text-align:center;line-height:1.05;opacity:.25;color:var(--text);text-shadow:0 1px 3px rgba(0,0,0,.75);white-space:nowrap;font-weight:700}
-.reader-watermark .wm-title{font-size:34px;font-weight:900;letter-spacing:1px;line-height:1;}
+.reader-watermark .wm-title{font-size:34px;font-weight:900;letter-spacing:0;line-height:1;text-align:center;}
 .reader-watermark .wm-user{font-size:16px;font-weight:800;margin-top:7px;letter-spacing:.2px}
 
 .novel-reader{width:min(820px,100%);margin:0 auto;padding:10px 24px 20px;background:transparent;color:var(--text);line-height:1.8;font-size:17px;user-select:none;-webkit-user-select:none;} 
@@ -1075,7 +1075,7 @@ html,body{background:var(--bg)}
 
 <div id="reader" class="wrap hidden">
   <div id="readerContent"></div>
-  <div id="readerWatermark" class="reader-watermark hidden"><div class="wm-title">👑 MVP</div><div id="readerWatermarkUser" class="wm-user"></div></div>
+  <div id="readerWatermark" class="reader-watermark hidden"><div class="wm-title">👑</div><div id="readerWatermarkUser" class="wm-user"></div></div>
 </div>
 
 <script>
