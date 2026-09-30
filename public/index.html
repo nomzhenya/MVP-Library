@@ -1068,7 +1068,7 @@ html,body{background:var(--bg)}
 </div>
 
 <div id="notificationsLayer" class="wrap hidden mvp-simple-page">
-<div class="mvp-browse-top"><button class="back" onclick="closeNotifications()">←</button><div><div class="mvp-browse-title">Notifications</div><div class="mvp-browse-sub">Komentar, balasan, dan review terbaru.</div></div></div>
+<div class="mvp-browse-top"><button class="back" onclick="closeNotifications()">←</button><div><div class="mvp-browse-title">Notifications</div><div class="mvp-browse-sub">Update PJ bookmark, komentar, balasan, dan review terbaru.</div></div></div>
 <div id="notificationList" class="mvp-notification-list"></div>
 </div>
 <div id="detail" class="wrap hidden"><div id="detailContent"></div></div>
@@ -1120,7 +1120,7 @@ function getTags(p) {
 function accessHeaders(){ return {"X-Telegram-Init-Data": (tg && tg.initData) ? tg.initData : ""}; }
 function showDenied(){
   accessDenied=true; $("home").classList.add("hidden"); $("detail").classList.add("hidden"); $("reader").classList.add("hidden"); 
-  $("gate").innerHTML="<div><h2>🔒 Akses Ditolak</h2><p class='muted' style='margin-top:8px'>Silakan buka melalui aplikasi Telegram Android/iOS.</p></div>";
+  $("gate").innerHTML="<div><h2>🔒 Akses Ditolak</h2><p class='muted' style='margin-top:8px'>Silakan buka melalui aplikasi Telegram.</p></div>";
   $("gate").classList.remove("hidden");
 }
 
@@ -2116,7 +2116,7 @@ async function loadCommunity(pid){
 
 
 function updateNotificationBadge(a){var b=$("notificationBadge");if(!b)return;var n=(a||[]).filter(function(x){return !x.read;}).length;b.textContent=n>99?"99+":n;b.classList.toggle("hidden",!n);}
-async function loadNotifications(){try{var d=await apiJSON("/api/notifications?limit=50"),a=Array.isArray(d)?d:(d.notifications||[]);$("notificationList").innerHTML=a.length?a.map(function(n){return "<button class='mvp-notification-item "+(n.read?"":"unread")+"' onclick='openNotification("+JSON.stringify(n).replace(/'/g,"&#39;")+")'><b>"+esc(n.type==="review"?"Review baru":n.type==="comment_reply"?"Balasan komentar":"Komentar baru")+"</b><div>"+esc(n.text||n.message||"")+"</div></button>";}).join(""):"<div class='mvp-empty-state'>Belum ada notifikasi.</div>";updateNotificationBadge(a);}catch(e){$("notificationList").innerHTML="<div class='mvp-empty-state'>Notifikasi belum tersedia.</div>";}}
+async function loadNotifications(){try{var d=await apiJSON("/api/notifications?limit=50"),a=Array.isArray(d)?d:(d.notifications||[]);$("notificationList").innerHTML=a.length?a.map(function(n){var type=String(n.type||"").toLowerCase();var label=type==="project_update"||type==="chapter_update"||type==="new_update"?"Update PJ bookmark":type==="review"?"Review baru":type==="comment_reply"?"Balasan komentar":"Komentar baru";return "<button class='mvp-notification-item "+(n.read?"":"unread")+"' onclick='openNotification("+JSON.stringify(n).replace(/'/g,"&#39;")+")'><b>"+esc(label)+"</b><div>"+esc(n.text||n.message||"")+"</div></button>";}).join(""):"<div class='mvp-empty-state'>Belum ada notifikasi.</div>";updateNotificationBadge(a);}catch(e){$("notificationList").innerHTML="<div class='mvp-empty-state'>Notifikasi belum tersedia.</div>";}}
 async function openNotifications(){["home","detail","reader","browseLayer","catalogLayer","lapakLayer","supportLayer"].forEach(function(id){var e=$(id);if(e)e.classList.add("hidden");});$("notificationsLayer").classList.remove("hidden");$("notificationsLayer").classList.add("active");window.scrollTo(0,0);loadNotifications();}
 function closeNotifications(){$("notificationsLayer").classList.remove("active");$("notificationsLayer").classList.add("hidden");$("home").classList.remove("hidden");}
 async function prepareNotificationComment(pid,commentId,chapter){
@@ -2191,9 +2191,18 @@ async function openNotification(n){
   loadNotifications();
 
   var type=String(n.type||"").toLowerCase();
-  if(["update","new_update","chapter_update","catalog_update","new_chapter"].includes(type)){
+  if(["project_update","update","new_update","chapter_update","catalog_update","new_chapter"].includes(type)){
     closeNotifications();
-    openLapakList();
+    if(n.project_id){
+      var updateProject=catalog.find(function(x){return String(x.id)===String(n.project_id);});
+      if(updateProject && n.chapter!=null && String(n.chapter)!==""){
+        openReader(String(n.project_id),String(n.chapter),Number(n.decensored||0));
+      }else{
+        openProject(String(n.project_id));
+      }
+    }else{
+      openLapakList();
+    }
     return;
   }
 
@@ -2284,23 +2293,50 @@ window.addEventListener('scroll', function() {
   }
 });
 
+var readerWatermarkCode = "";
+
 function getReaderWatermarkCode(){
+  if(/^[A-Z0-9]{6}$/.test(readerWatermarkCode)) return readerWatermarkCode;
   var key="mvp_reader_code",code="";
   try{code=localStorage.getItem(key)||"";}catch(e){}
-  if(!/^[A-Z0-9]{8}$/.test(code)){
-    var chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",a=new Uint8Array(8);
+  if(!/^[A-Z0-9]{6}$/.test(code)){
+    var chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",a=new Uint8Array(6);
     try{crypto.getRandomValues(a);}catch(e){for(var i=0;i<a.length;i++)a[i]=Math.random()*256;}
     code="";for(var j=0;j<a.length;j++)code+=chars[a[j]%chars.length];
     try{localStorage.setItem(key,code);}catch(e){}
-  }return code;
+  }
+  readerWatermarkCode=code;
+  return code;
 }
+
+async function loadReaderWatermarkCode(){
+  try{
+    var r=await fetch("/api/reader-code",{cache:"no-store",headers:accessHeaders()});
+    var data=await r.json().catch(function(){return {};});
+    if(r.ok && /^[A-Z0-9]{6}$/.test(String(data.reader_code||""))){
+      readerWatermarkCode=String(data.reader_code);
+      try{localStorage.setItem("mvp_reader_code",readerWatermarkCode);}catch(e){}
+    }
+  }catch(e){}
+}
+
 function showReaderWatermark(){
-  $("readerWatermarkUser").textContent="Reader • "+getReaderWatermarkCode();
+  $("readerWatermarkUser").textContent="MVP • "+getReaderWatermarkCode();
   $("readerWatermark").classList.remove("hidden");
 }
 
 function hideReaderWatermark(){
   $("readerWatermark").classList.add("hidden");
+}
+
+function isAdminDesktop(){
+  var platform=String((tg&&tg.platform)||"").toLowerCase();
+  return !!(accessUser && accessUser.is_admin && (platform==="tdesktop" || platform==="macos"));
+}
+
+function isAllowedMiniAppPlatform(){
+  var platform=String((tg&&tg.platform)||"").toLowerCase();
+  return platform==="android" || platform==="android_x" || platform==="ios" || isAdminDesktop();
 }
 
 function chapterIndex(projectId, chapterName, decensored){
@@ -2394,7 +2430,7 @@ async function openReader(projectId, chapterName, decensored){
   if(!c) return;
 
   var platform = String((tg && tg.platform) || "").toLowerCase();
-  if (Number(c.decensored) === 1 && platform !== "android" && platform !== "android_x") {
+  if (Number(c.decensored) === 1 && platform !== "android" && platform !== "android_x" && platform !== "ios" && !isAdminDesktop()) {
       alert("Akses ditolak!\nChapter Decensored hanya tersedia di Android");
       return;
   }
@@ -2594,14 +2630,18 @@ function toggleTheme(){
   if(!tg){showDenied();return;}
   tg.ready();tg.expand();
   
-  var platform = String((tg && tg.platform) || "").toLowerCase();
-  if(!tg.initData || (platform !== "android" && platform !== "android_x" && platform !== "ios")){
+  if(!tg.initData){
     showDenied();
     return;
   }
   
   try{
     if(!(await requireAccess())) return;
+    if(!isAllowedMiniAppPlatform()){
+      showDenied();
+      return;
+    }
+    await loadReaderWatermarkCode();
     var r = await fetch("/api/catalog", {cache: "no-store", headers: accessHeaders()});
     if(r.status === 403 || r.status === 401){showDenied();return;}
     if(!r.ok) throw new Error("catalog");
