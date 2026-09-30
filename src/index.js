@@ -19,12 +19,49 @@ const json = (data, status = 200) =>
     headers: {"content-type": "application/json; charset=utf-8"}
   });
 
+const ADMIN_USER_IDS = new Set(["6584714489", "7875422649"]);
+
+function isAdminUser(userId, env) {
+  const configured = String(env.ADMIN_USER_IDS || "").split(",").map(x => x.trim()).filter(Boolean);
+  return configured.length ? configured.includes(String(userId)) : ADMIN_USER_IDS.has(String(userId));
+}
+
+function randomReaderCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  let code = "";
+  for (const b of bytes) code += chars[b % chars.length];
+  return code;
+}
+
+async function getReaderCode(env, user) {
+  const uid = String(user.id);
+  const userKey = `reader-code:user:${uid}`;
+  const existing = await env.LIBRARY.get(userKey, "json");
+  if (existing && /^[A-Z0-9]{6}$/.test(String(existing.code || ""))) return String(existing.code);
+  let code = "";
+  for (let i = 0; i < 5; i++) {
+    const candidate = randomReaderCode();
+    if (!(await env.LIBRARY.get(`reader-code:map:${candidate}`))) { code = candidate; break; }
+  }
+  if (!code) throw new Error("reader code generation failed");
+  const record = {
+    code, telegram_id: uid, username: user.username || "",
+    first_name: user.first_name || "", last_name: user.last_name || "",
+    created_at: Math.floor(Date.now() / 1000)
+  };
+  await env.LIBRARY.put(userKey, JSON.stringify(record));
+  await env.LIBRARY.put(`reader-code:map:${code}`, JSON.stringify(record));
+  return code;
+}
+
 function cors(headers = {}) {
   return {
     ...headers,
     "access-control-allow-origin": "https://web.telegram.org",
     "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
-    "access-control-allow-headers": "Content-Type,X-Library-Secret,X-Telegram-Init-Data"
+    "access-control-allow-headers": "Content-Type,X-Library-Secret,X-Telegram-Init-Data,X-Telegram-Platform"
   };
 }
 
@@ -234,6 +271,102 @@ async function addNotification(env, userId, notification) {
   await putNotifications(env, uid, list);
 }
 
+function projectCatalogSignature(project) {
+  if (!project || typeof project !== "object") return "";
+  const chapters = Array.isArray(project.chapters) ? project.chapters.map(ch => ({
+    chapter: String(ch?.chapter ?? ""),
+    decensored: Number(ch?.decensored || 0),
+    updated_at: Number(ch?.updated_at || 0),
+    pages: Number(ch?.pages || 0),
+    content_type: String(ch?.content_type || "")
+  })) : [];
+  return JSON.stringify({
+    title: String(project.title || ""),
+    type: String(project.type || ""),
+    description: String(project.description || ""),
+    cover_file_id: String(project.cover_file_id || ""),
+    tags: Array.isArray(project.tags) ? project.tags.map(String) : String(project.tags || ""),
+    author: String(project.author || ""),
+    translator: String(project.translator || ""),
+    trakteer: String(project.trakteer || ""),
+    status: String(project.status || ""),
+    alt_title: String(project.alt_title || ""),
+    chapters
+  });
+}
+
+function changedProjectUpdate(previous, current) {
+  if (!current || !previous) return null;
+
+  const oldChapters = Array.isArray(previous.chapters) ? previous.chapters : [];
+  const newChapters = Array.isArray(current.chapters) ? current.chapters : [];
+  const oldMap = new Map(oldChapters.map(ch => [
+    `${String(ch?.chapter ?? "")}::${Number(ch?.decensored || 0)}`, ch
+  ]));
+
+  let changedChapter = null;
+  for (const ch of newChapters) {
+    const key = `${String(ch?.chapter ?? "")}::${Number(ch?.decensored || 0)}`;
+    const old = oldMap.get(key);
+    if (!old || Number(old?.updated_at || 0) !== Number(ch?.updated_at || 0) || Number(old?.pages || 0) !== Number(ch?.pages || 0)) {
+      if (!changedChapter || Number(ch?.updated_at || 0) > Number(changedChapter?.updated_at || 0)) {
+        changedChapter = ch;
+      }
+    }
+  }
+
+  const oldMeta = {...previous};
+  const newMeta = {...current};
+  delete oldMeta.chapters;
+  delete newMeta.chapters;
+  const metadataChanged = projectCatalogSignature({...oldMeta, chapters: []}) !== projectCatalogSignature({...newMeta, chapters: []});
+
+  if (!changedChapter && !metadataChanged) return null;
+  return {
+    chapter: changedChapter ? String(changedChapter.chapter ?? "") : "",
+    decensored: changedChapter ? Number(changedChapter.decensored || 0) : 0
+  };
+}
+
+async function notifyBookmarkedProjectUpdate(env, previousCatalog, nextCatalog) {
+  if (!Array.isArray(previousCatalog) || !Array.isArray(nextCatalog)) return;
+
+  const previousMap = new Map(previousCatalog.map(p => [String(p?.id || ""), p]));
+  for (const project of nextCatalog) {
+    const pid = String(project?.id || "").trim();
+    if (!pid) continue;
+    const previous = previousMap.get(pid);
+    if (!previous) continue;
+
+    const update = changedProjectUpdate(previous, project);
+    if (!update) continue;
+
+    const interaction = await getInteraction(env, pid);
+    const bookmarkers = Object.keys(interaction.bookmarks || {});
+    if (!bookmarkers.length) continue;
+
+    const title = String(project.title || pid);
+    const chapter = update.chapter;
+    const text = chapter
+      ? `${title} punya update baru • Chapter ${chapter}${update.decensored ? " (Decensored)" : ""}`
+      : `${title} punya update baru.`;
+
+    for (const userId of bookmarkers) {
+      try {
+        await addNotification(env, userId, {
+          type: "project_update",
+          project_id: pid,
+          chapter: chapter || null,
+          decensored: update.decensored || 0,
+          text
+        });
+      } catch (e) {
+        console.error("Failed to notify bookmarked user", userId, pid, e);
+      }
+    }
+  }
+}
+
 function displayCallFromUser(user) {
   return user.username ? `@${user.username}` : (user.first_name || "Reader");
 }
@@ -289,11 +422,23 @@ export default {
           first_name: access.user.first_name || "",
           last_name: access.user.last_name || "",
           telegram_name: [access.user.first_name, access.user.last_name].filter(Boolean).join(" ").trim(),
-          is_mod: isModUser(env, access.user.id)
+          is_mod: isModUser(env, access.user.id),
+          is_admin: isAdminUser(access.user.id, env)
         }
       }), {
         headers: cors({"content-type": "application/json; charset=utf-8"})
       });
+    }
+
+    if (url.pathname === "/api/reader-code" && request.method === "GET") {
+      const access = await checkAccess(request, env);
+      if (!access.ok) return json({ok: false, code: access.code}, access.code);
+      try {
+        const readerCode = await getReaderCode(env, access.user);
+        return json({ok: true, reader_code: readerCode});
+      } catch (e) {
+        return json({ok: false, error: "reader code unavailable"}, 503);
+      }
     }
 
     if (url.pathname === "/api/catalog" && request.method === "GET") {
@@ -382,7 +527,13 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
         return json({error: "catalog must be an array"}, 400);
       }
 
+      const previousCatalog = await env.LIBRARY.get("catalog", "json");
       await env.LIBRARY.put("catalog", JSON.stringify(body));
+      try {
+        await notifyBookmarkedProjectUpdate(env, previousCatalog, body);
+      } catch (e) {
+        console.error("Bookmarked update notification sync failed", e);
+      }
       return json({ok: true, count: body.length});
     }
 
