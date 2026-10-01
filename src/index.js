@@ -516,6 +516,62 @@ export default {
       return json({ok:true, updated: body.projects.length});
     }
 
+    // =========================
+    // ADMIN: WEB COMMUNITY POINT EVENTS
+    // Taekjoo polls this endpoint and records each event idempotently in
+    // its own SQLite point_events table. One web comment/reply/review = 1 point.
+    // =========================
+    if (url.pathname === "/api/admin/web-point-events" && request.method === "GET") {
+      const secret = request.headers.get("X-Library-Secret") || request.headers.get("x-library-secret") || "";
+      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
+        return json({ok:false, reason:"unauthorized"}, 401);
+      }
+
+      const events = [];
+      let cursor = undefined;
+      do {
+        const page = await env.LIBRARY.list({prefix:"community:", limit:1000, cursor});
+        for (const key of page.keys || []) {
+          const projectId = String(key.name || "").slice("community:".length);
+          if (!projectId) continue;
+          const data = await env.LIBRARY.get(key.name, "json");
+          if (!data || typeof data !== "object") continue;
+
+          for (const review of Array.isArray(data.reviews) ? data.reviews : []) {
+            const uid = String(review?.user_id || review?.telegram_id || "").trim();
+            const id = String(review?.id || "").trim();
+            if (!uid || !id) continue;
+            events.push({
+              source: "web_review",
+              source_id: id,
+              telegram_id: uid,
+              project_id: projectId,
+              created_at: Number(review?.created_at || 0)
+            });
+          }
+
+          for (const comment of Array.isArray(data.comments) ? data.comments : []) {
+            const uid = String(comment?.user_id || comment?.telegram_id || "").trim();
+            const id = String(comment?.id || "").trim();
+            if (!uid || !id) continue;
+            events.push({
+              source: comment?.parent_id ? "web_reply" : "web_comment",
+              source_id: id,
+              telegram_id: uid,
+              project_id: projectId,
+              parent_id: comment?.parent_id ? String(comment.parent_id) : null,
+              created_at: Number(comment?.created_at || 0)
+            });
+          }
+        }
+        cursor = page.list_complete ? undefined : page.cursor;
+      } while (cursor);
+
+      events.sort((a,b) => Number(a.created_at || 0) - Number(b.created_at || 0));
+      return json({ok:true, events});
+    }
+
+
 if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const secret = request.headers.get("x-library-secret");
       if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
@@ -607,90 +663,6 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       return new Response(file.body, {status: 200, headers});
     }
 
-
-    // =========================
-    // ADMIN: MINIWEB POINT EVENTS
-    // =========================
-    // Taekjoo polls this endpoint to award points for Miniweb comments/replies
-    // and reviews. Comments and reviews use independent cursors so one stream
-    // can never advance past events from the other stream.
-    if (url.pathname === "/api/admin/comment-events" && request.method === "GET") {
-      const secret = request.headers.get("x-library-secret");
-      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
-        return json({ok:false, error:"unauthorized"}, 401);
-      }
-
-      const stream = String(url.searchParams.get("stream") || "comments").toLowerCase();
-      if (!["comments", "reviews"].includes(stream)) {
-        return json({ok:false, error:"invalid stream"}, 400);
-      }
-
-      const since = Math.max(0, Number(url.searchParams.get("since") || 0));
-      const sinceId = String(url.searchParams.get("since_id") || "");
-      const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit") || 500)));
-
-      const events = [];
-      let cursor = undefined;
-
-      // KV list is paginated. Read every community:* key so this endpoint
-      // remains independent from the catalog and works with all existing data.
-      do {
-        const listed = await env.LIBRARY.list({prefix:"community:", cursor, limit:1000});
-        for (const keyInfo of listed.keys || []) {
-          const projectId = String(keyInfo.name || "").slice("community:".length);
-          if (!projectId) continue;
-
-          const community = await env.LIBRARY.get(keyInfo.name, "json");
-          if (!community) continue;
-
-          const items = Array.isArray(community[stream]) ? community[stream] : [];
-          for (const item of items) {
-            const userId = String(item?.user_id ?? item?.telegram_id ?? "").trim();
-            const createdAt = Number(item?.created_at || 0);
-            if (!userId || !createdAt) continue;
-
-            let eventId;
-            if (stream === "comments") {
-              eventId = String(item?.id || "").trim();
-            } else {
-              // One review point per user per project. This stays stable even
-              // if the review text/score is edited or the review is recreated.
-              eventId = `review:${projectId}:${userId}`;
-            }
-            if (!eventId) continue;
-
-            if (createdAt < since) continue;
-            if (createdAt === since && sinceId && eventId <= sinceId) continue;
-
-            events.push({
-              id: eventId,
-              user_id: Number(userId),
-              telegram_id: Number(userId),
-              project_id: projectId,
-              parent_id: stream === "comments" ? (item?.parent_id ?? null) : null,
-              created_at: createdAt
-            });
-          }
-        }
-        cursor = listed.list_complete ? undefined : listed.cursor;
-      } while (cursor);
-
-      events.sort((a,b) => {
-        const t = Number(a.created_at) - Number(b.created_at);
-        return t || String(a.id).localeCompare(String(b.id));
-      });
-
-      const page = events.slice(0, limit);
-      const hasMore = events.length > limit;
-      const last = page[page.length - 1];
-
-      return json({
-        ok: true,
-        [stream]: page,
-        cursor: last ? {created_at:last.created_at, id:last.id} : {created_at:since, id:sinceId},
-        has_more: hasMore
-      });
-    }
 
     // =========================
     // COMMUNITY: REVIEWS / COMMENTS
