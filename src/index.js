@@ -593,7 +593,7 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       return json({ok: true, count: body.length});
     }
 
-    // TAMBAHAN: Endpoint Menerima Text HTML Novel dari Bot
+    // NOVEL: store HTML with BOOK-aware keys.
     if (url.pathname === "/api/admin/novel" && request.method === "PUT") {
       const secret = request.headers.get("x-library-secret");
       if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
@@ -601,12 +601,18 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       }
 
       const body = await request.json();
-      const key = `novel_${body.project_id}_${body.chapter}_${body.decensored}`;
-      await env.LIBRARY.put(key, JSON.stringify({html: body.html}));
+      const projectId = String(body.project_id || "").trim();
+      const chapter = String(body.chapter || "").trim();
+      const book = String(body.book || "").trim();
+      const key = `novel_${projectId}_${book || "-"}_${chapter}`;
+      await env.LIBRARY.put(key, JSON.stringify({
+        html: body.html,
+        book
+      }));
       return json({ok: true});
     }
 
-    // TAMBAHAN: Endpoint Mengirim Text HTML Novel ke Mini Web Reader
+    // NOVEL: reader endpoint. Supports BOOK-aware novels and old keys for backward compatibility.
     if (url.pathname === "/api/novel" && request.method === "GET") {
       const access = await checkAccess(request, env);
       if (!access.ok) {
@@ -615,11 +621,17 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
 
       const pid = url.searchParams.get("project_id");
       const ch = url.searchParams.get("chapter");
-      const dec = url.searchParams.get("decensored");
-      
-      const key = `novel_${pid}_${ch}_${dec}`;
-      const data = await env.LIBRARY.get(key, "json");
-      
+      const book = url.searchParams.get("book") || "";
+      const dec = url.searchParams.get("decensored") || "0";
+
+      const key = `novel_${pid}_${book || "-"}_${ch}`;
+      let data = await env.LIBRARY.get(key, "json");
+
+      // Backward compatibility for novels uploaded before the BOOK-aware key.
+      if (!data) {
+        data = await env.LIBRARY.get(`novel_${pid}_${ch}_${dec}`, "json");
+      }
+
       if (!data) return json({error: "not found"}, 404);
 
       return new Response(JSON.stringify(data), {
