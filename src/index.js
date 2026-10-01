@@ -348,8 +348,8 @@ async function notifyBookmarkedProjectUpdate(env, previousCatalog, nextCatalog) 
     const title = String(project.title || pid);
     const chapter = update.chapter;
     const text = chapter
-      ? `${title} punya update baru • Chapter ${chapter}${update.decensored ? " (Decensored)" : ""}`
-      : `${title} punya update baru.`;
+      ? `${title} update: Chapter ${chapter}${update.decensored ? " (Decensored)" : ""}`
+      : `${title} update.`;
 
     for (const userId of bookmarkers) {
       try {
@@ -869,7 +869,7 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
             chapter: targetChapter,
             actor_id: uid,
             actor_name: telegramName || access.user.username || "Reader",
-            text: `${telegramName || access.user.username || "Reader"} membalas komentarmu: ${text.slice(0, 180)}`
+            text: `${telegramName || access.user.username || "Reader"} membalas komentarmu.`
           });
         }
       }
