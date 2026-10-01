@@ -405,6 +405,30 @@ html,body{background:var(--bg)}
   color:var(--muted);
   font-size:12px;
 }
+/* LAST READ */
+.chapter-bato.last-read{
+  border-color:var(--accent) !important;
+  background:linear-gradient(90deg,rgba(255,255,255,.08),rgba(255,255,255,.035)) !important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.03),0 4px 18px rgba(0,0,0,.08);
+}
+.chapter-bato.last-read .mvp-chapter-bato-body > div:first-child{
+  color:var(--accent) !important;
+}
+.last-read-badge{
+  display:inline-flex;
+  align-items:center;
+  margin-left:7px;
+  padding:2px 7px;
+  border-radius:999px;
+  font-size:9px;
+  line-height:1.2;
+  font-weight:900;
+  letter-spacing:.2px;
+  vertical-align:middle;
+  background:var(--accent);
+  color:#fff;
+}
+
 .chapter-item .chapter-translator{
   display:flex;
   justify-content:center;
@@ -1165,8 +1189,17 @@ async function toggleBookmark(id) {
     if(!$('detail').classList.contains('hidden')) openProject(id); else renderHome();
   }catch(e){if(tg&&tg.showAlert)tg.showAlert("Bookmark gagal disimpan.");}
 }
-function saveHistory(pid, ch, dec) {
-  try{ var h=JSON.parse(localStorage.getItem("mvp_history")||"{}"); h[pid]={chapter:ch, decensored:Number(dec), ts:Date.now()}; localStorage.setItem("mvp_history",JSON.stringify(h)); }catch(e){}
+function saveHistory(pid, ch, dec, book) {
+  try{ var h=JSON.parse(localStorage.getItem("mvp_history")||"{}"); h[pid]={chapter:String(ch), decensored:Number(dec||0), book:String(book||""), ts:Date.now()}; localStorage.setItem("mvp_history",JSON.stringify(h)); }catch(e){}
+}
+function isLastReadChapter(pid, c){
+  try{
+    var h=getHistory()[pid];
+    if(!h || !c) return false;
+    return String(h.chapter||"")===String(c.chapter||"") &&
+      Number(h.decensored||0)===Number(c.decensored||0) &&
+      String(h.book||"")===String(c.book||"");
+  }catch(e){ return false; }
 }
 function getHistory() { try{ return JSON.parse(localStorage.getItem("mvp_history")||"{}"); }catch(e){return {};} }
 
@@ -1418,11 +1451,7 @@ function toggleSec(id, btn) {
 
 // FORMAT BATO LIST DENGAN STATS DARI DATABASE
 function chapterDisplayTitle(ch){return String(ch&&(ch.chapter_title||ch.title||ch.name)||"").trim();}
-function chapterLabel(p,ch){
-  var type=String((p&&p.type)||"").toLowerCase();
-  if(type==="novel" && String((p&&p.novel_type)||"").toLowerCase()==="ebook") return "Bab ";
-  return "Chapter ";
-}
+function chapterLabel(p,ch){ return String((p&&p.type)||"").toLowerCase()==="novel" ? "Bab " : "Chapter "; }
 function novelIsEbook(p){ return String((p&&p.type)||"").toLowerCase()==="novel" && String((p&&p.novel_type)||"").toLowerCase()==="ebook"; }
 function toggleEbookBook(id){ var box=document.getElementById(id); if(!box)return; var open=!box.classList.contains("hidden"); box.classList.toggle("hidden",open); var t=box.previousElementSibling&&box.previousElementSibling.querySelector(".ebook-book-toggle"); if(t)t.textContent=open?"+":"−"; }
 function chapterTranslator(p,ch){
@@ -1754,9 +1783,12 @@ async function openProject(id){
     var timeStr=item.c.updated_at?timeAgo(item.c.updated_at):"Just now";
     var chTitle=chapterDisplayTitle(item.c);
     var label=chapterLabel(p,item.c);
+    var isLastRead=isLastReadChapter(p.id,item.c);
+    var lastReadClass=isLastRead?" last-read":"";
+    var lastReadBadge=isLastRead?"<span class='last-read-badge'>TERAKHIR DIBACA</span>":"";
     return "<div class='chapter-bato-wrap'>"+
-      "<div class='chapter-bato' onclick=\"openReader('"+esc(p.id)+"','"+esc(item.c.chapter)+"',"+Number(item.c.decensored||0)+")\">"+
-        "<div class='mvp-chapter-bato-body'><div style='font-weight:800;font-size:14px;color:var(--accent);'>"+label+esc(item.c.chapter)+decBadge(item.c.decensored)+"</div>"+
+      "<div class='chapter-bato"+lastReadClass+"' onclick=\"openReader('"+esc(p.id)+"','"+esc(item.c.chapter)+"',"+Number(item.c.decensored||0)+")\">"+
+        "<div class='mvp-chapter-bato-body'><div style='font-weight:800;font-size:14px;color:var(--accent);'>"+label+esc(item.c.chapter)+decBadge(item.c.decensored)+lastReadBadge+"</div>"+
         (chTitle?"<div class='mvp-chapter-title'>"+esc(chTitle)+"</div>":"")+"</div>"+
         "<div class='mvp-chapter-bato-meta'>🕒 "+timeStr+"</div>"+
       "</div>"+
@@ -2463,7 +2495,7 @@ async function openReader(projectId, chapterName, decensored){
       return;
   }
 
-  saveHistory(projectId, c.chapter, Number(c.decensored));
+  saveHistory(projectId, c.chapter, Number(c.decensored), c.book);
   $("progressContainer").style.display="block";
   $("progressBar").style.width="0%";
 
@@ -2475,7 +2507,9 @@ async function openReader(projectId, chapterName, decensored){
 
   var chapterOptions = chaptersArr.map(function(ch, i) {
     var isCur = i === idx ? "current" : "";
-    return "<button class='reader-chapter-option "+isCur+"' onclick=\"selectReaderChapter('"+esc(p.id)+"',"+i+")\">Chapter "+esc(ch.chapter)+decBadge(ch.decensored)+(chapterDisplayTitle(ch)?" · "+esc(chapterDisplayTitle(ch)):"")+"</button>";
+    var isLast = isLastReadChapter(p.id,ch);
+    var lastBadge = isLast ? " · Terakhir dibaca" : "";
+    return "<button class='reader-chapter-option "+isCur+"' onclick=\"selectReaderChapter('"+esc(p.id)+"',"+i+")\">"+chapterLabel(p,ch)+esc(ch.chapter)+decBadge(ch.decensored)+(chapterDisplayTitle(ch)?" · "+esc(chapterDisplayTitle(ch)):"")+lastBadge+"</button>";
   }).join("");
 
   var isLast = idx >= chaptersArr.length - 1;
