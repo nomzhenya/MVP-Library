@@ -516,6 +516,61 @@ export default {
       return json({ok:true, updated: body.projects.length});
     }
 
+    // =========================
+    // ADMIN: WEB COMMUNITY POINT EVENTS
+    // Taekjoo polls this endpoint and records each event idempotently in
+    // its own SQLite point_events table. One web comment/reply/review = 1 point.
+    // =========================
+    if (url.pathname === "/api/admin/web-point-events" && request.method === "GET") {
+      const secret = request.headers.get("X-Library-Secret") || request.headers.get("x-library-secret") || "";
+      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
+        return json({ok:false, reason:"unauthorized"}, 401);
+      }
+
+      const events = [];
+      let cursor = undefined;
+      do {
+        const page = await env.LIBRARY.list({prefix:"community:", limit:1000, cursor});
+        for (const key of page.keys || []) {
+          const projectId = String(key.name || "").slice("community:".length);
+          if (!projectId) continue;
+          const data = await env.LIBRARY.get(key.name, "json");
+          if (!data || typeof data !== "object") continue;
+
+          for (const review of Array.isArray(data.reviews) ? data.reviews : []) {
+            const uid = String(review?.user_id || review?.telegram_id || "").trim();
+            const id = String(review?.id || "").trim();
+            if (!uid || !id) continue;
+            events.push({
+              source: "web_review",
+              source_id: id,
+              telegram_id: uid,
+              project_id: projectId,
+              created_at: Number(review?.created_at || 0)
+            });
+          }
+
+          for (const comment of Array.isArray(data.comments) ? data.comments : []) {
+            const uid = String(comment?.user_id || comment?.telegram_id || "").trim();
+            const id = String(comment?.id || "").trim();
+            if (!uid || !id) continue;
+            events.push({
+              source: comment?.parent_id ? "web_reply" : "web_comment",
+              source_id: id,
+              telegram_id: uid,
+              project_id: projectId,
+              parent_id: comment?.parent_id ? String(comment.parent_id) : null,
+              created_at: Number(comment?.created_at || 0)
+            });
+          }
+        }
+        cursor = page.list_complete ? undefined : page.cursor;
+      } while (cursor);
+
+      events.sort((a,b) => Number(a.created_at || 0) - Number(b.created_at || 0));
+      return json({ok:true, events});
+    }
+
 if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const secret = request.headers.get("x-library-secret");
       if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
