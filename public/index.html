@@ -2116,7 +2116,7 @@ async function loadCommunity(pid){
 
 
 function updateNotificationBadge(a){var b=$("notificationBadge");if(!b)return;var n=(a||[]).filter(function(x){return !x.read;}).length;b.textContent=n>99?"99+":n;b.classList.toggle("hidden",!n);}
-async function loadNotifications(){try{var d=await apiJSON("/api/notifications?limit=50"),a=Array.isArray(d)?d:(d.notifications||[]);$("notificationList").innerHTML=a.length?a.map(function(n){var type=String(n.type||"").toLowerCase();var label=type==="project_update"||type==="chapter_update"||type==="new_update"?"UPDATE":type==="review"?"Review baru":type==="comment_reply"?"Balasan komentar":"Komentar baru";return "<button class='mvp-notification-item "+(n.read?"":"unread")+"' onclick='openNotification("+JSON.stringify(n).replace(/'/g,"&#39;")+")'><b>"+esc(label)+"</b><div>"+esc(n.text||n.message||"")+"</div></button>";}).join(""):"<div class='mvp-empty-state'>Belum ada notifikasi.</div>";updateNotificationBadge(a);}catch(e){$("notificationList").innerHTML="<div class='mvp-empty-state'>Notifikasi belum tersedia.</div>";}}
+async function loadNotifications(){try{var d=await apiJSON("/api/notifications?limit=50"),a=Array.isArray(d)?d:(d.notifications||[]);$("notificationList").innerHTML=a.length?a.map(function(n){var type=String(n.type||"").toLowerCase();var label=type==="project_update"||type==="chapter_update"||type==="new_update"?"UPDATE":type==="review"?"Review baru":type==="comment_reply"?"Balasan komentar":"Komentar baru";var body=type==="comment_reply"?((n.actor_name||n.from_name||n.username)?String(n.actor_name||n.from_name||n.username)+" membalas komentarmu.":"Balasan komentar"):(n.text||n.message||"");return "<button class='mvp-notification-item "+(n.read?"":"unread")+"' onclick='openNotification("+JSON.stringify(n).replace(/'/g,"&#39;")+")'><b>"+esc(label)+"</b><div>"+esc(body)+"</div></button>";}).join(""):"<div class='mvp-empty-state'>Belum ada notifikasi.</div>";updateNotificationBadge(a);}catch(e){$("notificationList").innerHTML="<div class='mvp-empty-state'>Notifikasi belum tersedia.</div>";}}
 async function openNotifications(){["home","detail","reader","browseLayer","catalogLayer","lapakLayer","supportLayer"].forEach(function(id){var e=$(id);if(e)e.classList.add("hidden");});$("notificationsLayer").classList.remove("hidden");$("notificationsLayer").classList.add("active");window.scrollTo(0,0);loadNotifications();}
 function closeNotifications(){$("notificationsLayer").classList.remove("active");$("notificationsLayer").classList.add("hidden");$("home").classList.remove("hidden");}
 async function prepareNotificationComment(pid,commentId,chapter){
@@ -2479,9 +2479,9 @@ async function openReader(projectId, chapterName, decensored){
 
   var readerCommentSection =
     "<section id='readerChapterCommunity' class='reader-chapter-community'>"+
-      "<div class='reader-chapter-community-title'>"+miniIcon("comment",14)+" Komentar Chapter "+esc(c.chapter)+"</div>"+
+      "<div class='reader-chapter-community-title'>"+miniIcon("comment",14)+" Komentar</div>"+
       "<div id='readerChapterCommentCompose' class='mvp-comment-compose'>"+
-        "<textarea id='readerChapterCommentInput' class='mvp-comment-input' maxlength='2000' placeholder='Tulis komentar untuk Chapter "+esc(c.chapter)+"...'></textarea>"+
+        "<textarea id='readerChapterCommentInput' class='mvp-comment-input' maxlength='2000' placeholder='Tulis komentar...'></textarea>"+
         "<button class='btn primary' onclick=\"submitReaderChapterComment('"+esc(p.id)+"','"+esc(c.chapter)+"')\">Kirim Komentar</button>"+
       "</div>"+
       "<div id='readerChapterComments' class='mvp-chapter-comment-list'><div class='mvp-empty-state'>Memuat...</div></div>"+
