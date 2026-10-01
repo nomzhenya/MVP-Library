@@ -276,8 +276,6 @@ function projectCatalogSignature(project) {
   const chapters = Array.isArray(project.chapters) ? project.chapters.map(ch => ({
     chapter: String(ch?.chapter ?? ""),
     decensored: Number(ch?.decensored || 0),
-    book: String(ch?.book || ""),
-    title: String(ch?.title || ""),
     updated_at: Number(ch?.updated_at || 0),
     pages: Number(ch?.pages || 0),
     content_type: String(ch?.content_type || "")
@@ -293,7 +291,6 @@ function projectCatalogSignature(project) {
     trakteer: String(project.trakteer || ""),
     status: String(project.status || ""),
     alt_title: String(project.alt_title || ""),
-    novel_type: String(project.novel_type || ""),
     chapters
   });
 }
@@ -304,12 +301,12 @@ function changedProjectUpdate(previous, current) {
   const oldChapters = Array.isArray(previous.chapters) ? previous.chapters : [];
   const newChapters = Array.isArray(current.chapters) ? current.chapters : [];
   const oldMap = new Map(oldChapters.map(ch => [
-    `${String(ch?.chapter ?? "")}::${String(ch?.book || "")}::${Number(ch?.decensored || 0)}`, ch
+    `${String(ch?.chapter ?? "")}::${Number(ch?.decensored || 0)}`, ch
   ]));
 
   let changedChapter = null;
   for (const ch of newChapters) {
-    const key = `${String(ch?.chapter ?? "")}::${String(ch?.book || "")}::${Number(ch?.decensored || 0)}`;
+    const key = `${String(ch?.chapter ?? "")}::${Number(ch?.decensored || 0)}`;
     const old = oldMap.get(key);
     if (!old || Number(old?.updated_at || 0) !== Number(ch?.updated_at || 0) || Number(old?.pages || 0) !== Number(ch?.pages || 0)) {
       if (!changedChapter || Number(ch?.updated_at || 0) > Number(changedChapter?.updated_at || 0)) {
@@ -548,11 +545,8 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       }
 
       const body = await request.json();
-      const projectId = String(body.project_id || "").trim();
-      const chapter = String(body.chapter || "").trim();
-      const book = String(body.book || "").trim();
-      const key = `novel_${projectId}_${book || "-"}_${chapter}`;
-      await env.LIBRARY.put(key, JSON.stringify({html: body.html, book}));
+      const key = `novel_${body.project_id}_${body.chapter}_${body.decensored}`;
+      await env.LIBRARY.put(key, JSON.stringify({html: body.html}));
       return json({ok: true});
     }
 
@@ -565,15 +559,10 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
 
       const pid = url.searchParams.get("project_id");
       const ch = url.searchParams.get("chapter");
-      const book = url.searchParams.get("book") || "";
-      const dec = url.searchParams.get("decensored") || "0";
+      const dec = url.searchParams.get("decensored");
       
-      const key = `novel_${pid}_${book || "-"}_${ch}`;
-      let data = await env.LIBRARY.get(key, "json");
-      // Backward compatibility for novels uploaded before the BOOK-aware key.
-      if (!data) {
-        data = await env.LIBRARY.get(`novel_${pid}_${ch}_${dec}`, "json");
-      }
+      const key = `novel_${pid}_${ch}_${dec}`;
+      const data = await env.LIBRARY.get(key, "json");
       
       if (!data) return json({error: "not found"}, 404);
 
@@ -618,6 +607,90 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       return new Response(file.body, {status: 200, headers});
     }
 
+
+    // =========================
+    // ADMIN: MINIWEB POINT EVENTS
+    // =========================
+    // Taekjoo polls this endpoint to award points for Miniweb comments/replies
+    // and reviews. Comments and reviews use independent cursors so one stream
+    // can never advance past events from the other stream.
+    if (url.pathname === "/api/admin/comment-events" && request.method === "GET") {
+      const secret = request.headers.get("x-library-secret");
+      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
+        return json({ok:false, error:"unauthorized"}, 401);
+      }
+
+      const stream = String(url.searchParams.get("stream") || "comments").toLowerCase();
+      if (!["comments", "reviews"].includes(stream)) {
+        return json({ok:false, error:"invalid stream"}, 400);
+      }
+
+      const since = Math.max(0, Number(url.searchParams.get("since") || 0));
+      const sinceId = String(url.searchParams.get("since_id") || "");
+      const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit") || 500)));
+
+      const events = [];
+      let cursor = undefined;
+
+      // KV list is paginated. Read every community:* key so this endpoint
+      // remains independent from the catalog and works with all existing data.
+      do {
+        const listed = await env.LIBRARY.list({prefix:"community:", cursor, limit:1000});
+        for (const keyInfo of listed.keys || []) {
+          const projectId = String(keyInfo.name || "").slice("community:".length);
+          if (!projectId) continue;
+
+          const community = await env.LIBRARY.get(keyInfo.name, "json");
+          if (!community) continue;
+
+          const items = Array.isArray(community[stream]) ? community[stream] : [];
+          for (const item of items) {
+            const userId = String(item?.user_id ?? item?.telegram_id ?? "").trim();
+            const createdAt = Number(item?.created_at || 0);
+            if (!userId || !createdAt) continue;
+
+            let eventId;
+            if (stream === "comments") {
+              eventId = String(item?.id || "").trim();
+            } else {
+              // One review point per user per project. This stays stable even
+              // if the review text/score is edited or the review is recreated.
+              eventId = `review:${projectId}:${userId}`;
+            }
+            if (!eventId) continue;
+
+            if (createdAt < since) continue;
+            if (createdAt === since && sinceId && eventId <= sinceId) continue;
+
+            events.push({
+              id: eventId,
+              user_id: Number(userId),
+              telegram_id: Number(userId),
+              project_id: projectId,
+              parent_id: stream === "comments" ? (item?.parent_id ?? null) : null,
+              created_at: createdAt
+            });
+          }
+        }
+        cursor = listed.list_complete ? undefined : listed.cursor;
+      } while (cursor);
+
+      events.sort((a,b) => {
+        const t = Number(a.created_at) - Number(b.created_at);
+        return t || String(a.id).localeCompare(String(b.id));
+      });
+
+      const page = events.slice(0, limit);
+      const hasMore = events.length > limit;
+      const last = page[page.length - 1];
+
+      return json({
+        ok: true,
+        [stream]: page,
+        cursor: last ? {created_at:last.created_at, id:last.id} : {created_at:since, id:sinceId},
+        has_more: hasMore
+      });
+    }
 
     // =========================
     // COMMUNITY: REVIEWS / COMMENTS
