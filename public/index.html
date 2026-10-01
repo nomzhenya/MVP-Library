@@ -1418,7 +1418,11 @@ function toggleSec(id, btn) {
 
 // FORMAT BATO LIST DENGAN STATS DARI DATABASE
 function chapterDisplayTitle(ch){return String(ch&&(ch.chapter_title||ch.title||ch.name)||"").trim();}
-function chapterLabel(p,ch){ return String((p&&p.type)||"").toLowerCase()==="novel" ? "Bab " : "Chapter "; }
+function chapterLabel(p,ch){
+  var type=String((p&&p.type)||"").toLowerCase();
+  if(type==="novel" && String((p&&p.novel_type)||"").toLowerCase()==="ebook") return "Bab ";
+  return "Chapter ";
+}
 function novelIsEbook(p){ return String((p&&p.type)||"").toLowerCase()==="novel" && String((p&&p.novel_type)||"").toLowerCase()==="ebook"; }
 function toggleEbookBook(id){ var box=document.getElementById(id); if(!box)return; var open=!box.classList.contains("hidden"); box.classList.toggle("hidden",open); var t=box.previousElementSibling&&box.previousElementSibling.querySelector(".ebook-book-toggle"); if(t)t.textContent=open?"+":"−"; }
 function chapterTranslator(p,ch){
