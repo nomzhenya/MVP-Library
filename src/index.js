@@ -276,6 +276,8 @@ function projectCatalogSignature(project) {
   const chapters = Array.isArray(project.chapters) ? project.chapters.map(ch => ({
     chapter: String(ch?.chapter ?? ""),
     decensored: Number(ch?.decensored || 0),
+    book: String(ch?.book || ""),
+    title: String(ch?.title || ""),
     updated_at: Number(ch?.updated_at || 0),
     pages: Number(ch?.pages || 0),
     content_type: String(ch?.content_type || "")
@@ -291,6 +293,7 @@ function projectCatalogSignature(project) {
     trakteer: String(project.trakteer || ""),
     status: String(project.status || ""),
     alt_title: String(project.alt_title || ""),
+    novel_type: String(project.novel_type || ""),
     chapters
   });
 }
@@ -301,12 +304,12 @@ function changedProjectUpdate(previous, current) {
   const oldChapters = Array.isArray(previous.chapters) ? previous.chapters : [];
   const newChapters = Array.isArray(current.chapters) ? current.chapters : [];
   const oldMap = new Map(oldChapters.map(ch => [
-    `${String(ch?.chapter ?? "")}::${Number(ch?.decensored || 0)}`, ch
+    `${String(ch?.chapter ?? "")}::${String(ch?.book || "")}::${Number(ch?.decensored || 0)}`, ch
   ]));
 
   let changedChapter = null;
   for (const ch of newChapters) {
-    const key = `${String(ch?.chapter ?? "")}::${Number(ch?.decensored || 0)}`;
+    const key = `${String(ch?.chapter ?? "")}::${String(ch?.book || "")}::${Number(ch?.decensored || 0)}`;
     const old = oldMap.get(key);
     if (!old || Number(old?.updated_at || 0) !== Number(ch?.updated_at || 0) || Number(old?.pages || 0) !== Number(ch?.pages || 0)) {
       if (!changedChapter || Number(ch?.updated_at || 0) > Number(changedChapter?.updated_at || 0)) {
@@ -348,8 +351,8 @@ async function notifyBookmarkedProjectUpdate(env, previousCatalog, nextCatalog) 
     const title = String(project.title || pid);
     const chapter = update.chapter;
     const text = chapter
-      ? `${title} update: Chapter ${chapter}${update.decensored ? " (Decensored)" : ""}`
-      : `${title} update.`;
+      ? `${title} punya update baru • Chapter ${chapter}${update.decensored ? " (Decensored)" : ""}`
+      : `${title} punya update baru.`;
 
     for (const userId of bookmarkers) {
       try {
@@ -516,61 +519,6 @@ export default {
       return json({ok:true, updated: body.projects.length});
     }
 
-    // =========================
-    // ADMIN: WEB COMMUNITY POINT EVENTS
-    // Taekjoo polls this endpoint and records each event idempotently in
-    // its own SQLite point_events table. One web comment/reply/review = 1 point.
-    // =========================
-    if (url.pathname === "/api/admin/web-point-events" && request.method === "GET") {
-      const secret = request.headers.get("X-Library-Secret") || request.headers.get("x-library-secret") || "";
-      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
-        return json({ok:false, reason:"unauthorized"}, 401);
-      }
-
-      const events = [];
-      let cursor = undefined;
-      do {
-        const page = await env.LIBRARY.list({prefix:"community:", limit:1000, cursor});
-        for (const key of page.keys || []) {
-          const projectId = String(key.name || "").slice("community:".length);
-          if (!projectId) continue;
-          const data = await env.LIBRARY.get(key.name, "json");
-          if (!data || typeof data !== "object") continue;
-
-          for (const review of Array.isArray(data.reviews) ? data.reviews : []) {
-            const uid = String(review?.user_id || review?.telegram_id || "").trim();
-            const id = String(review?.id || "").trim();
-            if (!uid || !id) continue;
-            events.push({
-              source: "web_review",
-              source_id: id,
-              telegram_id: uid,
-              project_id: projectId,
-              created_at: Number(review?.created_at || 0)
-            });
-          }
-
-          for (const comment of Array.isArray(data.comments) ? data.comments : []) {
-            const uid = String(comment?.user_id || comment?.telegram_id || "").trim();
-            const id = String(comment?.id || "").trim();
-            if (!uid || !id) continue;
-            events.push({
-              source: comment?.parent_id ? "web_reply" : "web_comment",
-              source_id: id,
-              telegram_id: uid,
-              project_id: projectId,
-              parent_id: comment?.parent_id ? String(comment.parent_id) : null,
-              created_at: Number(comment?.created_at || 0)
-            });
-          }
-        }
-        cursor = page.list_complete ? undefined : page.cursor;
-      } while (cursor);
-
-      events.sort((a,b) => Number(a.created_at || 0) - Number(b.created_at || 0));
-      return json({ok:true, events});
-    }
-
 if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const secret = request.headers.get("x-library-secret");
       if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
@@ -600,8 +548,11 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       }
 
       const body = await request.json();
-      const key = `novel_${body.project_id}_${body.chapter}_${body.decensored}`;
-      await env.LIBRARY.put(key, JSON.stringify({html: body.html}));
+      const projectId = String(body.project_id || "").trim();
+      const chapter = String(body.chapter || "").trim();
+      const book = String(body.book || "").trim();
+      const key = `novel_${projectId}_${book || "-"}_${chapter}`;
+      await env.LIBRARY.put(key, JSON.stringify({html: body.html, book}));
       return json({ok: true});
     }
 
@@ -614,10 +565,15 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
 
       const pid = url.searchParams.get("project_id");
       const ch = url.searchParams.get("chapter");
-      const dec = url.searchParams.get("decensored");
+      const book = url.searchParams.get("book") || "";
+      const dec = url.searchParams.get("decensored") || "0";
       
-      const key = `novel_${pid}_${ch}_${dec}`;
-      const data = await env.LIBRARY.get(key, "json");
+      const key = `novel_${pid}_${book || "-"}_${ch}`;
+      let data = await env.LIBRARY.get(key, "json");
+      // Backward compatibility for novels uploaded before the BOOK-aware key.
+      if (!data) {
+        data = await env.LIBRARY.get(`novel_${pid}_${ch}_${dec}`, "json");
+      }
       
       if (!data) return json({error: "not found"}, 404);
 
@@ -869,7 +825,7 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
             chapter: targetChapter,
             actor_id: uid,
             actor_name: telegramName || access.user.username || "Reader",
-            text: `${telegramName || access.user.username || "Reader"} membalas komentarmu.`
+            text: `${telegramName || access.user.username || "Reader"} membalas komentarmu: ${text.slice(0, 180)}`
           });
         }
       }
