@@ -13,11 +13,70 @@ async function putStats(env, projectId, stats) {
     comments: Number(stats.comments || 0)
   }));
 }
-const json = (data, status = 200) =>
+const json = (data, status = 200, extraHeaders = {}) =>
   new Response(JSON.stringify(data), {
     status,
-    headers: {"content-type": "application/json; charset=utf-8"}
+    headers: securityHeaders({
+      "content-type": "application/json; charset=utf-8",
+      ...extraHeaders
+    })
   });
+
+const API_RATE_WINDOW = 60;
+const API_RATE_LIMIT = 90;
+const MUTATION_RATE_LIMIT = 20;
+const AUTH_FAIL_LIMIT = 15;
+const MAX_USER_JSON_BYTES = 256 * 1024;
+
+function clientIp(request) {
+  return String(request.headers.get("CF-Connecting-IP") || request.headers.get("X-Forwarded-For") || "unknown").split(",")[0].trim().slice(0,64);
+}
+
+function securityHeaders(extra = {}) {
+  return {
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY",
+    "referrer-policy": "no-referrer",
+    "permissions-policy": "camera=(), microphone=(), geolocation=()",
+    "content-security-policy": "frame-ancestors 'none'",
+    ...extra
+  };
+}
+
+function securedResponse(response) {
+  const headers = new Headers(response.headers);
+  Object.entries(securityHeaders()).forEach(([k,v]) => headers.set(k,v));
+  return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
+}
+
+async function rateLimitKV(env,key,limit,windowSeconds=API_RATE_WINDOW) {
+  if(!env.LIBRARY) return {allowed:true};
+  const bucket=Math.floor(Math.floor(Date.now()/1000)/windowSeconds);
+  const kvKey=`rl:${key}:${bucket}`;
+  const current=Number(await env.LIBRARY.get(kvKey)||"0");
+  if(current>=limit) return {allowed:false};
+  await env.LIBRARY.put(kvKey,String(current+1),{expirationTtl:windowSeconds+5});
+  return {allowed:true};
+}
+
+function isUserMutationRoute(url) {
+  return ["/api/review","/api/comment","/api/love","/api/bookmark","/api/notifications/read"].includes(url.pathname);
+}
+
+async function securityGate(request,env,url) {
+  if(request.method==="OPTIONS") return {ok:true};
+  if(!url.pathname.startsWith("/api/") || url.pathname==="/api/qris") return {ok:true};
+  const ip=clientIp(request);
+  const general=await rateLimitKV(env,`api:${ip}`,API_RATE_LIMIT);
+  if(!general.allowed) return {ok:false,response:json({ok:false,error:"too many requests"},429,{"retry-after":String(API_RATE_WINDOW)})};
+  if(isUserMutationRoute(url) || (["POST","PUT","DELETE","PATCH"].includes(request.method) && !url.pathname.startsWith("/api/admin/"))) {
+    const mutation=await rateLimitKV(env,`mutation:${ip}`,MUTATION_RATE_LIMIT);
+    if(!mutation.allowed) return {ok:false,response:json({ok:false,error:"too many write requests"},429,{"retry-after":String(API_RATE_WINDOW)})};
+  }
+  const contentLength=Number(request.headers.get("content-length")||"0");
+  if(contentLength>MAX_USER_JSON_BYTES && isUserMutationRoute(url)) return {ok:false,response:json({ok:false,error:"request body too large"},413)};
+  return {ok:true};
+}
 
 const ADMIN_USER_IDS = new Set(["6584714489", "7875422649"]);
 
@@ -128,7 +187,11 @@ async function telegramMemberStatus(env, chatId, userId) {
 async function checkAccess(request, env) {
   const initData = request.headers.get("X-Telegram-Init-Data") || new URL(request.url).searchParams.get("init_data") || "";
   const user = await verifyTelegramInitData(initData, env.TELEGRAM_BOT_TOKEN);
-  if (!user?.id) return {ok: false, code: 401};
+  if (!user?.id) {
+    const fail=await rateLimitKV(env,`authfail:${clientIp(request)}`,AUTH_FAIL_LIMIT);
+    if(!fail.allowed) return {ok:false,code:429};
+    return {ok:false,code:401};
+  }
   if (!user.username || user.username.trim() === "") {
     return {ok: false, code: 403};
   }
@@ -379,6 +442,9 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    const gate = await securityGate(request, env, url);
+    if (!gate.ok) return gate.response;
+
     // =========================
     // SUPPORT US: QRIS DOWNLOAD
     // =========================
@@ -516,62 +582,6 @@ export default {
       return json({ok:true, updated: body.projects.length});
     }
 
-    // =========================
-    // ADMIN: WEB COMMUNITY POINT EVENTS
-    // Taekjoo polls this endpoint and records each event idempotently in
-    // its own SQLite point_events table. One web comment/reply/review = 1 point.
-    // =========================
-    if (url.pathname === "/api/admin/web-point-events" && request.method === "GET") {
-      const secret = request.headers.get("X-Library-Secret") || request.headers.get("x-library-secret") || "";
-      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
-        return json({ok:false, reason:"unauthorized"}, 401);
-      }
-
-      const events = [];
-      let cursor = undefined;
-      do {
-        const page = await env.LIBRARY.list({prefix:"community:", limit:1000, cursor});
-        for (const key of page.keys || []) {
-          const projectId = String(key.name || "").slice("community:".length);
-          if (!projectId) continue;
-          const data = await env.LIBRARY.get(key.name, "json");
-          if (!data || typeof data !== "object") continue;
-
-          for (const review of Array.isArray(data.reviews) ? data.reviews : []) {
-            const uid = String(review?.user_id || review?.telegram_id || "").trim();
-            const id = String(review?.id || "").trim();
-            if (!uid || !id) continue;
-            events.push({
-              source: "web_review",
-              source_id: id,
-              telegram_id: uid,
-              project_id: projectId,
-              created_at: Number(review?.created_at || 0)
-            });
-          }
-
-          for (const comment of Array.isArray(data.comments) ? data.comments : []) {
-            const uid = String(comment?.user_id || comment?.telegram_id || "").trim();
-            const id = String(comment?.id || "").trim();
-            if (!uid || !id) continue;
-            events.push({
-              source: comment?.parent_id ? "web_reply" : "web_comment",
-              source_id: id,
-              telegram_id: uid,
-              project_id: projectId,
-              parent_id: comment?.parent_id ? String(comment.parent_id) : null,
-              created_at: Number(comment?.created_at || 0)
-            });
-          }
-        }
-        cursor = page.list_complete ? undefined : page.cursor;
-      } while (cursor);
-
-      events.sort((a,b) => Number(a.created_at || 0) - Number(b.created_at || 0));
-      return json({ok:true, events});
-    }
-
-
 if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const secret = request.headers.get("x-library-secret");
       if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
@@ -593,7 +603,7 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       return json({ok: true, count: body.length});
     }
 
-    // NOVEL: store HTML with BOOK-aware keys.
+    // TAMBAHAN: Endpoint Menerima Text HTML Novel dari Bot
     if (url.pathname === "/api/admin/novel" && request.method === "PUT") {
       const secret = request.headers.get("x-library-secret");
       if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
@@ -601,18 +611,12 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       }
 
       const body = await request.json();
-      const projectId = String(body.project_id || "").trim();
-      const chapter = String(body.chapter || "").trim();
-      const book = String(body.book || "").trim();
-      const key = `novel_${projectId}_${book || "-"}_${chapter}`;
-      await env.LIBRARY.put(key, JSON.stringify({
-        html: body.html,
-        book
-      }));
+      const key = `novel_${body.project_id}_${body.chapter}_${body.decensored}`;
+      await env.LIBRARY.put(key, JSON.stringify({html: body.html}));
       return json({ok: true});
     }
 
-    // NOVEL: reader endpoint. Supports BOOK-aware novels and old keys for backward compatibility.
+    // TAMBAHAN: Endpoint Mengirim Text HTML Novel ke Mini Web Reader
     if (url.pathname === "/api/novel" && request.method === "GET") {
       const access = await checkAccess(request, env);
       if (!access.ok) {
@@ -621,17 +625,11 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
 
       const pid = url.searchParams.get("project_id");
       const ch = url.searchParams.get("chapter");
-      const book = url.searchParams.get("book") || "";
-      const dec = url.searchParams.get("decensored") || "0";
-
-      const key = `novel_${pid}_${book || "-"}_${ch}`;
-      let data = await env.LIBRARY.get(key, "json");
-
-      // Backward compatibility for novels uploaded before the BOOK-aware key.
-      if (!data) {
-        data = await env.LIBRARY.get(`novel_${pid}_${ch}_${dec}`, "json");
-      }
-
+      const dec = url.searchParams.get("decensored");
+      
+      const key = `novel_${pid}_${ch}_${dec}`;
+      const data = await env.LIBRARY.get(key, "json");
+      
       if (!data) return json({error: "not found"}, 404);
 
       return new Response(JSON.stringify(data), {
@@ -956,6 +954,6 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       return json({ok:true, found});
     }
 
-    return env.ASSETS.fetch(request);
+    return securedResponse(await env.ASSETS.fetch(request));
   }
 };
