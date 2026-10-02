@@ -16,44 +16,10 @@ async function putStats(env, projectId, stats) {
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
-    headers: apiSecurityHeaders({"content-type": "application/json; charset=utf-8", "cache-control": "no-store"})
+    headers: {"content-type": "application/json; charset=utf-8"}
   });
 
 const ADMIN_USER_IDS = new Set(["6584714489", "7875422649"]);
-
-// Defense-in-depth rate limiting. Cloudflare's edge/network DDoS protection remains
-// the primary shield; this limiter protects Worker CPU, Telegram API calls, and KV
-// from abusive request bursts that reach the Worker.
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_BUCKETS = new Map();
-const RATE_LIMIT_CONFIG = { access: 20, write: 30, read: 90, file: 600, admin: 20, public: 120 };
-function clientIp(request) {
-  return String(request.headers.get("CF-Connecting-IP") || request.headers.get("X-Forwarded-For") || "unknown").split(",")[0].trim() || "unknown";
-}
-function rateLimit(request, bucket = "public") {
-  const now = Date.now();
-  const limit = RATE_LIMIT_CONFIG[bucket] || RATE_LIMIT_CONFIG.public;
-  const key = `${bucket}:${clientIp(request)}`;
-  const current = RATE_LIMIT_BUCKETS.get(key);
-  if (!current || now - current.startedAt >= RATE_LIMIT_WINDOW_MS) {
-    RATE_LIMIT_BUCKETS.set(key, {startedAt: now, count: 1});
-  } else {
-    current.count += 1;
-    if (current.count > limit) {
-      const retryAfter = Math.max(1, Math.ceil((RATE_LIMIT_WINDOW_MS - (now - current.startedAt)) / 1000));
-      return {ok:false, retryAfter};
-    }
-  }
-  if (RATE_LIMIT_BUCKETS.size > 5000) {
-    for (const [k, v] of RATE_LIMIT_BUCKETS) {
-      if (now - v.startedAt >= RATE_LIMIT_WINDOW_MS) RATE_LIMIT_BUCKETS.delete(k);
-    }
-  }
-  return {ok:true};
-}
-function apiSecurityHeaders(headers = {}) {
-  return {...headers, "x-content-type-options":"nosniff", "referrer-policy":"no-referrer", "permissions-policy":"camera=(), microphone=(), geolocation=()"};
-}
 
 function isAdminUser(userId, env) {
   const configured = String(env.ADMIN_USER_IDS || "").split(",").map(x => x.trim()).filter(Boolean);
@@ -91,13 +57,12 @@ async function getReaderCode(env, user) {
 }
 
 function cors(headers = {}) {
-  return apiSecurityHeaders({
+  return {
     ...headers,
     "access-control-allow-origin": "https://web.telegram.org",
     "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
-    "access-control-allow-headers": "Content-Type,X-Library-Secret,X-Telegram-Init-Data,X-Telegram-Platform",
-    "access-control-max-age": "600"
-  });
+    "access-control-allow-headers": "Content-Type,X-Library-Secret,X-Telegram-Init-Data,X-Telegram-Platform"
+  };
 }
 
 async function verifyTelegramInitData(initData, botToken) {
@@ -175,14 +140,6 @@ async function checkAccess(request, env) {
     return {ok: false, code: 503};
   }
 
-  // Cache successful membership checks briefly. Signed initData is still verified
-  // on every request, while repeated legitimate requests avoid Telegram API bursts.
-  const accessKey = `access:${String(user.id)}`;
-  const cached = await env.LIBRARY.get(accessKey, "json");
-  if (cached && cached.ok === true && Number(cached.expires_at || 0) > Math.floor(Date.now() / 1000)) {
-    return {ok:true, user};
-  }
-
   const [mvp, discussion] = await Promise.all([
     telegramMemberStatus(env, CHANNEL_ID, user.id),
     telegramMemberStatus(env, DISCUSSION_ID, user.id)
@@ -192,7 +149,6 @@ async function checkAccess(request, env) {
     return {ok: false, code: 403};
   }
 
-  await env.LIBRARY.put(accessKey, JSON.stringify({ok:true, expires_at:Math.floor(Date.now()/1000)+60}), {expirationTtl:60});
   return {ok: true, user};
 }
 
@@ -423,23 +379,6 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // Rate-limit API traffic before expensive auth, Telegram API, KV, or file work.
-    if (url.pathname.startsWith("/api/")) {
-      let bucket = "read";
-      if (url.pathname === "/api/access") bucket = "access";
-      else if (url.pathname === "/api/file") bucket = "file";
-      else if (url.pathname.startsWith("/api/admin/")) bucket = "admin";
-      else if (["POST","PUT","DELETE","PATCH"].includes(request.method)) bucket = "write";
-      const limited = rateLimit(request, bucket);
-      if (!limited.ok) {
-        return new Response(JSON.stringify({ok:false,error:"rate limit exceeded"}), {
-          status:429,
-          headers:apiSecurityHeaders({"content-type":"application/json; charset=utf-8","cache-control":"no-store","retry-after":String(limited.retryAfter)})
-        });
-      }
-      if (request.method === "OPTIONS") return new Response(null, {status:204, headers:cors()});
-    }
-
     // =========================
     // SUPPORT US: QRIS DOWNLOAD
     // =========================
@@ -588,12 +527,9 @@ export default {
         return json({ok:false, reason:"unauthorized"}, 401);
       }
 
-      // Fast-change gate: one tiny KV read tells Taekjoo whether any new
-      // pointable web event has been created since its last sync. We only
-      // scan community:* when this version changes.
       const currentVersion = String(await env.LIBRARY.get("web-point-version") || "");
-      const clientVersion = String(url.searchParams.get("since") || "");
-      if (currentVersion && clientVersion && currentVersion === clientVersion) {
+      const clientVersion = String(request.headers.get("X-Web-Point-Version") || "");
+      if (clientVersion && clientVersion === currentVersion) {
         return json({ok:true, changed:false, version:currentVersion, events:[]});
       }
 
@@ -815,6 +751,7 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       }
 
       let existing = data.reviews.find(r => String(r.user_id || r.telegram_id) === uid);
+      let newReviewCreated = false;
       if (reviewId) {
         existing = data.reviews.find(r => String(r.id) === reviewId);
         if (!existing || String(existing.user_id || existing.telegram_id) !== uid) return json({error:"review not found or forbidden"}, 404);
@@ -845,12 +782,13 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
           score, text, loves:{}, created_at: now, updated_at: now
         };
         data.reviews.push(existing);
-        // Only a newly-created review is pointable. Editing/deleting a review
-        // must not trigger a full Miniweb point rescan.
-        await env.LIBRARY.put("web-point-version", crypto.randomUUID());
+        newReviewCreated = true;
       }
 
       await putCommunity(env, projectId, data);
+      if (newReviewCreated) {
+        await env.LIBRARY.put("web-point-version", `${Date.now()}-${crypto.randomUUID()}`);
+      }
       await saveInteraction(env, projectId, interaction);
       const summary = summarizeInteraction(interaction, uid, data.comments.length);
       return json({ok:true, review:existing, reviews:data.reviews.length, interaction:summary});
@@ -924,9 +862,7 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       };
       data.comments.push(comment);
       await putCommunity(env, projectId, data);
-      // A new top-level comment or reply is a new point event. Edits/deletes
-      // do not bump the version, so idle polling stays cheap.
-      await env.LIBRARY.put("web-point-version", crypto.randomUUID());
+      await env.LIBRARY.put("web-point-version", `${Date.now()}-${crypto.randomUUID()}`);
 
       const interaction = await getInteraction(env, projectId);
       interaction.comments = data.comments.length;
