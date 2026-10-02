@@ -1394,20 +1394,16 @@ function showBrowse(){
   renderBrowseTags();renderBrowseResults();window.scrollTo(0,0);
 }
 function openBrowse(tag){
-  // Opening Browse from the main menu starts with a clean filter.
-  // If a tag is supplied, select that tag.
   browseSelectedTag=tag===undefined?"":(tag||"");
   browseSelectedStatus="";
   showBrowse();
 }
 function openTagBrowse(tag){
-  // Keep the mode selected inside Browse. Do not reset it from currentMode.
   browseSelectedTag=tag||"";
   browseSelectedStatus="";
   showBrowse();
 }
 function openStatusBrowse(status){
-  // Status selection must survive the Browse renderer.
   browseSelectedTag="";
   browseSelectedStatus=normalizeStatusKey(status);
   showBrowse();
