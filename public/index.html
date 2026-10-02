@@ -149,7 +149,7 @@ h1,h2,h3,p{margin:0}
 .mvp-browse-sub{font-size:12px;color:var(--muted);margin-top:3px}
 .mvp-tag-cloud{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
 .mvp-tag-link{border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:9px;padding:8px 11px;font-size:12px;font-weight:650;cursor:pointer;transition:transform .12s,background .12s,border-color .12s}
-.mvp-tag-link:active{transform:scale(.97);background:var(--panel2)}.mvp-tag-link.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.mvp-tag-link:active{transform:scale(.97);background:var(--panel2)}
 .mvp-tag-link.major{font-weight:900;border-color:var(--accent);color:var(--accent)}
 .mvp-tag-link.secondary{font-weight:900}
 .mvp-browse-results{margin-top:24px}
@@ -1386,27 +1386,21 @@ function renderSupportPage(){
     "</section>";
 }
 
-function showBrowse(){
-  $("lapakLayer").classList.remove("active");$("lapakLayer").classList.add("hidden");$("supportLayer").classList.remove("active");$("supportLayer").classList.add("hidden");
-  $("home").classList.add("hidden");$("detail").classList.add("hidden");$("catalogLayer").classList.remove("active");
-  $("browseLayer").classList.remove("hidden");$("browseLayer").classList.add("active");
-  $("browseModeComic").classList.toggle("active",browseMode==="comic");$("browseModeNovel").classList.toggle("active",browseMode==="novel");
-  renderBrowseTags();renderBrowseResults();window.scrollTo(0,0);
-}
-function openBrowse(tag){
-  browseSelectedTag=tag===undefined?"":(tag||"");
-  browseSelectedStatus="";
-  showBrowse();
-}
+function openBrowse(tag){$("lapakLayer").classList.remove("active");$("lapakLayer").classList.add("hidden");$("supportLayer").classList.remove("active");$("supportLayer").classList.add("hidden");browseMode=currentMode;browseSelectedTag=tag||"";browseSelectedStatus="";$("home").classList.add("hidden");$("detail").classList.add("hidden");$("catalogLayer").classList.remove("active");$("browseLayer").classList.remove("hidden");$("browseLayer").classList.add("active");$("browseModeComic").classList.toggle("active",browseMode==="comic");$("browseModeNovel").classList.toggle("active",browseMode==="novel");renderBrowseTags();renderBrowseResults();window.scrollTo(0,0);}
 function openTagBrowse(tag){
+  // Keep the mode currently selected INSIDE Browse. Do not reset it to
+  // currentMode, which belongs to the Home page.
   browseSelectedTag=tag||"";
   browseSelectedStatus="";
-  showBrowse();
+  renderBrowseTags();
+  renderBrowseResults();
 }
 function openStatusBrowse(status){
+  // Same rule for Status: filtering must stay inside the active Browse mode.
   browseSelectedTag="";
   browseSelectedStatus=normalizeStatusKey(status);
-  showBrowse();
+  renderBrowseTags();
+  renderBrowseResults();
 }
 function closeBrowse(){$("browseLayer").classList.remove("active");$("browseLayer").classList.add("hidden");$("home").classList.remove("hidden");window.scrollTo(0,0);}
 
