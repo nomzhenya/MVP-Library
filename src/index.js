@@ -588,6 +588,15 @@ export default {
         return json({ok:false, reason:"unauthorized"}, 401);
       }
 
+      // Fast-change gate: one tiny KV read tells Taekjoo whether any new
+      // pointable web event has been created since its last sync. We only
+      // scan community:* when this version changes.
+      const currentVersion = String(await env.LIBRARY.get("web-point-version") || "");
+      const clientVersion = String(url.searchParams.get("since") || "");
+      if (currentVersion && clientVersion && currentVersion === clientVersion) {
+        return json({ok:true, changed:false, version:currentVersion, events:[]});
+      }
+
       const events = [];
       let cursor = undefined;
       do {
@@ -629,7 +638,7 @@ export default {
       } while (cursor);
 
       events.sort((a,b) => Number(a.created_at || 0) - Number(b.created_at || 0));
-      return json({ok:true, events});
+      return json({ok:true, changed:true, version:currentVersion, events});
     }
 
 
@@ -836,6 +845,9 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
           score, text, loves:{}, created_at: now, updated_at: now
         };
         data.reviews.push(existing);
+        // Only a newly-created review is pointable. Editing/deleting a review
+        // must not trigger a full Miniweb point rescan.
+        await env.LIBRARY.put("web-point-version", crypto.randomUUID());
       }
 
       await putCommunity(env, projectId, data);
@@ -912,6 +924,9 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       };
       data.comments.push(comment);
       await putCommunity(env, projectId, data);
+      // A new top-level comment or reply is a new point event. Edits/deletes
+      // do not bump the version, so idle polling stays cheap.
+      await env.LIBRARY.put("web-point-version", crypto.randomUUID());
 
       const interaction = await getInteraction(env, projectId);
       interaction.comments = data.comments.length;
