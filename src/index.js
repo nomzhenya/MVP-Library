@@ -13,72 +13,69 @@ async function putStats(env, projectId, stats) {
     comments: Number(stats.comments || 0)
   }));
 }
-const json = (data, status = 200, extraHeaders = {}) =>
+const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
-    headers: securityHeaders({
+    headers: apiSecurityHeaders({
       "content-type": "application/json; charset=utf-8",
-      ...extraHeaders
+      "cache-control": "no-store"
     })
   });
 
-const API_RATE_WINDOW = 60;
-const API_RATE_LIMIT = 90;
-const MUTATION_RATE_LIMIT = 20;
-const AUTH_FAIL_LIMIT = 15;
-const MAX_USER_JSON_BYTES = 256 * 1024;
+const ADMIN_USER_IDS = new Set(["6584714489", "7875422649"]);
+
+// Defense-in-depth rate limiting. Cloudflare's edge/network DDoS protection remains
+// the primary shield; this limiter protects Worker CPU, Telegram API calls, and KV
+// from abusive request bursts that reach the Worker.
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_BUCKETS = new Map();
+const RATE_LIMIT_CONFIG = {
+  access: 20,
+  write: 30,
+  read: 90,
+  file: 600,
+  admin: 20,
+  public: 120
+};
 
 function clientIp(request) {
-  return String(request.headers.get("CF-Connecting-IP") || request.headers.get("X-Forwarded-For") || "unknown").split(",")[0].trim().slice(0,64);
+  return String(request.headers.get("CF-Connecting-IP") ||
+    request.headers.get("X-Forwarded-For") || "unknown").split(",")[0].trim() || "unknown";
 }
 
-function securityHeaders(extra = {}) {
+function rateLimit(request, bucket = "public") {
+  const now = Date.now();
+  const limit = RATE_LIMIT_CONFIG[bucket] || RATE_LIMIT_CONFIG.public;
+  const key = `${bucket}:${clientIp(request)}`;
+  const current = RATE_LIMIT_BUCKETS.get(key);
+
+  if (!current || now - current.startedAt >= RATE_LIMIT_WINDOW_MS) {
+    RATE_LIMIT_BUCKETS.set(key, {startedAt: now, count: 1});
+  } else {
+    current.count += 1;
+    if (current.count > limit) {
+      const retryAfter = Math.max(1, Math.ceil((RATE_LIMIT_WINDOW_MS - (now - current.startedAt)) / 1000));
+      return {ok: false, retryAfter};
+    }
+  }
+
+  // Prevent unbounded memory growth inside a warm Worker isolate.
+  if (RATE_LIMIT_BUCKETS.size > 5000) {
+    for (const [k, v] of RATE_LIMIT_BUCKETS) {
+      if (now - v.startedAt >= RATE_LIMIT_WINDOW_MS) RATE_LIMIT_BUCKETS.delete(k);
+    }
+  }
+  return {ok: true};
+}
+
+function apiSecurityHeaders(headers = {}) {
   return {
+    ...headers,
     "x-content-type-options": "nosniff",
-    "x-frame-options": "DENY",
     "referrer-policy": "no-referrer",
-    "permissions-policy": "camera=(), microphone=(), geolocation=()",
-    "content-security-policy": "frame-ancestors 'none'",
-    ...extra
+    "permissions-policy": "camera=(), microphone=(), geolocation=()"
   };
 }
-
-function securedResponse(response) {
-  const headers = new Headers(response.headers);
-  Object.entries(securityHeaders()).forEach(([k,v]) => headers.set(k,v));
-  return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
-}
-
-async function rateLimitKV(env,key,limit,windowSeconds=API_RATE_WINDOW) {
-  if(!env.LIBRARY) return {allowed:true};
-  const bucket=Math.floor(Math.floor(Date.now()/1000)/windowSeconds);
-  const kvKey=`rl:${key}:${bucket}`;
-  const current=Number(await env.LIBRARY.get(kvKey)||"0");
-  if(current>=limit) return {allowed:false};
-  await env.LIBRARY.put(kvKey,String(current+1),{expirationTtl:windowSeconds+5});
-  return {allowed:true};
-}
-
-function isUserMutationRoute(url) {
-  return ["/api/review","/api/comment","/api/love","/api/bookmark","/api/notifications/read"].includes(url.pathname);
-}
-
-async function securityGate(request,env,url) {
-  if(request.method==="OPTIONS") return {ok:true};
-  if(!url.pathname.startsWith("/api/") || url.pathname==="/api/qris") return {ok:true};
-  const ip=clientIp(request);
-  const general=await rateLimitKV(env,`api:${ip}`,API_RATE_LIMIT);
-  if(!general.allowed) return {ok:false,response:json({ok:false,error:"too many requests"},429,{"retry-after":String(API_RATE_WINDOW)})};
-  if(isUserMutationRoute(url) || (["POST","PUT","DELETE","PATCH"].includes(request.method) && !url.pathname.startsWith("/api/admin/"))) {
-    const mutation=await rateLimitKV(env,`mutation:${ip}`,MUTATION_RATE_LIMIT);
-    if(!mutation.allowed) return {ok:false,response:json({ok:false,error:"too many write requests"},429,{"retry-after":String(API_RATE_WINDOW)})};
-  }
-  const contentLength=Number(request.headers.get("content-length")||"0");
-  if(contentLength>MAX_USER_JSON_BYTES && isUserMutationRoute(url)) return {ok:false,response:json({ok:false,error:"request body too large"},413)};
-  return {ok:true};
-}
-
-const ADMIN_USER_IDS = new Set(["6584714489", "7875422649"]);
 
 function isAdminUser(userId, env) {
   const configured = String(env.ADMIN_USER_IDS || "").split(",").map(x => x.trim()).filter(Boolean);
@@ -116,12 +113,13 @@ async function getReaderCode(env, user) {
 }
 
 function cors(headers = {}) {
-  return {
+  return apiSecurityHeaders({
     ...headers,
     "access-control-allow-origin": "https://web.telegram.org",
     "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
-    "access-control-allow-headers": "Content-Type,X-Library-Secret,X-Telegram-Init-Data,X-Telegram-Platform"
-  };
+    "access-control-allow-headers": "Content-Type,X-Library-Secret,X-Telegram-Init-Data,X-Telegram-Platform",
+    "access-control-max-age": "600"
+  });
 }
 
 async function verifyTelegramInitData(initData, botToken) {
@@ -187,11 +185,7 @@ async function telegramMemberStatus(env, chatId, userId) {
 async function checkAccess(request, env) {
   const initData = request.headers.get("X-Telegram-Init-Data") || new URL(request.url).searchParams.get("init_data") || "";
   const user = await verifyTelegramInitData(initData, env.TELEGRAM_BOT_TOKEN);
-  if (!user?.id) {
-    const fail=await rateLimitKV(env,`authfail:${clientIp(request)}`,AUTH_FAIL_LIMIT);
-    if(!fail.allowed) return {ok:false,code:429};
-    return {ok:false,code:401};
-  }
+  if (!user?.id) return {ok: false, code: 401};
   if (!user.username || user.username.trim() === "") {
     return {ok: false, code: 403};
   }
@@ -203,6 +197,15 @@ async function checkAccess(request, env) {
     return {ok: false, code: 503};
   }
 
+  // Cache membership checks briefly so bursts of legitimate requests do not
+  // fan out into repeated Telegram API calls. The signed initData is still
+  // verified on every request.
+  const accessKey = `access:${String(user.id)}`;
+  const cached = await env.LIBRARY.get(accessKey, "json");
+  if (cached && cached.ok === true && Number(cached.expires_at || 0) > Math.floor(Date.now() / 1000)) {
+    return {ok: true, user};
+  }
+
   const [mvp, discussion] = await Promise.all([
     telegramMemberStatus(env, CHANNEL_ID, user.id),
     telegramMemberStatus(env, DISCUSSION_ID, user.id)
@@ -212,6 +215,7 @@ async function checkAccess(request, env) {
     return {ok: false, code: 403};
   }
 
+  await env.LIBRARY.put(accessKey, JSON.stringify({ok: true, expires_at: Math.floor(Date.now() / 1000) + 60}), {expirationTtl: 60});
   return {ok: true, user};
 }
 
@@ -442,8 +446,31 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    const gate = await securityGate(request, env, url);
-    if (!gate.ok) return gate.response;
+    // API traffic is rate-limited before any expensive authentication, Telegram
+    // API call, KV operation, or file proxy work is performed.
+    if (url.pathname.startsWith("/api/")) {
+      let bucket = "read";
+      if (url.pathname === "/api/access") bucket = "access";
+      else if (url.pathname === "/api/file") bucket = "file";
+      else if (url.pathname.startsWith("/api/admin/")) bucket = "admin";
+      else if (["POST", "PUT", "DELETE", "PATCH"].includes(request.method)) bucket = "write";
+
+      const limited = rateLimit(request, bucket);
+      if (!limited.ok) {
+        return new Response(JSON.stringify({ok:false, error:"rate limit exceeded"}), {
+          status: 429,
+          headers: apiSecurityHeaders({
+            "content-type": "application/json; charset=utf-8",
+            "cache-control": "no-store",
+            "retry-after": String(limited.retryAfter)
+          })
+        });
+      }
+
+      if (request.method === "OPTIONS") {
+        return new Response(null, {status: 204, headers: cors()});
+      }
+    }
 
     // =========================
     // SUPPORT US: QRIS DOWNLOAD
@@ -954,6 +981,6 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       return json({ok:true, found});
     }
 
-    return securedResponse(await env.ASSETS.fetch(request));
+    return env.ASSETS.fetch(request);
   }
 };
