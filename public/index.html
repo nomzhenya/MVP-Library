@@ -1386,26 +1386,31 @@ function renderSupportPage(){
     "</section>";
 }
 
-function openBrowse(tag){
+function showBrowse(){
   $("lapakLayer").classList.remove("active");$("lapakLayer").classList.add("hidden");$("supportLayer").classList.remove("active");$("supportLayer").classList.add("hidden");
-  if(tag !== undefined) browseSelectedTag=tag||"";
-  browseSelectedStatus="";
   $("home").classList.add("hidden");$("detail").classList.add("hidden");$("catalogLayer").classList.remove("active");
   $("browseLayer").classList.remove("hidden");$("browseLayer").classList.add("active");
   $("browseModeComic").classList.toggle("active",browseMode==="comic");$("browseModeNovel").classList.toggle("active",browseMode==="novel");
   renderBrowseTags();renderBrowseResults();window.scrollTo(0,0);
 }
+function openBrowse(tag){
+  // Opening Browse from the main menu starts with a clean filter.
+  // If a tag is supplied, select that tag.
+  browseSelectedTag=tag===undefined?"":(tag||"");
+  browseSelectedStatus="";
+  showBrowse();
+}
 function openTagBrowse(tag){
   // Keep the mode selected inside Browse. Do not reset it from currentMode.
   browseSelectedTag=tag||"";
   browseSelectedStatus="";
-  openBrowse();
+  showBrowse();
 }
 function openStatusBrowse(status){
-  // Keep the mode selected inside Browse.
+  // Status selection must survive the Browse renderer.
   browseSelectedTag="";
   browseSelectedStatus=normalizeStatusKey(status);
-  openBrowse();
+  showBrowse();
 }
 function closeBrowse(){$("browseLayer").classList.remove("active");$("browseLayer").classList.add("hidden");$("home").classList.remove("hidden");window.scrollTo(0,0);}
 
