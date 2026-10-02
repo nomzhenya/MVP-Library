@@ -16,10 +16,7 @@ async function putStats(env, projectId, stats) {
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
-    headers: apiSecurityHeaders({
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store"
-    })
+    headers: apiSecurityHeaders({"content-type": "application/json; charset=utf-8", "cache-control": "no-store"})
   });
 
 const ADMIN_USER_IDS = new Set(["6584714489", "7875422649"]);
@@ -29,52 +26,33 @@ const ADMIN_USER_IDS = new Set(["6584714489", "7875422649"]);
 // from abusive request bursts that reach the Worker.
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_BUCKETS = new Map();
-const RATE_LIMIT_CONFIG = {
-  access: 20,
-  write: 30,
-  read: 90,
-  file: 600,
-  admin: 20,
-  public: 120
-};
-
+const RATE_LIMIT_CONFIG = { access: 20, write: 30, read: 90, file: 600, admin: 20, public: 120 };
 function clientIp(request) {
-  return String(request.headers.get("CF-Connecting-IP") ||
-    request.headers.get("X-Forwarded-For") || "unknown").split(",")[0].trim() || "unknown";
+  return String(request.headers.get("CF-Connecting-IP") || request.headers.get("X-Forwarded-For") || "unknown").split(",")[0].trim() || "unknown";
 }
-
 function rateLimit(request, bucket = "public") {
   const now = Date.now();
   const limit = RATE_LIMIT_CONFIG[bucket] || RATE_LIMIT_CONFIG.public;
   const key = `${bucket}:${clientIp(request)}`;
   const current = RATE_LIMIT_BUCKETS.get(key);
-
   if (!current || now - current.startedAt >= RATE_LIMIT_WINDOW_MS) {
     RATE_LIMIT_BUCKETS.set(key, {startedAt: now, count: 1});
   } else {
     current.count += 1;
     if (current.count > limit) {
       const retryAfter = Math.max(1, Math.ceil((RATE_LIMIT_WINDOW_MS - (now - current.startedAt)) / 1000));
-      return {ok: false, retryAfter};
+      return {ok:false, retryAfter};
     }
   }
-
-  // Prevent unbounded memory growth inside a warm Worker isolate.
   if (RATE_LIMIT_BUCKETS.size > 5000) {
     for (const [k, v] of RATE_LIMIT_BUCKETS) {
       if (now - v.startedAt >= RATE_LIMIT_WINDOW_MS) RATE_LIMIT_BUCKETS.delete(k);
     }
   }
-  return {ok: true};
+  return {ok:true};
 }
-
 function apiSecurityHeaders(headers = {}) {
-  return {
-    ...headers,
-    "x-content-type-options": "nosniff",
-    "referrer-policy": "no-referrer",
-    "permissions-policy": "camera=(), microphone=(), geolocation=()"
-  };
+  return {...headers, "x-content-type-options":"nosniff", "referrer-policy":"no-referrer", "permissions-policy":"camera=(), microphone=(), geolocation=()"};
 }
 
 function isAdminUser(userId, env) {
@@ -197,13 +175,12 @@ async function checkAccess(request, env) {
     return {ok: false, code: 503};
   }
 
-  // Cache membership checks briefly so bursts of legitimate requests do not
-  // fan out into repeated Telegram API calls. The signed initData is still
-  // verified on every request.
+  // Cache successful membership checks briefly. Signed initData is still verified
+  // on every request, while repeated legitimate requests avoid Telegram API bursts.
   const accessKey = `access:${String(user.id)}`;
   const cached = await env.LIBRARY.get(accessKey, "json");
   if (cached && cached.ok === true && Number(cached.expires_at || 0) > Math.floor(Date.now() / 1000)) {
-    return {ok: true, user};
+    return {ok:true, user};
   }
 
   const [mvp, discussion] = await Promise.all([
@@ -215,7 +192,7 @@ async function checkAccess(request, env) {
     return {ok: false, code: 403};
   }
 
-  await env.LIBRARY.put(accessKey, JSON.stringify({ok: true, expires_at: Math.floor(Date.now() / 1000) + 60}), {expirationTtl: 60});
+  await env.LIBRARY.put(accessKey, JSON.stringify({ok:true, expires_at:Math.floor(Date.now()/1000)+60}), {expirationTtl:60});
   return {ok: true, user};
 }
 
@@ -446,30 +423,21 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // API traffic is rate-limited before any expensive authentication, Telegram
-    // API call, KV operation, or file proxy work is performed.
+    // Rate-limit API traffic before expensive auth, Telegram API, KV, or file work.
     if (url.pathname.startsWith("/api/")) {
       let bucket = "read";
       if (url.pathname === "/api/access") bucket = "access";
       else if (url.pathname === "/api/file") bucket = "file";
       else if (url.pathname.startsWith("/api/admin/")) bucket = "admin";
-      else if (["POST", "PUT", "DELETE", "PATCH"].includes(request.method)) bucket = "write";
-
+      else if (["POST","PUT","DELETE","PATCH"].includes(request.method)) bucket = "write";
       const limited = rateLimit(request, bucket);
       if (!limited.ok) {
-        return new Response(JSON.stringify({ok:false, error:"rate limit exceeded"}), {
-          status: 429,
-          headers: apiSecurityHeaders({
-            "content-type": "application/json; charset=utf-8",
-            "cache-control": "no-store",
-            "retry-after": String(limited.retryAfter)
-          })
+        return new Response(JSON.stringify({ok:false,error:"rate limit exceeded"}), {
+          status:429,
+          headers:apiSecurityHeaders({"content-type":"application/json; charset=utf-8","cache-control":"no-store","retry-after":String(limited.retryAfter)})
         });
       }
-
-      if (request.method === "OPTIONS") {
-        return new Response(null, {status: 204, headers: cors()});
-      }
+      if (request.method === "OPTIONS") return new Response(null, {status:204, headers:cors()});
     }
 
     // =========================
@@ -609,6 +577,62 @@ export default {
       return json({ok:true, updated: body.projects.length});
     }
 
+    // =========================
+    // ADMIN: WEB COMMUNITY POINT EVENTS
+    // Taekjoo polls this endpoint and records each event idempotently in
+    // its own SQLite point_events table. One web comment/reply/review = 1 point.
+    // =========================
+    if (url.pathname === "/api/admin/web-point-events" && request.method === "GET") {
+      const secret = request.headers.get("X-Library-Secret") || request.headers.get("x-library-secret") || "";
+      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
+        return json({ok:false, reason:"unauthorized"}, 401);
+      }
+
+      const events = [];
+      let cursor = undefined;
+      do {
+        const page = await env.LIBRARY.list({prefix:"community:", limit:1000, cursor});
+        for (const key of page.keys || []) {
+          const projectId = String(key.name || "").slice("community:".length);
+          if (!projectId) continue;
+          const data = await env.LIBRARY.get(key.name, "json");
+          if (!data || typeof data !== "object") continue;
+
+          for (const review of Array.isArray(data.reviews) ? data.reviews : []) {
+            const uid = String(review?.user_id || review?.telegram_id || "").trim();
+            const id = String(review?.id || "").trim();
+            if (!uid || !id) continue;
+            events.push({
+              source: "web_review",
+              source_id: id,
+              telegram_id: uid,
+              project_id: projectId,
+              created_at: Number(review?.created_at || 0)
+            });
+          }
+
+          for (const comment of Array.isArray(data.comments) ? data.comments : []) {
+            const uid = String(comment?.user_id || comment?.telegram_id || "").trim();
+            const id = String(comment?.id || "").trim();
+            if (!uid || !id) continue;
+            events.push({
+              source: comment?.parent_id ? "web_reply" : "web_comment",
+              source_id: id,
+              telegram_id: uid,
+              project_id: projectId,
+              parent_id: comment?.parent_id ? String(comment.parent_id) : null,
+              created_at: Number(comment?.created_at || 0)
+            });
+          }
+        }
+        cursor = page.list_complete ? undefined : page.cursor;
+      } while (cursor);
+
+      events.sort((a,b) => Number(a.created_at || 0) - Number(b.created_at || 0));
+      return json({ok:true, events});
+    }
+
+
 if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const secret = request.headers.get("x-library-secret");
       if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
@@ -630,7 +654,7 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       return json({ok: true, count: body.length});
     }
 
-    // TAMBAHAN: Endpoint Menerima Text HTML Novel dari Bot
+    // NOVEL: store HTML with BOOK-aware keys.
     if (url.pathname === "/api/admin/novel" && request.method === "PUT") {
       const secret = request.headers.get("x-library-secret");
       if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
@@ -638,12 +662,18 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       }
 
       const body = await request.json();
-      const key = `novel_${body.project_id}_${body.chapter}_${body.decensored}`;
-      await env.LIBRARY.put(key, JSON.stringify({html: body.html}));
+      const projectId = String(body.project_id || "").trim();
+      const chapter = String(body.chapter || "").trim();
+      const book = String(body.book || "").trim();
+      const key = `novel_${projectId}_${book || "-"}_${chapter}`;
+      await env.LIBRARY.put(key, JSON.stringify({
+        html: body.html,
+        book
+      }));
       return json({ok: true});
     }
 
-    // TAMBAHAN: Endpoint Mengirim Text HTML Novel ke Mini Web Reader
+    // NOVEL: reader endpoint. Supports BOOK-aware novels and old keys for backward compatibility.
     if (url.pathname === "/api/novel" && request.method === "GET") {
       const access = await checkAccess(request, env);
       if (!access.ok) {
@@ -652,11 +682,17 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
 
       const pid = url.searchParams.get("project_id");
       const ch = url.searchParams.get("chapter");
-      const dec = url.searchParams.get("decensored");
-      
-      const key = `novel_${pid}_${ch}_${dec}`;
-      const data = await env.LIBRARY.get(key, "json");
-      
+      const book = url.searchParams.get("book") || "";
+      const dec = url.searchParams.get("decensored") || "0";
+
+      const key = `novel_${pid}_${book || "-"}_${ch}`;
+      let data = await env.LIBRARY.get(key, "json");
+
+      // Backward compatibility for novels uploaded before the BOOK-aware key.
+      if (!data) {
+        data = await env.LIBRARY.get(`novel_${pid}_${ch}_${dec}`, "json");
+      }
+
       if (!data) return json({error: "not found"}, 404);
 
       return new Response(JSON.stringify(data), {
