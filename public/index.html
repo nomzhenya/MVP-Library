@@ -130,14 +130,6 @@ h1,h2,h3,p{margin:0}
 .chapter-bato { padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer; pointer-events:auto; background:transparent; transition:background 0.2s; display:flex; justify-content:space-between; align-items:center;}
 .chapter-bato:last-child { border-bottom:none; }
 .chapter-bato:active { background:var(--panel2); }
-.ebook-book-group{border-bottom:1px solid var(--border);background:var(--panel)}
-.ebook-book-group:last-child{border-bottom:none}
-.ebook-book-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border:0;background:transparent;color:var(--text);font-size:14px;font-weight:900;text-align:left;cursor:pointer}
-.ebook-book-head:active{background:var(--panel2)}
-.ebook-book-toggle{color:var(--accent);font-size:18px;line-height:1;font-weight:900;flex-shrink:0}
-.ebook-book-chapters{border-top:1px solid var(--border)}
-.ebook-book-chapters .chapter-bato{padding-left:24px}
-
 
 .theme-toggle{border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:var(--panel2);color:var(--text);font-size:18px;cursor:pointer; pointer-events:auto;}
 .home-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -157,7 +149,7 @@ h1,h2,h3,p{margin:0}
 .mvp-browse-sub{font-size:12px;color:var(--muted);margin-top:3px}
 .mvp-tag-cloud{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
 .mvp-tag-link{border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:9px;padding:8px 11px;font-size:12px;font-weight:650;cursor:pointer;transition:transform .12s,background .12s,border-color .12s}
-.mvp-tag-link:active{transform:scale(.97);background:var(--panel2)}
+.mvp-tag-link:active{transform:scale(.97);background:var(--panel2)}.mvp-tag-link.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .mvp-tag-link.major{font-weight:900;border-color:var(--accent);color:var(--accent)}
 .mvp-tag-link.secondary{font-weight:900}
 .mvp-browse-results{margin-top:24px}
@@ -405,30 +397,6 @@ html,body{background:var(--bg)}
   color:var(--muted);
   font-size:12px;
 }
-/* LAST READ */
-.chapter-bato.last-read{
-  border-color:var(--accent) !important;
-  background:linear-gradient(90deg,rgba(255,255,255,.08),rgba(255,255,255,.035)) !important;
-  box-shadow:0 0 0 1px rgba(255,255,255,.03),0 4px 18px rgba(0,0,0,.08);
-}
-.chapter-bato.last-read .mvp-chapter-bato-body > div:first-child{
-  color:var(--accent) !important;
-}
-.last-read-badge{
-  display:inline-flex;
-  align-items:center;
-  margin-left:7px;
-  padding:2px 7px;
-  border-radius:999px;
-  font-size:9px;
-  line-height:1.2;
-  font-weight:900;
-  letter-spacing:.2px;
-  vertical-align:middle;
-  background:var(--accent);
-  color:#fff;
-}
-
 .chapter-item .chapter-translator{
   display:flex;
   justify-content:center;
@@ -1189,17 +1157,8 @@ async function toggleBookmark(id) {
     if(!$('detail').classList.contains('hidden')) openProject(id); else renderHome();
   }catch(e){if(tg&&tg.showAlert)tg.showAlert("Bookmark gagal disimpan.");}
 }
-function saveHistory(pid, ch, dec, book) {
-  try{ var h=JSON.parse(localStorage.getItem("mvp_history")||"{}"); h[pid]={chapter:String(ch), decensored:Number(dec||0), book:String(book||""), ts:Date.now()}; localStorage.setItem("mvp_history",JSON.stringify(h)); }catch(e){}
-}
-function isLastReadChapter(pid, c){
-  try{
-    var h=getHistory()[pid];
-    if(!h || !c) return false;
-    return String(h.chapter||"")===String(c.chapter||"") &&
-      Number(h.decensored||0)===Number(c.decensored||0) &&
-      String(h.book||"")===String(c.book||"");
-  }catch(e){ return false; }
+function saveHistory(pid, ch, dec) {
+  try{ var h=JSON.parse(localStorage.getItem("mvp_history")||"{}"); h[pid]={chapter:ch, decensored:Number(dec), ts:Date.now()}; localStorage.setItem("mvp_history",JSON.stringify(h)); }catch(e){}
 }
 function getHistory() { try{ return JSON.parse(localStorage.getItem("mvp_history")||"{}"); }catch(e){return {};} }
 
@@ -1427,9 +1386,27 @@ function renderSupportPage(){
     "</section>";
 }
 
-function openBrowse(tag){$("lapakLayer").classList.remove("active");$("lapakLayer").classList.add("hidden");$("supportLayer").classList.remove("active");$("supportLayer").classList.add("hidden");browseMode=currentMode;browseSelectedTag=tag||"";browseSelectedStatus="";$("home").classList.add("hidden");$("detail").classList.add("hidden");$("catalogLayer").classList.remove("active");$("browseLayer").classList.remove("hidden");$("browseLayer").classList.add("active");$("browseModeComic").classList.toggle("active",browseMode==="comic");$("browseModeNovel").classList.toggle("active",browseMode==="novel");renderBrowseTags();renderBrowseResults();window.scrollTo(0,0);}
-function openTagBrowse(tag){openBrowse(tag);}
-function openStatusBrowse(status){browseMode=currentMode;browseSelectedTag="";browseSelectedStatus=normalizeStatusKey(status);$("home").classList.add("hidden");$("detail").classList.add("hidden");$("catalogLayer").classList.remove("active");$("browseLayer").classList.remove("hidden");$("browseLayer").classList.add("active");$("browseModeComic").classList.toggle("active",browseMode==="comic");$("browseModeNovel").classList.toggle("active",browseMode==="novel");renderBrowseTags();renderBrowseResults();window.scrollTo(0,0);}
+function openBrowse(tag){
+  $("lapakLayer").classList.remove("active");$("lapakLayer").classList.add("hidden");$("supportLayer").classList.remove("active");$("supportLayer").classList.add("hidden");
+  if(tag !== undefined) browseSelectedTag=tag||"";
+  browseSelectedStatus="";
+  $("home").classList.add("hidden");$("detail").classList.add("hidden");$("catalogLayer").classList.remove("active");
+  $("browseLayer").classList.remove("hidden");$("browseLayer").classList.add("active");
+  $("browseModeComic").classList.toggle("active",browseMode==="comic");$("browseModeNovel").classList.toggle("active",browseMode==="novel");
+  renderBrowseTags();renderBrowseResults();window.scrollTo(0,0);
+}
+function openTagBrowse(tag){
+  // Keep the mode selected inside Browse. Do not reset it from currentMode.
+  browseSelectedTag=tag||"";
+  browseSelectedStatus="";
+  openBrowse();
+}
+function openStatusBrowse(status){
+  // Keep the mode selected inside Browse.
+  browseSelectedTag="";
+  browseSelectedStatus=normalizeStatusKey(status);
+  openBrowse();
+}
 function closeBrowse(){$("browseLayer").classList.remove("active");$("browseLayer").classList.add("hidden");$("home").classList.remove("hidden");window.scrollTo(0,0);}
 
 // UI LOGIC
@@ -1451,9 +1428,6 @@ function toggleSec(id, btn) {
 
 // FORMAT BATO LIST DENGAN STATS DARI DATABASE
 function chapterDisplayTitle(ch){return String(ch&&(ch.chapter_title||ch.title||ch.name)||"").trim();}
-function chapterLabel(p,ch){ return String((p&&p.type)||"").toLowerCase()==="novel" ? "Bab " : "Chapter "; }
-function novelIsEbook(p){ return String((p&&p.type)||"").toLowerCase()==="novel" && String((p&&p.novel_type)||"").toLowerCase()==="ebook"; }
-function toggleEbookBook(id){ var box=document.getElementById(id); if(!box)return; var open=!box.classList.contains("hidden"); box.classList.toggle("hidden",open); var t=box.previousElementSibling&&box.previousElementSibling.querySelector(".ebook-book-toggle"); if(t)t.textContent=open?"+":"−"; }
 function chapterTranslator(p,ch){
   var t=String((ch&&ch.translator)||"").trim();
   if(t) return t;
@@ -1779,35 +1753,19 @@ async function openProject(id){
   var mappedChaps=chaptersArr.map(function(c,i){return {c:c,i:i};});
   if(!window.chapterSortDesc) mappedChaps.reverse();
 
-  var chapterItemHtml=function(item){
+  var chaptersHtml=mappedChaps.map(function(item){
     var timeStr=item.c.updated_at?timeAgo(item.c.updated_at):"Just now";
     var chTitle=chapterDisplayTitle(item.c);
-    var label=chapterLabel(p,item.c);
-    var isLastRead=isLastReadChapter(p.id,item.c);
-    var lastReadClass=isLastRead?" last-read":"";
-    var lastReadBadge=isLastRead?"<span class='last-read-badge'>TERAKHIR DIBACA</span>":"";
+    var chTranslator=chapterTranslator(p,item.c);
+    var chKey=String(item.c.chapter);
     return "<div class='chapter-bato-wrap'>"+
-      "<div class='chapter-bato"+lastReadClass+"' onclick=\"openReader('"+esc(p.id)+"','"+esc(item.c.chapter)+"',"+Number(item.c.decensored||0)+")\">"+
-        "<div class='mvp-chapter-bato-body'><div style='font-weight:800;font-size:14px;color:var(--accent);'>"+label+esc(item.c.chapter)+decBadge(item.c.decensored)+lastReadBadge+"</div>"+
+      "<div class='chapter-bato' onclick=\"openReader('"+esc(p.id)+"','"+esc(item.c.chapter)+"',"+Number(item.c.decensored||0)+")\">"+
+        "<div class='mvp-chapter-bato-body'><div style='font-weight:800;font-size:14px;color:var(--accent);'>Chapter "+esc(item.c.chapter)+decBadge(item.c.decensored)+"</div>"+
         (chTitle?"<div class='mvp-chapter-title'>"+esc(chTitle)+"</div>":"")+"</div>"+
         "<div class='mvp-chapter-bato-meta'>🕒 "+timeStr+"</div>"+
       "</div>"+
     "</div>";
-  };
-  var chaptersHtml="";
-  if(novelIsEbook(p)){
-    var groups={}; var order=[];
-    mappedChaps.forEach(function(item){ var book=String(item.c.book||"").trim() || ""; if(!groups[book]){groups[book]=[];order.push(book);} groups[book].push(item); });
-    chaptersHtml=order.map(function(book,gi){
-      var groupId="ebookBook_"+gi+"_"+String(p.id).replace(/[^A-Za-z0-9_-]/g,"_");
-      var label=book?"BOOK "+esc(book):"CHAPTERS";
-      var rows=groups[book].map(chapterItemHtml).join("");
-      return "<div class='ebook-book-group'>"+
-        "<button type='button' class='ebook-book-head' onclick=\"toggleEbookBook('"+groupId+"')\"><span>"+label+"</span><span class='ebook-book-toggle'>−</span></button>"+
-        "<div id='"+groupId+"' class='ebook-book-chapters'>"+rows+"</div>"+
-      "</div>";
-    }).join("");
-  }else{ chaptersHtml=mappedChaps.map(chapterItemHtml).join(""); }
+  }).join("");
 
   var chaptersWrap="<div class='chapter-scroll-box'>"+
     (chaptersHtml||"<div class='mvp-empty-state'>Belum ada chapter.</div>")+
@@ -1839,7 +1797,7 @@ async function openProject(id){
   var part4=
     "<section class='mvp-detail-part'>"+
       "<div class='mvp-chapters-head'>"+
-        "<h3>"+(novelIsEbook(p)?"Bab":"Chapters")+" <span style='color:var(--muted);font-size:14px;'>("+chaptersArr.length+")</span></h3>"+
+        "<h3>Chapters <span style='color:var(--muted);font-size:14px;'>("+chaptersArr.length+")</span></h3>"+
         "<button class='btn' style='padding:6px 12px;font-size:12px;background:var(--panel2);color:var(--text);border:1px solid var(--border);pointer-events:auto;border-radius:24px;' onclick=\"toggleChapterSort('"+esc(p.id)+"')\">⇅ Sortir</button>"+
       "</div>"+
       chaptersWrap+
@@ -2176,7 +2134,7 @@ async function loadCommunity(pid){
 
 
 function updateNotificationBadge(a){var b=$("notificationBadge");if(!b)return;var n=(a||[]).filter(function(x){return !x.read;}).length;b.textContent=n>99?"99+":n;b.classList.toggle("hidden",!n);}
-async function loadNotifications(){try{var d=await apiJSON("/api/notifications?limit=50"),a=Array.isArray(d)?d:(d.notifications||[]);$("notificationList").innerHTML=a.length?a.map(function(n){var type=String(n.type||"").toLowerCase();var label=type==="project_update"||type==="chapter_update"||type==="new_update"?"UPDATE":type==="review"?"Review baru":type==="comment_reply"?"Balasan komentar":"Komentar baru";var body=type==="comment_reply"?((n.actor_name||n.from_name||n.username)?String(n.actor_name||n.from_name||n.username)+" membalas komentarmu.":"Balasan komentar"):(n.text||n.message||"");return "<button class='mvp-notification-item "+(n.read?"":"unread")+"' onclick='openNotification("+JSON.stringify(n).replace(/'/g,"&#39;")+")'><b>"+esc(label)+"</b><div>"+esc(body)+"</div></button>";}).join(""):"<div class='mvp-empty-state'>Belum ada notifikasi.</div>";updateNotificationBadge(a);}catch(e){$("notificationList").innerHTML="<div class='mvp-empty-state'>Notifikasi belum tersedia.</div>";}}
+async function loadNotifications(){try{var d=await apiJSON("/api/notifications?limit=50"),a=Array.isArray(d)?d:(d.notifications||[]);$("notificationList").innerHTML=a.length?a.map(function(n){var type=String(n.type||"").toLowerCase();var label=type==="project_update"||type==="chapter_update"||type==="new_update"?"Update PJ bookmark":type==="review"?"Review baru":type==="comment_reply"?"Balasan komentar":"Komentar baru";return "<button class='mvp-notification-item "+(n.read?"":"unread")+"' onclick='openNotification("+JSON.stringify(n).replace(/'/g,"&#39;")+")'><b>"+esc(label)+"</b><div>"+esc(n.text||n.message||"")+"</div></button>";}).join(""):"<div class='mvp-empty-state'>Belum ada notifikasi.</div>";updateNotificationBadge(a);}catch(e){$("notificationList").innerHTML="<div class='mvp-empty-state'>Notifikasi belum tersedia.</div>";}}
 async function openNotifications(){["home","detail","reader","browseLayer","catalogLayer","lapakLayer","supportLayer"].forEach(function(id){var e=$(id);if(e)e.classList.add("hidden");});$("notificationsLayer").classList.remove("hidden");$("notificationsLayer").classList.add("active");window.scrollTo(0,0);loadNotifications();}
 function closeNotifications(){$("notificationsLayer").classList.remove("active");$("notificationsLayer").classList.add("hidden");$("home").classList.remove("hidden");}
 async function prepareNotificationComment(pid,commentId,chapter){
@@ -2495,7 +2453,7 @@ async function openReader(projectId, chapterName, decensored){
       return;
   }
 
-  saveHistory(projectId, c.chapter, Number(c.decensored), c.book);
+  saveHistory(projectId, c.chapter, Number(c.decensored));
   $("progressContainer").style.display="block";
   $("progressBar").style.width="0%";
 
@@ -2507,9 +2465,7 @@ async function openReader(projectId, chapterName, decensored){
 
   var chapterOptions = chaptersArr.map(function(ch, i) {
     var isCur = i === idx ? "current" : "";
-    var isLast = isLastReadChapter(p.id,ch);
-    var lastBadge = isLast ? " · Terakhir dibaca" : "";
-    return "<button class='reader-chapter-option "+isCur+"' onclick=\"selectReaderChapter('"+esc(p.id)+"',"+i+")\">"+chapterLabel(p,ch)+esc(ch.chapter)+decBadge(ch.decensored)+(chapterDisplayTitle(ch)?" · "+esc(chapterDisplayTitle(ch)):"")+lastBadge+"</button>";
+    return "<button class='reader-chapter-option "+isCur+"' onclick=\"selectReaderChapter('"+esc(p.id)+"',"+i+")\">Chapter "+esc(ch.chapter)+decBadge(ch.decensored)+(chapterDisplayTitle(ch)?" · "+esc(chapterDisplayTitle(ch)):"")+"</button>";
   }).join("");
 
   var isLast = idx >= chaptersArr.length - 1;
@@ -2525,7 +2481,7 @@ async function openReader(projectId, chapterName, decensored){
         "</button>" +
         "<div class='reader-chapter-wrap'>" +
           "<button id='readerChapterButton' class='reader-chapter-btn' onclick='toggleChapterMenu(event)'>" +
-            chapterLabel(p,c)+esc(c.chapter)+decBadge(c.decensored) +
+            "Ch."+esc(c.chapter)+decBadge(c.decensored) +
           "</button>" +
           "<div id='readerChapterMenu' class='reader-chapter-menu hidden'>" + chapterOptions + "</div>" +
         "</div>" +
@@ -2541,9 +2497,9 @@ async function openReader(projectId, chapterName, decensored){
 
   var readerCommentSection =
     "<section id='readerChapterCommunity' class='reader-chapter-community'>"+
-      "<div class='reader-chapter-community-title'>"+miniIcon("comment",14)+" Komentar</div>"+
+      "<div class='reader-chapter-community-title'>"+miniIcon("comment",14)+" Komentar Chapter "+esc(c.chapter)+"</div>"+
       "<div id='readerChapterCommentCompose' class='mvp-comment-compose'>"+
-        "<textarea id='readerChapterCommentInput' class='mvp-comment-input' maxlength='2000' placeholder='Tulis komentar...'></textarea>"+
+        "<textarea id='readerChapterCommentInput' class='mvp-comment-input' maxlength='2000' placeholder='Tulis komentar untuk Chapter "+esc(c.chapter)+"...'></textarea>"+
         "<button class='btn primary' onclick=\"submitReaderChapterComment('"+esc(p.id)+"','"+esc(c.chapter)+"')\">Kirim Komentar</button>"+
       "</div>"+
       "<div id='readerChapterComments' class='mvp-chapter-comment-list'><div class='mvp-empty-state'>Memuat...</div></div>"+
@@ -2567,7 +2523,7 @@ async function openReader(projectId, chapterName, decensored){
   if(c && c.content_type === "docx"){
     pages.innerHTML = "<div class='novel-loading'>Memuat chapter…</div>";
     try {
-      var r = await fetch("/api/novel?project_id=" + encodeURIComponent(projectId) + "&chapter=" + encodeURIComponent(c.chapter) + "&book=" + encodeURIComponent(c.book||"") + "&decensored=" + c.decensored, {cache:"no-store",headers:accessHeaders()});
+      var r = await fetch("/api/novel?project_id=" + encodeURIComponent(projectId) + "&chapter=" + encodeURIComponent(c.chapter) + "&decensored=" + c.decensored, {cache:"no-store",headers:accessHeaders()});
       if(!r.ok) throw new Error("novel");
       var data = await r.json();
       var savedFont = Number(localStorage.getItem('mvp_fontsize')) || 17;
@@ -2614,7 +2570,7 @@ async function openReader(projectId, chapterName, decensored){
     c.file_ids.forEach(function(fid, i) {
       var img = document.createElement("img");
       img.className = "readerpage";
-      img.alt = p.title + " " + chapterLabel(p,c) + chapterName + " Page " + (i+1);
+      img.alt = p.title + " Chapter " + chapterName + " Page " + (i+1);
       img.loading = "lazy";
       img.dataset.src = fileUrl(fid);
       img.onerror = function() {
