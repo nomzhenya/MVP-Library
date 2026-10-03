@@ -976,7 +976,6 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const target = list.find(x => String(x.id) === targetId);
       if (!target) return json({error:"target not found"},404);
       target.loves = target.loves && typeof target.loves === "object" ? target.loves : {};
-      const uid = String(access.user.id);
       const loved = Object.prototype.hasOwnProperty.call(target.loves, uid);
       if (loved) delete target.loves[uid]; else target.loves[uid] = true;
       await putCommunity(env, projectId, data);
