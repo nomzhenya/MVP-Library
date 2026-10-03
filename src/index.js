@@ -115,7 +115,7 @@ async function verifyTelegramInitData(initData, botToken) {
 
 async function telegramMemberStatus(env, chatId, userId) {
   const r = await fetch(
-    `https://api.telegram.org/bot${env.Zhenya_BOT_TOKEN}/getChatMember?chat_id=${encodeURIComponent(chatId)}&user_id=${encodeURIComponent(userId)}`
+    `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getChatMember?chat_id=${encodeURIComponent(chatId)}&user_id=${encodeURIComponent(userId)}`
   );
   if (!r.ok) return null;
   const data = await r.json();
@@ -127,7 +127,7 @@ async function telegramMemberStatus(env, chatId, userId) {
 
 async function checkAccess(request, env) {
   const initData = request.headers.get("X-Telegram-Init-Data") || new URL(request.url).searchParams.get("init_data") || "";
-  const user = await verifyTelegramInitData(initData, env.Zhenya_BOT_TOKEN);
+  const user = await verifyTelegramInitData(initData, env.TELEGRAM_BOT_TOKEN);
   if (!user?.id) return {ok: false, code: 401};
   if (!user.username || user.username.trim() === "") {
     return {ok: false, code: 403};
