@@ -115,7 +115,7 @@ async function verifyTelegramInitData(initData, botToken) {
 
 async function telegramMemberStatus(env, chatId, userId) {
   const r = await fetch(
-    `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getChatMember?chat_id=${encodeURIComponent(chatId)}&user_id=${encodeURIComponent(userId)}`
+    `https://api.telegram.org/bot${env.Zhenya_BOT_TOKEN}/getChatMember?chat_id=${encodeURIComponent(chatId)}&user_id=${encodeURIComponent(userId)}`
   );
   if (!r.ok) return null;
   const data = await r.json();
@@ -127,7 +127,7 @@ async function telegramMemberStatus(env, chatId, userId) {
 
 async function checkAccess(request, env) {
   const initData = request.headers.get("X-Telegram-Init-Data") || new URL(request.url).searchParams.get("init_data") || "";
-  const user = await verifyTelegramInitData(initData, env.TELEGRAM_BOT_TOKEN);
+  const user = await verifyTelegramInitData(initData, env.Zhenya_BOT_TOKEN);
   if (!user?.id) return {ok: false, code: 401};
   if (!user.username || user.username.trim() === "") {
     return {ok: false, code: 403};
@@ -367,6 +367,299 @@ async function notifyBookmarkedProjectUpdate(env, previousCatalog, nextCatalog) 
   }
 }
 
+// =========================
+// SYSTEM ANTI-SPAM: KV RATE LIMITING
+// =========================
+// Soft rate limiter untuk workers.dev tanpa Cloudflare Rate Limiting binding.
+// Counter dipisahkan per user + endpoint agar aktivitas normal tidak saling memblokir.
+async function checkRateLimit(env, userId, scope, limit, windowSec) {
+  const uid = String(userId || "").trim();
+  const bucket = String(scope || "api").replace(/[^a-zA-Z0-9_.:-]/g, "_");
+  const safeLimit = Math.max(1, Number(limit) || 1);
+  const safeWindow = Math.max(1, Number(windowSec) || 1);
+  if (!uid) return {allowed: false, retryAfter: safeWindow};
+
+  const key = `ratelimit:${bucket}:${uid}`;
+  const now = nowSec();
+  let record = await env.LIBRARY.get(key, "json");
+
+  if (!record || now >= Number(record.reset_at || 0)) {
+    record = {count: 1, reset_at: now + safeWindow};
+  } else {
+    record.count = Number(record.count || 0) + 1;
+    if (record.count > safeLimit) {
+      return {
+        allowed: false,
+        retryAfter: Math.max(1, Number(record.reset_at) - now)
+      };
+    }
+  }
+
+  await env.LIBRARY.put(
+    key,
+    JSON.stringify(record),
+    {expirationTtl: Math.max(60, safeWindow + 5)}
+  );
+
+  return {
+    allowed: true,
+    retryAfter: Math.max(1, Number(record.reset_at) - now)
+  };
+}
+
+function rateLimitResponse(result, message) {
+  const retryAfter = Math.max(1, Number(result?.retryAfter || 1));
+  return json(
+    {
+      ok: false,
+      error: message || "Terlalu banyak request. Tunggu beberapa detik sebelum mencoba lagi.",
+      retry_after: retryAfter
+    },
+    429
+  );
+}
+
+// =========================
+// ABUSE GUARD / ALERT REPORTING
+// =========================
+// Zhenya menangani seluruh siklus alert:
+// 1) membuat topic 🚨 ALERT di Control Group bila belum ada;
+// 2) mengirim laporan abuse ke topic tersebut;
+// 3) melakukan auto-ban ketika threshold abuse tercapai.
+// Tidak membutuhkan Taekjoo atau environment variable tambahan.
+const ABUSE_WINDOW_SEC = 10 * 60;
+const ABUSE_BLOCK_1_SEC = 5 * 60;
+const ABUSE_BLOCK_2_SEC = 60 * 60;
+const ABUSE_BAN_THRESHOLD_DEFAULT = 10;
+const ABUSE_ALERT_TOPIC_NAME = "🚨 ALERT";
+
+function abuseBanThreshold(env) {
+  return Math.max(3, Number(env.ABUSE_BAN_THRESHOLD || ABUSE_BAN_THRESHOLD_DEFAULT));
+}
+
+async function getAbuseRecord(env, userId) {
+  const uid = String(userId || "").trim();
+  if (!uid) return {count: 0, reset_at: 0, blocked_until: 0};
+  const now = nowSec();
+  const record = await env.LIBRARY.get(`abuse:${uid}`, "json");
+  if (!record || now >= Number(record.reset_at || 0)) {
+    return {count: 0, reset_at: now + ABUSE_WINDOW_SEC, blocked_until: 0};
+  }
+  return {
+    count: Number(record.count || 0),
+    reset_at: Number(record.reset_at || now + ABUSE_WINDOW_SEC),
+    blocked_until: Number(record.blocked_until || 0)
+  };
+}
+
+async function saveAbuseRecord(env, userId, record) {
+  const uid = String(userId || "").trim();
+  if (!uid) return;
+  await env.LIBRARY.put(
+    `abuse:${uid}`,
+    JSON.stringify(record),
+    {expirationTtl: Math.max(60, ABUSE_WINDOW_SEC + 60)}
+  );
+}
+
+async function getAlertTopicId(env) {
+  const configured = String(env.MVP_ALERT_TOPIC_ID || "").trim();
+  if (configured) return configured;
+  return String((await env.LIBRARY.get("system:alert_topic_id")) || "").trim();
+}
+
+async function createAlertTopic(env) {
+  const botToken = String(env.Zhenya_BOT_TOKEN || "").trim();
+  const controlId = String(env.MVP_CONTROL_ID || "").trim();
+  if (!botToken || !controlId) return null;
+
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${botToken}/createForumTopic`, {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({
+        chat_id: controlId,
+        name: ABUSE_ALERT_TOPIC_NAME
+      })
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok || !data.ok || !data.result?.message_thread_id) {
+      console.error("Failed to create abuse alert topic", data);
+      return null;
+    }
+
+    const topicId = String(data.result.message_thread_id);
+    await env.LIBRARY.put("system:alert_topic_id", topicId);
+    return topicId;
+  } catch (e) {
+    console.error("Failed to create abuse alert topic", e);
+    return null;
+  }
+}
+
+async function ensureAlertTopic(env) {
+  const existing = await getAlertTopicId(env);
+  if (existing) return existing;
+  return await createAlertTopic(env);
+}
+
+async function sendTelegramAlert(env, text) {
+  const botToken = String(env.Zhenya_BOT_TOKEN || "").trim();
+  const controlId = String(env.MVP_CONTROL_ID || "").trim();
+  if (!botToken || !controlId) {
+    console.error("Abuse alert skipped: Zhenya_BOT_TOKEN or MVP_CONTROL_ID is not configured.");
+    return false;
+  }
+
+  let topicId = await ensureAlertTopic(env);
+  if (!topicId) return false;
+
+  const send = async (threadId) => {
+    const r = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({
+        chat_id: controlId,
+        message_thread_id: Number(threadId),
+        text,
+        parse_mode: "HTML",
+        protect_content: true
+      })
+    });
+    const data = await r.json().catch(() => ({}));
+    return {ok: Boolean(r.ok && data.ok), data};
+  };
+
+  try {
+    let result = await send(topicId);
+    // Topic may have been deleted manually. Clear the stale ID and recreate it once.
+    if (!result.ok) {
+      await env.LIBRARY.delete("system:alert_topic_id");
+      topicId = await createAlertTopic(env);
+      if (!topicId) return false;
+      result = await send(topicId);
+    }
+    if (!result.ok) {
+      console.error("Abuse alert send failed", result.data);
+    }
+    return result.ok;
+  } catch (e) {
+    console.error("Abuse alert send failed", e);
+    return false;
+  }
+}
+
+async function banTelegramUser(env, userId) {
+  const botToken = String(env.Zhenya_BOT_TOKEN || "").trim();
+  const uid = String(userId || "").trim();
+  if (!botToken || !uid) {
+    return {channel: false, discussion: false};
+  }
+
+  const ban = async (chatId) => {
+    if (!chatId) return false;
+    try {
+      const r = await fetch(`https://api.telegram.org/bot${botToken}/banChatMember`, {
+        method: "POST",
+        headers: {"content-type": "application/json"},
+        body: JSON.stringify({chat_id: chatId, user_id: uid})
+      });
+      const data = await r.json().catch(() => ({}));
+      return Boolean(r.ok && data.ok);
+    } catch (e) {
+      console.error("Telegram ban failed", chatId, uid, e);
+      return false;
+    }
+  };
+
+  const [channel, discussion] = await Promise.all([
+    ban(env.MVP_CHANNEL_ID),
+    ban(env.MVP_DISCUSSION_ID)
+  ]);
+  return {channel, discussion};
+}
+
+async function registerAbuse(env, user, scope, meta = {}) {
+  const uid = String(user?.id || "").trim();
+  if (!uid) return {count: 0, action: "none", retryAfter: ABUSE_WINDOW_SEC};
+
+  const now = nowSec();
+  const current = await getAbuseRecord(env, uid);
+  const count = current.count + 1;
+  let action = "none";
+  let blockedUntil = Number(current.blocked_until || 0);
+  const banThreshold = abuseBanThreshold(env);
+
+  if (count >= banThreshold) {
+    action = "ban";
+    blockedUntil = now + 86400;
+  } else if (count >= 6) {
+    action = "block_1h";
+    blockedUntil = Math.max(blockedUntil, now + ABUSE_BLOCK_2_SEC);
+  } else if (count >= 3) {
+    action = "block_5m";
+    blockedUntil = Math.max(blockedUntil, now + ABUSE_BLOCK_1_SEC);
+  }
+
+  const record = {
+    count,
+    reset_at: current.reset_at || now + ABUSE_WINDOW_SEC,
+    blocked_until: blockedUntil
+  };
+  await saveAbuseRecord(env, uid, record);
+
+  let banResult = null;
+  if (action === "ban") {
+    banResult = await banTelegramUser(env, uid);
+  }
+
+  // Hanya level 3, 6, dan ban threshold yang membuat alert agar Control Group
+  // tidak dibanjiri satu pesan untuk setiap request yang ditolak.
+  if ([3, 6, banThreshold].includes(count)) {
+    const name = [user.first_name, user.last_name].filter(Boolean).join(" ").trim() || "-";
+    const esc = value => String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    const username = user.username ? `@${esc(user.username)}` : "-";
+    const actionText = action === "ban"
+      ? `AUTO-BAN • channel=${banResult?.channel ? "OK" : "FAIL"} • discussion=${banResult?.discussion ? "OK" : "FAIL"}`
+      : action === "block_1h"
+        ? "BLOCK MINIWEB 1 JAM"
+        : action === "block_5m"
+          ? "BLOCK MINIWEB 5 MENIT"
+          : "DICATAT";
+
+    await sendTelegramAlert(
+      env,
+      `🚨 <b>ALERT ABUSE MINIWEB</b>\n\n` +
+      `User: <b>${esc(name)}</b> ${username}\n` +
+      `Telegram ID: <code>${esc(uid)}</code>\n` +
+      `Endpoint: <code>${esc(scope || "api")}</code>\n` +
+      `Project: <code>${esc(meta.projectId || "-")}</code>\n` +
+      `Pelanggaran: <b>${count}</b> dalam 10 menit\n` +
+      `Tindakan: <b>${actionText}</b>\n` +
+      `Waktu: <code>${new Date().toISOString()}</code>`
+    );
+  }
+
+  return {
+    count,
+    action,
+    blockedUntil,
+    retryAfter: Math.max(1, blockedUntil ? blockedUntil - now : ABUSE_WINDOW_SEC),
+    banResult
+  };
+}
+
+async function checkAbuseBlock(env, userId) {
+  const record = await getAbuseRecord(env, userId);
+  const now = nowSec();
+  return record.blocked_until > now
+    ? {blocked: true, retryAfter: record.blocked_until - now, count: record.count}
+    : {blocked: false, retryAfter: 0, count: record.count};
+}
+
 function displayCallFromUser(user) {
   return user.username ? `@${user.username}` : (user.first_name || "Reader");
 }
@@ -578,7 +871,17 @@ export default {
     }
 
 
-if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
+if (url.pathname === "/api/admin/alert-topic" && request.method === "POST") {
+      const secret = request.headers.get("x-library-secret");
+      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) return json({error:"unauthorized"}, 401);
+      const body = await request.json().catch(() => ({}));
+      const topicId = String(body.topic_id || "").trim();
+      if (!/^\d+$/.test(topicId)) return json({error:"invalid topic_id"}, 400);
+      await env.LIBRARY.put("system:alert_topic_id", topicId);
+      return json({ok:true, topic_id:topicId});
+    }
+
+    if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const secret = request.headers.get("x-library-secret");
       if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
         return json({error: "unauthorized"}, 401);
@@ -653,12 +956,12 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const fileId = url.searchParams.get("file_id");
       if (!fileId) return new Response("Missing file_id", {status: 400});
 
-      if (!env.TELEGRAM_BOT_TOKEN) {
+      if (!env.Zhenya_BOT_TOKEN) {
         return new Response("Telegram file proxy is not configured", {status: 503});
       }
 
       const tg = await fetch(
-        `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getFile?file_id=${encodeURIComponent(fileId)}`
+        `https://api.telegram.org/bot${env.Zhenya_BOT_TOKEN}/getFile?file_id=${encodeURIComponent(fileId)}`
       );
       const info = await tg.json();
 
@@ -667,7 +970,7 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       }
 
       const file = await fetch(
-        `https://api.telegram.org/file/bot${env.TELEGRAM_BOT_TOKEN}/${info.result.file_path}`
+        `https://api.telegram.org/file/bot${env.Zhenya_BOT_TOKEN}/${info.result.file_path}`
       );
 
       if (!file.ok) {
@@ -735,6 +1038,13 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const data = await getCommunity(env, projectId);
       data.reviews = Array.isArray(data.reviews) ? data.reviews : [];
       const uid = String(access.user.id);
+      const abuseBlock = await checkAbuseBlock(env, uid);
+      if (abuseBlock.blocked) return rateLimitResponse({retryAfter:abuseBlock.retryAfter}, "Akses sementara diblokir karena aktivitas terlalu cepat.");
+      const rate = await checkRateLimit(env, uid, "review", 2, 60);
+      if (!rate.allowed) {
+        const abuse = await registerAbuse(env, access.user, "review", {projectId});
+        return rateLimitResponse({retryAfter:Math.max(rate.retryAfter, abuse.retryAfter)}, "Terlalu banyak request review. Tunggu sebentar sebelum mencoba lagi.");
+      }
       const now = nowSec();
       const telegramName = [access.user.first_name, access.user.last_name].filter(Boolean).join(" ").trim();
       const interaction = await getInteraction(env, projectId);
@@ -811,6 +1121,13 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const data = await getCommunity(env, projectId);
       data.comments = Array.isArray(data.comments) ? data.comments : [];
       const uid = String(access.user.id);
+      const abuseBlock = await checkAbuseBlock(env, uid);
+      if (abuseBlock.blocked) return rateLimitResponse({retryAfter:abuseBlock.retryAfter}, "Akses sementara diblokir karena aktivitas terlalu cepat.");
+      const rate = await checkRateLimit(env, uid, "comment", 3, 30);
+      if (!rate.allowed) {
+        const abuse = await registerAbuse(env, access.user, "comment", {projectId});
+        return rateLimitResponse({retryAfter:Math.max(rate.retryAfter, abuse.retryAfter)}, "Terlalu banyak komentar/reply. Tunggu sebentar sebelum mengirim lagi.");
+      }
       const telegramName = [access.user.first_name, access.user.last_name].filter(Boolean).join(" ").trim();
 
       if (body.action === "delete") {
@@ -908,6 +1225,14 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       if (!access.ok) return json({ok:false, code:access.code}, access.code);
       const body = await request.json().catch(() => ({}));
       const projectId = String(body.project_id || "").trim();
+      const uid = String(access.user.id);
+      const abuseBlock = await checkAbuseBlock(env, uid);
+      if (abuseBlock.blocked) return rateLimitResponse({retryAfter:abuseBlock.retryAfter}, "Akses sementara diblokir karena aktivitas terlalu cepat.");
+      const rate = await checkRateLimit(env, uid, "love", 10, 10);
+      if (!rate.allowed) {
+        const abuse = await registerAbuse(env, access.user, "love", {projectId});
+        return rateLimitResponse({retryAfter:Math.max(rate.retryAfter, abuse.retryAfter)}, "Terlalu banyak aksi love. Tunggu beberapa detik.");
+      }
       const targetType = String(body.target_type || "").trim();
       const targetId = String(body.target_id || "").trim();
       if (!projectId || !["comment","review"].includes(targetType) || !targetId) return json({error:"invalid love target"},400);
@@ -917,7 +1242,6 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const target = list.find(x => String(x.id) === targetId);
       if (!target) return json({error:"target not found"},404);
       target.loves = target.loves && typeof target.loves === "object" ? target.loves : {};
-      const uid = String(access.user.id);
       const loved = Object.prototype.hasOwnProperty.call(target.loves, uid);
       if (loved) delete target.loves[uid]; else target.loves[uid] = true;
       await putCommunity(env, projectId, data);
