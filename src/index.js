@@ -367,58 +367,6 @@ async function notifyBookmarkedProjectUpdate(env, previousCatalog, nextCatalog) 
   }
 }
 
-// =========================
-// SYSTEM ANTI-SPAM: KV RATE LIMITING
-// =========================
-// Soft rate limiter untuk workers.dev tanpa Cloudflare Rate Limiting binding.
-// Counter dipisahkan per user + endpoint agar aktivitas normal tidak saling memblokir.
-async function checkRateLimit(env, userId, scope, limit, windowSec) {
-  const uid = String(userId || "").trim();
-  const bucket = String(scope || "api").replace(/[^a-zA-Z0-9_.:-]/g, "_");
-  const safeLimit = Math.max(1, Number(limit) || 1);
-  const safeWindow = Math.max(1, Number(windowSec) || 1);
-  if (!uid) return {allowed: false, retryAfter: safeWindow};
-
-  const key = `ratelimit:${bucket}:${uid}`;
-  const now = nowSec();
-  let record = await env.LIBRARY.get(key, "json");
-
-  if (!record || now >= Number(record.reset_at || 0)) {
-    record = {count: 1, reset_at: now + safeWindow};
-  } else {
-    record.count = Number(record.count || 0) + 1;
-    if (record.count > safeLimit) {
-      return {
-        allowed: false,
-        retryAfter: Math.max(1, Number(record.reset_at) - now)
-      };
-    }
-  }
-
-  await env.LIBRARY.put(
-    key,
-    JSON.stringify(record),
-    {expirationTtl: Math.max(60, safeWindow + 5)}
-  );
-
-  return {
-    allowed: true,
-    retryAfter: Math.max(1, Number(record.reset_at) - now)
-  };
-}
-
-function rateLimitResponse(result, message) {
-  const retryAfter = Math.max(1, Number(result?.retryAfter || 1));
-  return json(
-    {
-      ok: false,
-      error: message || "Terlalu banyak request. Tunggu beberapa detik sebelum mencoba lagi.",
-      retry_after: retryAfter
-    },
-    429
-  );
-}
-
 function displayCallFromUser(user) {
   return user.username ? `@${user.username}` : (user.first_name || "Reader");
 }
@@ -787,8 +735,6 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const data = await getCommunity(env, projectId);
       data.reviews = Array.isArray(data.reviews) ? data.reviews : [];
       const uid = String(access.user.id);
-      const rate = await checkRateLimit(env, uid, "review", 2, 60);
-      if (!rate.allowed) return rateLimitResponse(rate, "Terlalu banyak request review. Tunggu sebentar sebelum mencoba lagi.");
       const now = nowSec();
       const telegramName = [access.user.first_name, access.user.last_name].filter(Boolean).join(" ").trim();
       const interaction = await getInteraction(env, projectId);
@@ -865,8 +811,6 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const data = await getCommunity(env, projectId);
       data.comments = Array.isArray(data.comments) ? data.comments : [];
       const uid = String(access.user.id);
-      const rate = await checkRateLimit(env, uid, "comment", 3, 30);
-      if (!rate.allowed) return rateLimitResponse(rate, "Terlalu banyak komentar/reply. Tunggu sebentar sebelum mengirim lagi.");
       const telegramName = [access.user.first_name, access.user.last_name].filter(Boolean).join(" ").trim();
 
       if (body.action === "delete") {
@@ -963,9 +907,6 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const access = await requireApiAccess(request, env);
       if (!access.ok) return json({ok:false, code:access.code}, access.code);
       const body = await request.json().catch(() => ({}));
-      const uid = String(access.user.id);
-      const rate = await checkRateLimit(env, uid, "love", 10, 10);
-      if (!rate.allowed) return rateLimitResponse(rate, "Terlalu banyak aksi love. Tunggu beberapa detik.");
       const projectId = String(body.project_id || "").trim();
       const targetType = String(body.target_type || "").trim();
       const targetId = String(body.target_id || "").trim();
@@ -976,6 +917,7 @@ if (url.pathname === "/api/admin/catalog" && request.method === "PUT") {
       const target = list.find(x => String(x.id) === targetId);
       if (!target) return json({error:"target not found"},404);
       target.loves = target.loves && typeof target.loves === "object" ? target.loves : {};
+      const uid = String(access.user.id);
       const loved = Object.prototype.hasOwnProperty.call(target.loves, uid);
       if (loved) delete target.loves[uid]; else target.loves[uid] = true;
       await putCommunity(env, projectId, data);
