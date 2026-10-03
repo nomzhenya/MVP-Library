@@ -1,77 +1,228 @@
-import { checkAccess } from "./auth.js";
+function randomReaderCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let res = "";
+  for (let i = 0; i < 6; i++) res += chars[Math.floor(Math.random() * chars.length)];
+  return res;
+}
 
-const cors = (extra = {}) => ({
-  "access-control-allow-origin": "*",
-  "access-control-allow-methods": "GET, POST, OPTIONS, PUT",
-  "access-control-allow-headers": "authorization, content-type, x-library-secret",
-  ...extra
-});
+async function getStats(env, projectId) {
+  const key = `stats:${String(projectId || "").toLowerCase()}`;
+  return (await env.LIBRARY.get(key, "json")) || {rating: 0, votes: 0, bookmarks: 0, comments: 0};
+}
+
+async function putStats(env, projectId, stats) {
+  const key = `stats:${String(projectId || "").toLowerCase()}`;
+  await env.LIBRARY.put(key, JSON.stringify({
+    rating: Number(stats.rating || 0),
+    votes: Number(stats.votes || 0),
+    bookmarks: Number(stats.bookmarks || 0),
+    comments: Number(stats.comments || 0)
+  }));
+}
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status,
-  headers: cors({ "content-type": "application/json; charset=utf-8" })
+  headers: {"content-type": "application/json; charset=utf-8"}
 });
 
-const nowSec = () => Math.floor(Date.now() / 1000);
+async function getReaderCode(env, user) {
+  const uid = String(user.id);
+  const userKey = `reader-code:user:${uid}`;
+  const existing = await env.LIBRARY.get(userKey, "json");
+  if (existing && /^[A-Z0-9]{6}$/.test(String(existing.code || ""))) return String(existing.code);
 
-async function getCommunity(env, projectId) {
-  const data = await env.LIBRARY.get(`community_${projectId}`, "json");
-  return data || { reviews: [], comments: [] };
-}
-
-async function putCommunity(env, projectId, data) {
-  await env.LIBRARY.put(`community_${projectId}`, JSON.stringify(data));
-}
-
-async function getInteraction(env, projectId) {
-  const data = await env.LIBRARY.get(`interaction_${projectId}`, "json");
-  return data || { views: 0, votes: {}, comments: 0 };
-}
-
-async function saveInteraction(env, projectId, data) {
-  await env.LIBRARY.put(`interaction_${projectId}`, JSON.stringify(data));
-}
-
-function summarizeInteraction(interaction, uid, commentCount = 0) {
-  let scoreSum = 0;
-  let scoreCount = 0;
-  for (const v of Object.values(interaction.votes || {})) {
-    if (v >= 1 && v <= 10) {
-      scoreSum += v;
-      scoreCount++;
+  let code = "";
+  for (let i = 0; i < 5; i++) {
+    const candidate = randomReaderCode();
+    if (!(await env.LIBRARY.get(`reader-code:map:${candidate}`))) {
+      code = candidate;
+      break;
     }
   }
+  if (!code) throw new Error("reader code generation failed");
+  const record = {
+    code, telegram_id: uid, username: user.username || "",
+    first_name: user.first_name || "", last_name: user.last_name || "",
+    created_at: Math.floor(Date.now() / 1000)
+  };
+  await env.LIBRARY.put(userKey, JSON.stringify(record));
+  await env.LIBRARY.put(`reader-code:map:${code}`, JSON.stringify(record));
+  return code;
+}
+
+function cors(headers = {}) {
   return {
-    views: interaction.views || 0,
-    score: scoreCount > 0 ? Number((scoreSum / scoreCount).toFixed(2)) : 0,
-    votes: scoreCount,
-    comments: commentCount,
-    user_vote: uid && interaction.votes && interaction.votes[uid] ? interaction.votes[uid] : null
+    ...headers,
+    "access-control-allow-origin": "https://web.telegram.org",
+    "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
+    "access-control-allow-headers": "Content-Type,X-Library-Secret,X-Telegram-Init-Data,X-Telegram-Platform"
   };
 }
 
-async function getNotifications(env, userId) {
-  const data = await env.LIBRARY.get(`notifications_${userId}`, "json");
-  return data || [];
+async function verifyTelegramInitData(initData, botToken) {
+  if (!initData || !botToken) return null;
+  const params = new URLSearchParams(initData);
+  const receivedHash = params.get("hash");
+  if (!receivedHash) return null;
+
+  const authDate = Number(params.get("auth_date") || 0);
+  if (!authDate || Math.abs(Math.floor(Date.now() / 1000) - authDate) > 86400) return null;
+
+  params.delete("hash");
+  const dataCheckString = [...params.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${v}`)
+    .join("\n");
+
+  const webAppKey = await crypto.subtle.importKey("raw", new TextEncoder().encode("WebAppData"), {name: "HMAC", hash: "SHA-256"}, false, ["sign"]);
+  const secretKeyBytes = new Uint8Array(await crypto.subtle.sign("HMAC", webAppKey, new TextEncoder().encode(botToken)));
+  const secretKey = await crypto.subtle.importKey("raw", secretKeyBytes, {name: "HMAC", hash: "SHA-256"}, false, ["sign"]);
+
+  const signature = new Uint8Array(await crypto.subtle.sign("HMAC", secretKey, new TextEncoder().encode(dataCheckString)));
+  const expectedHash = [...signature].map(b => b.toString(16).padStart(2, "0")).join("");
+  if (expectedHash !== receivedHash) return null;
+
+  try {
+    return JSON.parse(params.get("user") || "null");
+  } catch {
+    return null;
+  }
 }
 
-async function putNotifications(env, userId, notifications) {
-  await env.LIBRARY.put(`notifications_${userId}`, JSON.stringify(notifications));
+async function telegramMemberStatus(env, chatId, userId) {
+  const r = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getChatMember?chat_id=${encodeURIComponent(chatId)}&user_id=${encodeURIComponent(userId)}`);
+  if (!r.ok) return null;
+  const data = await r.json();
+  if (!data.ok) return null;
+  const status = data.result?.status;
+  return ["creator", "administrator", "member"].includes(status);
 }
 
-async function addNotification(env, userId, notification) {
-  const notifications = await getNotifications(env, userId);
-  notification.id = crypto.randomUUID();
-  notification.created_at = nowSec();
-  notification.read = false;
-  notifications.unshift(notification);
-  await putNotifications(env, userId, notifications.slice(0, 100)); // Keep last 100
+async function checkAccess(request, env) {
+  const initData = request.headers.get("X-Telegram-Init-Data") || new URL(request.url).searchParams.get("init_data") || "";
+  const user = await verifyTelegramInitData(initData, env.TELEGRAM_BOT_TOKEN);
+  if (!user?.id) return {ok: false, code: 401};
+  if (!user.username || user.username.trim() === "") return {ok: false, code: 403};
+
+  const CHANNEL_ID = env.MVP_CHANNEL_ID || "-1004459399775";
+  const DISCUSSION_ID = env.MVP_DISCUSSION_ID || "-1003923062839";
+  if (!CHANNEL_ID || !DISCUSSION_ID) return {ok: false, code: 503};
+
+  const [mvp, discussion] = await Promise.all([
+    telegramMemberStatus(env, CHANNEL_ID, user.id),
+    telegramMemberStatus(env, DISCUSSION_ID, user.id)
+  ]);
+
+  if (mvp !== true || discussion !== true) return {ok: false, code: 403};
+  return {ok: true, user};
+}
+
+async function getInteraction(env, projectId) {
+  const data = await env.LIBRARY.get(`interaction:${projectId}`, "json");
+  if (!data || typeof data !== "object") return {votes: {}, bookmarks: {}, comments: 0};
+  return {
+    votes: data.votes && typeof data.votes === "object" ? data.votes : {},
+    bookmarks: data.bookmarks && typeof data.bookmarks === "object" ? data.bookmarks : {},
+    comments: Number(data.comments || 0)
+  };
+}
+
+function summarizeInteraction(data, userId, fallbackComments = 0) {
+  const votes = data.votes || {};
+  const bookmarks = data.bookmarks || {};
+  const values = Object.values(votes).map(Number).filter(v => v >= 1 && v <= 10);
+  const rating = values.length ? Number((values.reduce((a, b) => a + b, 0) / values.length).toFixed(2)) : 0;
+  const vote_distribution = {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0};
+  values.forEach(v => { if(vote_distribution[v] !== undefined) vote_distribution[v]++; });
+
+  return {
+    rating,
+    votes: values.length,
+    vote_distribution,
+    bookmarks: Object.keys(bookmarks).length,
+    comments: Number(fallbackComments || data.comments || 0),
+    user_vote: Number(votes[String(userId)] || 0),
+    bookmarked: Object.prototype.hasOwnProperty.call(bookmarks, String(userId))
+  };
+}
+
+async function saveInteraction(env, projectId, data) {
+  await env.LIBRARY.put(`interaction:${projectId}`, JSON.stringify(data));
+}
+
+function envIdSet(value) {
+  return new Set(String(value || "").split(",").map(x => x.trim()).filter(Boolean));
 }
 
 function isModUser(env, userId) {
-  if (!env.MOD_USERS) return false;
-  const mods = env.MOD_USERS.split(',').map(s => String(s).trim());
-  return mods.includes(String(userId));
+  return envIdSet(env.MOD_USER_IDS).has(String(userId || ""));
+}
+
+function decoratePublicUser(item, env) {
+  const uid = String(item.user_id || item.telegram_id || "");
+  const mod = isModUser(env, uid);
+  const out = {...item, is_mod: mod};
+  if (mod) delete out.username;
+  return out;
+}
+
+async function enrichCatalog(env, catalog, userId) {
+  if (!Array.isArray(catalog)) return [];
+  return Promise.all(catalog.map(async p => {
+    const data = await getInteraction(env, p.id);
+    const community = await getCommunity(env, p.id);
+    const summary = summarizeInteraction(data, userId, community.comments.length);
+    return {
+      ...p,
+      is_mod: isModUser(env, userId),
+      rating: summary.rating,
+      votes: summary.votes,
+      vote_distribution: summary.vote_distribution,
+      bookmarks: summary.bookmarks,
+      comments: community.comments.length,
+      reviews: community.reviews.length,
+      review_count: community.reviews.length,
+      user_vote: summary.user_vote,
+      bookmarked: summary.bookmarked
+    };
+  }));
+}
+
+function safeId(value) {
+  return String(value || "").replace(/[^a-zA-Z0-9_.:-]/g, "_").slice(0, 180);
+}
+
+function nowSec() {
+  return Math.floor(Date.now() / 1000);
+}
+
+async function getCommunity(env, projectId) {
+  const data = await env.LIBRARY.get(`community:${safeId(projectId)}`, "json");
+  return {
+    reviews: Array.isArray(data?.reviews) ? data.reviews : [],
+    comments: Array.isArray(data?.comments) ? data.comments : []
+  };
+}
+
+async function putCommunity(env, projectId, data) {
+  await env.LIBRARY.put(`community:${safeId(projectId)}`, JSON.stringify(data));
+}
+
+async function getNotifications(env, userId) {
+  const data = await env.LIBRARY.get(`notifications:${String(userId)}`, "json");
+  return Array.isArray(data) ? data : [];
+}
+
+async function putNotifications(env, userId, data) {
+  await env.LIBRARY.put(`notifications:${String(userId)}`, JSON.stringify(data.slice(0, 100)));
+}
+
+async function addNotification(env, userId, notification) {
+  const uid = String(userId || "").trim();
+  if (!uid) return;
+  const list = await getNotifications(env, uid);
+  list.unshift({ id: crypto.randomUUID(), created_at: nowSec(), read: false, ...notification });
+  await putNotifications(env, uid, list);
 }
 
 function projectCatalogSignature(project) {
@@ -98,33 +249,71 @@ function projectCatalogSignature(project) {
   });
 }
 
-// System Anti-Spam (Rate Limiting) menggunakan KV
-// Membatasi request user berdasarkan Telegram ID
-async function checkRateLimit(env, userId) {
-  const key = `ratelimit_${userId}`;
-  const limit = 3; // Maksimal 3 request...
-  const windowSec = 10; // ...dalam 10 detik
+function changedProjectUpdate(previous, current) {
+  if (!current || !previous) return null;
+  const oldChapters = Array.isArray(previous.chapters) ? previous.chapters : [];
+  const newChapters = Array.isArray(current.chapters) ? current.chapters : [];
+  const oldMap = new Map(oldChapters.map(ch => [`${String(ch?.chapter ?? "")}::${Number(ch?.decensored || 0)}`, ch]));
 
-  let record = await env.LIBRARY.get(key, "json");
-  const now = nowSec();
-
-  if (!record) {
-    record = { count: 1, reset_at: now + windowSec };
-  } else {
-    if (now > record.reset_at) {
-      // Waktu sudah lewat, reset counter
-      record = { count: 1, reset_at: now + windowSec };
-    } else {
-      record.count += 1;
-      if (record.count > limit) {
-         return false; // Rate limit tercapai, blokir!
+  let changedChapter = null;
+  for (const ch of newChapters) {
+    const key = `${String(ch?.chapter ?? "")}::${Number(ch?.decensored || 0)}`;
+    const old = oldMap.get(key);
+    if (!old || Number(old?.updated_at || 0) !== Number(ch?.updated_at || 0) || Number(old?.pages || 0) !== Number(ch?.pages || 0)) {
+      if (!changedChapter || Number(ch?.updated_at || 0) > Number(changedChapter?.updated_at || 0)) {
+        changedChapter = ch;
       }
     }
   }
+  const oldMeta = {...previous};
+  const newMeta = {...current};
+  delete oldMeta.chapters;
+  delete newMeta.chapters;
+  const metadataChanged = projectCatalogSignature({...oldMeta, chapters: []}) !== projectCatalogSignature({...newMeta, chapters: []});
 
-  // Simpan kembali ke KV dengan waktu kedaluwarsa sesuai sisa windowSec agar hemat memori
-  await env.LIBRARY.put(key, JSON.stringify(record), { expirationTtl: 60 }); 
-  return true;
+  if (!changedChapter && !metadataChanged) return null;
+  return {
+    chapter: changedChapter ? String(changedChapter.chapter ?? "") : "",
+    decensored: changedChapter ? Number(changedChapter.decensored || 0) : 0
+  };
+}
+
+async function notifyBookmarkedProjectUpdate(env, previousCatalog, nextCatalog) {
+  if (!Array.isArray(previousCatalog) || !Array.isArray(nextCatalog)) return;
+  const previousMap = new Map(previousCatalog.map(p => [String(p?.id || ""), p]));
+  for (const project of nextCatalog) {
+    const pid = String(project?.id || "").trim();
+    if (!pid) continue;
+    const previous = previousMap.get(pid);
+    if (!previous) continue;
+
+    const update = changedProjectUpdate(previous, project);
+    if (!update) continue;
+
+    const interaction = await getInteraction(env, pid);
+    const bookmarkers = Object.keys(interaction.bookmarks || {});
+    if (!bookmarkers.length) continue;
+
+    const title = String(project.title || pid);
+    const chapter = update.chapter;
+    const text = chapter
+      ? `${title} punya update baru • Chapter ${chapter}${update.decensored ? " (Decensored)" : ""}`
+      : `${title} punya update baru.`;
+
+    for (const userId of bookmarkers) {
+      try {
+        await addNotification(env, userId, {
+          type: "project_update",
+          project_id: pid,
+          chapter: chapter || null,
+          decensored: update.decensored || 0,
+          text
+        });
+      } catch (e) {
+        console.error("Failed to notify bookmarked user", userId, pid, e);
+      }
+    }
+  }
 }
 
 function displayCallFromUser(user) {
@@ -135,12 +324,49 @@ async function requireApiAccess(request, env) {
   return await checkAccess(request, env);
 }
 
+// System Anti-Spam (Rate Limiting) menggunakan KV
+async function checkRateLimit(env, userId) {
+  const key = `ratelimit_${userId}`;
+  const limit = 3; // Maksimal 3 request
+  const windowSec = 10; // dalam 10 detik
+
+  let record = await env.LIBRARY.get(key, "json");
+  const now = nowSec();
+
+  if (!record) {
+    record = { count: 1, reset_at: now + windowSec };
+  } else {
+    if (now > record.reset_at) {
+      record = { count: 1, reset_at: now + windowSec };
+    } else {
+      record.count += 1;
+      if (record.count > limit) {
+         return false;
+      }
+    }
+  }
+
+  await env.LIBRARY.put(key, JSON.stringify(record), { expirationTtl: 60 });
+  return true;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: cors() });
+    }
+    
+    if (url.pathname === "/api/reader-code" && request.method === "GET") {
+      const access = await checkAccess(request, env);
+      if (!access.ok) return json({ok: false, code: access.code}, access.code);
+      try {
+        const code = await getReaderCode(env, access.user);
+        return json({ok: true, reader_code: code});
+      } catch(e) {
+        return json({error: e.message}, 500);
+      }
     }
 
     if (url.pathname === "/api/catalog" && request.method === "GET") {
@@ -150,10 +376,10 @@ export default {
       }
 
       const raw = await env.LIBRARY.get("catalog");
-      if (!raw) return json([]);
-      const catalog = JSON.parse(raw);
+      const catalog = raw ? JSON.parse(raw) : [];
+      const enriched = await enrichCatalog(env, catalog, access.user.id);
 
-      return new Response(JSON.stringify(catalog), {
+      return new Response(JSON.stringify(enriched), {
         headers: cors({ "content-type": "application/json; charset=utf-8" })
       });
     }
@@ -179,7 +405,6 @@ export default {
       return json({ ok: true, count: body.length });
     }
 
-    // NOVEL: store HTML with BOOK-aware keys.
     if (url.pathname === "/api/admin/novel" && request.method === "PUT") {
       const secret = request.headers.get("x-library-secret");
       if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
@@ -198,7 +423,6 @@ export default {
       return json({ ok: true });
     }
 
-    // NOVEL: reader endpoint.
     if (url.pathname === "/api/novel" && request.method === "GET") {
       const access = await checkAccess(request, env);
       if (!access.ok) {
@@ -213,7 +437,6 @@ export default {
       const key = `novel_${pid}_${book || "-"}_${ch}`;
       let data = await env.LIBRARY.get(key, "json");
 
-      // Backward compatibility
       if (!data) {
         data = await env.LIBRARY.get(`novel_${pid}_${ch}_${dec}`, "json");
       }
@@ -261,10 +484,6 @@ export default {
       return new Response(file.body, { status: 200, headers });
     }
 
-    // =========================
-    // COMMUNITY: REVIEWS / COMMENTS
-    // =========================
-
     if (url.pathname === "/api/community" && request.method === "GET") {
       const access = await requireApiAccess(request, env);
       if (!access.ok) return json({ ok: false, code: access.code }, access.code);
@@ -299,12 +518,8 @@ export default {
       if (!access.ok) return json({ ok: false, code: access.code }, access.code);
 
       const uid = String(access.user.id);
-      
-      // IMPLEMENTASI RATE LIMITING
       const isAllowed = await checkRateLimit(env, uid);
-      if (!isAllowed) {
-        return json({ error: "Tolong jangan spam! Tunggu beberapa detik sebelum mengirim lagi." }, 429);
-      }
+      if (!isAllowed) return json({ error: "Tolong jangan spam! Tunggu beberapa detik sebelum mengirim lagi." }, 429);
 
       const body = await request.json().catch(() => ({}));
       const projectId = String(body.project_id || "").trim();
@@ -316,8 +531,9 @@ export default {
       if (text.length > 2000) return json({ error: "review too long" }, 400);
       if (hasScore && (!Number.isInteger(score) || score < 1 || score > 10)) return json({ error: "invalid review score" }, 400);
 
-      const catalog = await env.LIBRARY.get("catalog", "json");
-      if (!Array.isArray(catalog) || !catalog.some(p => String(p.id) === projectId)) return json({ error: "project not found" }, 404);
+      const rawCat = await env.LIBRARY.get("catalog", "json");
+      const catalog = Array.isArray(rawCat) ? rawCat : [];
+      if (!catalog.some(p => String(p.id) === projectId)) return json({ error: "project not found" }, 404);
 
       const data = await getCommunity(env, projectId);
       data.reviews = Array.isArray(data.reviews) ? data.reviews : [];
@@ -385,12 +601,8 @@ export default {
       if (!access.ok) return json({ ok: false, code: access.code }, access.code);
 
       const uid = String(access.user.id);
-      
-      // IMPLEMENTASI RATE LIMITING
       const isAllowed = await checkRateLimit(env, uid);
-      if (!isAllowed) {
-        return json({ error: "Tolong jangan spam! Tunggu beberapa detik sebelum mengirim lagi." }, 429);
-      }
+      if (!isAllowed) return json({ error: "Tolong jangan spam! Tunggu beberapa detik sebelum mengirim lagi." }, 429);
 
       const body = await request.json().catch(() => ({}));
       const projectId = String(body.project_id || "").trim();
@@ -401,8 +613,10 @@ export default {
       if (!projectId) return json({ error: "missing project_id" }, 400);
       if (!text && body.action !== "delete") return json({ error: "empty comment" }, 400);
       if (text.length > 2000) return json({ error: "comment too long" }, 400);
-      const catalog = await env.LIBRARY.get("catalog", "json");
-      if (!Array.isArray(catalog) || !catalog.some(p => String(p.id) === projectId)) return json({ error: "project not found" }, 404);
+      const rawCat = await env.LIBRARY.get("catalog", "json");
+      const catalog = Array.isArray(rawCat) ? rawCat : [];
+      if (!catalog.some(p => String(p.id) === projectId)) return json({ error: "project not found" }, 404);
+      
       const data = await getCommunity(env, projectId);
       data.comments = Array.isArray(data.comments) ? data.comments : [];
       const telegramName = [access.user.first_name, access.user.last_name].filter(Boolean).join(" ").trim();
@@ -501,12 +715,8 @@ export default {
       if (!access.ok) return json({ ok: false, code: access.code }, access.code);
       
       const uid = String(access.user.id);
-      
-      // IMPLEMENTASI RATE LIMITING UNTUK LIKE
       const isAllowed = await checkRateLimit(env, uid);
-      if (!isAllowed) {
-        return json({ error: "Tolong jangan spam like! Tunggu beberapa detik." }, 429);
-      }
+      if (!isAllowed) return json({ error: "Tolong jangan spam like! Tunggu beberapa detik." }, 429);
 
       const body = await request.json().catch(() => ({}));
       const projectId = String(body.project_id || "").trim();
@@ -528,10 +738,6 @@ export default {
       const interaction = await getInteraction(env, projectId);
       return json({ ok: true, loved: !loved, love_count: loveCount, target_type: targetType, target_id: targetId, comments: data.comments.length, reviews: data.reviews.length, interaction: summarizeInteraction(interaction, uid, data.comments.length) });
     }
-
-    // =========================
-    // NOTIFICATIONS
-    // =========================
 
     if (url.pathname === "/api/notifications" && request.method === "GET") {
       const access = await requireApiAccess(request, env);
