@@ -956,12 +956,12 @@ if (url.pathname === "/api/admin/alert-topic" && request.method === "POST") {
       const fileId = url.searchParams.get("file_id");
       if (!fileId) return new Response("Missing file_id", {status: 400});
 
-      if (!env.Zhenya_BOT_TOKEN) {
+      if (!env.TELEGRAM_BOT_TOKEN) {
         return new Response("Telegram file proxy is not configured", {status: 503});
       }
 
       const tg = await fetch(
-        `https://api.telegram.org/bot${env.Zhenya_BOT_TOKEN}/getFile?file_id=${encodeURIComponent(fileId)}`
+        `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getFile?file_id=${encodeURIComponent(fileId)}`
       );
       const info = await tg.json();
 
@@ -970,7 +970,7 @@ if (url.pathname === "/api/admin/alert-topic" && request.method === "POST") {
       }
 
       const file = await fetch(
-        `https://api.telegram.org/file/bot${env.Zhenya_BOT_TOKEN}/${info.result.file_path}`
+        `https://api.telegram.org/file/bot${env.TELEGRAM_BOT_TOKEN}/${info.result.file_path}`
       );
 
       if (!file.ok) {
