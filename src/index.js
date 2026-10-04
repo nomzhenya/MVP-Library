@@ -121,8 +121,19 @@ async function telegramMemberStatus(env, chatId, userId) {
   const data = await r.json();
   if (!data.ok) return null;
 
-  const status = data.result?.status;
-  return ["creator", "administrator", "member"].includes(status);
+  const member = data.result || {};
+  const status = member.status;
+
+  // Creator/administrator tetap dianggap aktif. Untuk member biasa,
+  // Telegram restricted/muted harus ditolak walaupun status dasarnya masih
+  // "member" atau "restricted". can_send_messages=false adalah indikator
+  // utama bahwa user sedang tidak diizinkan mengirim pesan di discussion.
+  if (["creator", "administrator"].includes(status)) return true;
+  if (status === "restricted") return false;
+  if (status !== "member") return false;
+  if (member.permissions && member.permissions.can_send_messages === false) return false;
+
+  return true;
 }
 
 async function checkAccess(request, env) {
@@ -652,6 +663,48 @@ async function registerAbuse(env, user, scope, meta = {}) {
   };
 }
 
+async function resetAbuseState(env, userId, reason = "manual_unban") {
+  const uid = String(userId || "").trim();
+  if (!uid) return {ok: false, reason: "invalid_user_id"};
+
+  const now = nowSec();
+  const resetRecord = {
+    count: 0,
+    reset_at: now + ABUSE_WINDOW_SEC,
+    blocked_until: 0
+  };
+
+  try {
+    // Reset active abuse state so a false-positive auto-ban does not survive
+    // an owner /unban action.
+    await saveAbuseRecord(env, uid, resetRecord);
+
+    // Clear the endpoint rate-limit buckets as part of a full recovery.
+    await Promise.all([
+      env.LIBRARY.delete(`ratelimit:review:${uid}`),
+      env.LIBRARY.delete(`ratelimit:comment:${uid}`),
+      env.LIBRARY.delete(`ratelimit:love:${uid}`)
+    ]);
+
+    // Preserve an audit trail without keeping the active abuse counter.
+    await env.LIBRARY.put(
+      `abuse:unban:${uid}:${now}`,
+      JSON.stringify({
+        telegram_id: uid,
+        action: "reset",
+        reason: String(reason || "manual_unban"),
+        reset_at: now
+      }),
+      {expirationTtl: 90 * 24 * 60 * 60}
+    );
+
+    return {ok: true, count: 0, blocked_until: 0};
+  } catch (e) {
+    console.error("Failed to reset abuse state", uid, e);
+    return {ok: false, reason: "storage_error"};
+  }
+}
+
 async function checkAbuseBlock(env, userId) {
   const record = await getAbuseRecord(env, userId);
   const now = nowSec();
@@ -871,7 +924,31 @@ export default {
     }
 
 
-if (url.pathname === "/api/admin/alert-topic" && request.method === "POST") {
+if (url.pathname === "/api/admin/abuse-reset" && request.method === "POST") {
+      const secret = request.headers.get("x-library-secret") || request.headers.get("X-Library-Secret") || "";
+      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) {
+        return json({ok:false, reason:"unauthorized"}, 401);
+      }
+
+      const body = await request.json().catch(() => ({}));
+      const userId = String(body.user_id || body.telegram_id || "").trim();
+      if (!/^\d+$/.test(userId)) {
+        return json({ok:false, reason:"invalid_user_id"}, 400);
+      }
+
+      const result = await resetAbuseState(
+        env,
+        userId,
+        String(body.reason || "manual_unban")
+      );
+      if (!result.ok) {
+        return json({ok:false, reason:result.reason || "reset_failed"}, 503);
+      }
+
+      return json({ok:true, user_id:userId, abuse_count:0, blocked_until:0});
+    }
+
+    if (url.pathname === "/api/admin/alert-topic" && request.method === "POST") {
       const secret = request.headers.get("x-library-secret");
       if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) return json({error:"unauthorized"}, 401);
       const body = await request.json().catch(() => ({}));
