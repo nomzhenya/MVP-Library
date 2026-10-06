@@ -2682,8 +2682,13 @@ function shareCurrentSelection(e){if(e)e.stopPropagation();if(!mvpMarkState.sele
 function setupNovelMarking(p,c){mvpMarkState.projectId=p;mvpMarkState.chapter=c;mvpMarkState.selection=null;var a=getMarkPalette();mvpMarkState.color=a[0];var tb=$("mvpMarkToolbar");if(tb)tb.classList.remove('show');closeReaderMarksPanel();setTimeout(function(){renderMarkPalette();renderNovelMarks()},80)}
 function mvpSelectionChange(){var sel=window.getSelection();if(selectionIsInNovel(sel)){var o=selectionRangeOffsets(sel);if(o&&o.text){mvpMarkState.selection=o;markButtonState('');showMarkToolbar();return}}if(!sel||sel.isCollapsed){var tb=$("mvpMarkToolbar");if(!tb||!tb.contains(document.activeElement))hideMarkToolbar()}}
 document.addEventListener('selectionchange',mvpSelectionChange);
-document.addEventListener('copy',function(e){if(e.target&&e.target.closest&&e.target.closest('.novel-reader'))e.preventDefault()});
-document.addEventListener('cut',function(e){if(e.target&&e.target.closest&&e.target.closest('.novel-reader'))e.preventDefault()});
+function mvpIsNovelSelectionActive(){
+  try{return selectionIsInNovel(window.getSelection())}catch(_){return false}
+}
+document.addEventListener('beforecopy',function(e){if(mvpIsNovelSelectionActive())e.preventDefault()});
+document.addEventListener('copy',function(e){if(mvpIsNovelSelectionActive())e.preventDefault()});
+document.addEventListener('beforecut',function(e){if(mvpIsNovelSelectionActive())e.preventDefault()});
+document.addEventListener('cut',function(e){if(mvpIsNovelSelectionActive())e.preventDefault()});
 
 /* NATIVE TEXT SELECTION ONLY
    Jangan membuat Range secara manual saat long-press. Android/WebView menangani
