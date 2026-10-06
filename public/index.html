@@ -2685,10 +2685,30 @@ document.addEventListener('selectionchange',mvpSelectionChange);
 function mvpIsNovelSelectionActive(){
   try{return selectionIsInNovel(window.getSelection())}catch(_){return false}
 }
-document.addEventListener('beforecopy',function(e){if(mvpIsNovelSelectionActive())e.preventDefault()});
-document.addEventListener('copy',function(e){if(mvpIsNovelSelectionActive())e.preventDefault()});
-document.addEventListener('beforecut',function(e){if(mvpIsNovelSelectionActive())e.preventDefault()});
-document.addEventListener('cut',function(e){if(mvpIsNovelSelectionActive())e.preventDefault()});
+/* NOVEL COPY BLOCK — selection native tetap bebas; hanya aksi copy/cut yang diblokir.
+   Jangan menyentuh pointer/long-press/selection agar handle native mobile tetap normal. */
+document.addEventListener('beforecopy',function(e){
+  if(mvpIsNovelSelectionActive()){
+    e.preventDefault();
+  }
+},false);
+document.addEventListener('copy',function(e){
+  if(mvpIsNovelSelectionActive()){
+    e.preventDefault();
+    try{e.stopImmediatePropagation()}catch(_){}
+  }
+},false);
+document.addEventListener('beforecut',function(e){
+  if(mvpIsNovelSelectionActive()){
+    e.preventDefault();
+  }
+},false);
+document.addEventListener('cut',function(e){
+  if(mvpIsNovelSelectionActive()){
+    e.preventDefault();
+    try{e.stopImmediatePropagation()}catch(_){}
+  }
+},false);
 
 /* NATIVE NOVEL SELECTION — mengikuti mekanisme selection native browser/WebView.
    Jangan mengambil alih long-press/pointer gesture dengan Range buatan.
