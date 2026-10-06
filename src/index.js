@@ -1201,7 +1201,8 @@ if (url.pathname === "/api/admin/abuse-reset" && request.method === "POST") {
       const access = await requireApiAccess(request, env);
       if (!access.ok) return json({ok:false, code:access.code}, access.code);
       const quotes = await getSharedQuotes(env);
-      return json({ok:true, quotes});
+      const publicQuotes = quotes.map(item => decoratePublicUser(item, env));
+      return json({ok:true, quotes:publicQuotes});
     }
 
     if (url.pathname === "/api/novel-quotes" && request.method === "POST") {
@@ -1244,7 +1245,9 @@ if (url.pathname === "/api/admin/abuse-reset" && request.method === "POST") {
       };
       quotes.unshift(item);
       await putSharedQuotes(env, quotes);
-      return json({ok:true, quote:item, quotes:quotes.slice(0,100)});
+      const publicItem = decoratePublicUser(item, env);
+      const publicQuotes = quotes.slice(0,100).map(item => decoratePublicUser(item, env));
+      return json({ok:true, quote:publicItem, quotes:publicQuotes});
     }
 
     if (url.pathname === "/api/novel-marks-version" && request.method === "GET") {
