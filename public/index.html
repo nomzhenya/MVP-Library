@@ -2690,11 +2690,69 @@ document.addEventListener('copy',function(e){if(mvpIsNovelSelectionActive())e.pr
 document.addEventListener('beforecut',function(e){if(mvpIsNovelSelectionActive())e.preventDefault()});
 document.addEventListener('cut',function(e){if(mvpIsNovelSelectionActive())e.preventDefault()});
 
-/* NATIVE TEXT SELECTION ONLY
-   Jangan membuat Range secara manual saat long-press. Android/WebView menangani
-   word selection + handle kiri/kanan sendiri. selectionchange di atas akan selalu
-   mengambil range terbaru setelah handle digeser. */
-function mvpCancelHold(){}
+/* NOVEL HOLD — memakai mekanisme hold dari base HTML (550ms).
+   Hold tidak membuat Range secara manual dan tidak mencegah gesture native.
+   Setelah native selection terbentuk, selectionchange/captureCurrentSelection
+   mengambil range sebenarnya sehingga handle kiri/kanan tetap milik WebView. */
+var mvpHoldTimer=null,mvpHoldTarget=null,mvpHoldX=0,mvpHoldY=0,mvpHoldFired=false;
+var MVP_HOLD_MS=550;
+function mvpClearHold(p){
+  if(mvpHoldTimer){clearTimeout(mvpHoldTimer);mvpHoldTimer=null}
+  if(p&&p.classList)p.classList.remove('mvp-hold-armed');
+  if(mvpHoldTarget&&mvpHoldTarget!==p&&mvpHoldTarget.classList)mvpHoldTarget.classList.remove('mvp-hold-armed');
+  mvpHoldTarget=null;
+}
+function mvpCancelHold(){mvpClearHold()}
+function mvpArmNovelHold(p,e){
+  if(!p)return;
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  mvpClearHold();
+  mvpHoldTarget=p;
+  mvpHoldX=e.clientX;
+  mvpHoldY=e.clientY;
+  mvpHoldFired=false;
+  p.classList.add('mvp-hold-armed');
+  mvpHoldTimer=setTimeout(function(){
+    mvpHoldTimer=null;
+    if(mvpHoldTarget!==p)return;
+    mvpHoldFired=true;
+    p.classList.remove('mvp-hold-armed');
+    /* Jangan membuat selection baru. Jika WebView sudah membentuk native
+       word selection, simpan range tersebut dan tampilkan toolbar. */
+    var sel=window.getSelection();
+    if(selectionIsInNovel(sel)){
+      var o=selectionRangeOffsets(sel);
+      if(o&&o.text){
+        mvpMarkState.selection=o;
+        markButtonState('');
+        showMarkToolbar();
+      }
+    }
+    try{
+      if(tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred)tg.HapticFeedback.impactOccurred('light');
+    }catch(_){}
+  },MVP_HOLD_MS);
+}
+(function setupBaseStyleNovelHold(){
+  document.addEventListener('pointerdown',function(e){
+    var p=e.target&&e.target.closest?e.target.closest('.novel-reader p'):null;
+    if(!p)return;
+    mvpArmNovelHold(p,e);
+  },{passive:true});
+  document.addEventListener('pointermove',function(e){
+    if(!mvpHoldTimer||!mvpHoldTarget)return;
+    var dx=e.clientX-mvpHoldX,dy=e.clientY-mvpHoldY;
+    if(dx*dx+dy*dy>64)mvpClearHold(mvpHoldTarget);
+  },{passive:true});
+  document.addEventListener('pointerup',function(e){
+    var p=mvpHoldTarget,was=mvpHoldFired;
+    mvpClearHold(p);
+    if(was&&p&&p.contains(e.target)){
+      e.stopPropagation();
+    }
+  },{passive:true});
+  document.addEventListener('pointercancel',function(){mvpClearHold()},{passive:true});
+})();
 
 function closeReaderMarksPanel(){var p=$("mvpNotesPanel"),b=$("readerMarksButton");if(p)p.classList.remove('show');if(b)b.classList.remove('active')}
 function scrollToNovelMark(id){var marks=getNovelMarks(mvpMarkState.projectId,mvpMarkState.chapter),m=marks.find(function(x){return String(x.id)===String(id)}),r=document.querySelector('.novel-reader');if(!m||!r)return;closeReaderMarksPanel();var ranges=r.querySelectorAll('.mvp-marked-range'),target=null;for(var i=0;i<ranges.length;i++){if(ranges[i].dataset.markId===String(m.id)){target=ranges[i];break}}if(target){target.scrollIntoView({behavior:'smooth',block:'center'});target.classList.remove('mvp-mark-focus');void target.offsetWidth;target.classList.add('mvp-mark-focus');setTimeout(function(){target.classList.remove('mvp-mark-focus')},900)}}
