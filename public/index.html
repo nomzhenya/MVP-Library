@@ -2690,135 +2690,30 @@ document.addEventListener('copy',function(e){if(mvpIsNovelSelectionActive())e.pr
 document.addEventListener('beforecut',function(e){if(mvpIsNovelSelectionActive())e.preventDefault()});
 document.addEventListener('cut',function(e){if(mvpIsNovelSelectionActive())e.preventDefault()});
 
-/* NOVEL HOLD + DRAG SELECTION
-   Hold pada teks lalu drag untuk membuat selection custom.
-   Tidak bergantung pada Selection.modify() atau native selection handle. */
-var mvpHoldTimer=null,mvpHoldTarget=null,mvpHoldX=0,mvpHoldY=0,mvpHoldFired=false,mvpHoldPointerId=null,mvpHoldStartRange=null;
-var MVP_HOLD_MS=550;
-function mvpClearHold(p){
-  if(mvpHoldTimer){clearTimeout(mvpHoldTimer);mvpHoldTimer=null}
-  if(p&&p.classList)p.classList.remove('mvp-hold-armed');
-  if(mvpHoldTarget&&mvpHoldTarget!==p&&mvpHoldTarget.classList)mvpHoldTarget.classList.remove('mvp-hold-armed');
-  if(mvpHoldTarget&&mvpHoldTarget.style)mvpHoldTarget.style.touchAction='';
-  mvpHoldTarget=null;
-  mvpHoldPointerId=null;
-  mvpHoldStartRange=null;
-  mvpHoldFired=false;
-}
-function mvpCancelHold(){mvpClearHold()}
-function mvpPointRange(x,y){
-  var r=null;
-  try{
-    if(document.caretRangeFromPoint)r=document.caretRangeFromPoint(x,y);
-    else if(document.caretPositionFromPoint){
-      var cp=document.caretPositionFromPoint(x,y);
-      if(cp){r=document.createRange();r.setStart(cp.offsetNode,cp.offset);r.collapse(true)}
-    }
-  }catch(_){r=null}
-  if(!r||!r.startContainer)return null;
-  var reader=closestNovelReader(r.startContainer);
-  if(!reader)return null;
-  if(r.startContainer.nodeType!==3)return null;
-  return r;
-}
-function mvpWordRangeFromPoint(x,y){
-  var r=mvpPointRange(x,y);
-  if(!r)return null;
-  var node=r.startContainer,text=node.nodeValue||'',at=Math.max(0,Math.min(r.startOffset,text.length));
-  var left=at,right=at;
-  while(left>0&&!/\s/.test(text.charAt(left-1)))left--;
-  while(right<text.length&&!/\s/.test(text.charAt(right)))right++;
-  if(right<=left)return null;
-  try{r.setStart(node,left);r.setEnd(node,right);return r}catch(_){return null}
-}
-function mvpApplyDragSelection(x,y){
-  if(!mvpHoldStartRange||!mvpHoldFired)return false;
-  var endRange=mvpPointRange(x,y);
-  if(!endRange)return false;
-  var start=mvpHoldStartRange;
-  var sel=window.getSelection(),range=document.createRange();
-  try{
-    var cmp=start.compareBoundaryPoints(Range.START_TO_START,endRange);
-    if(cmp<=0){
-      range.setStart(start.startContainer,start.startOffset);
-      range.setEnd(endRange.startContainer,endRange.startOffset);
-    }else{
-      range.setStart(endRange.startContainer,endRange.startOffset);
-      range.setEnd(start.startContainer,start.startOffset);
-    }
-    if(range.collapsed)return false;
-    sel.removeAllRanges();sel.addRange(range);
-    var o=selectionRangeOffsets(sel);
-    if(o&&o.text){
-      mvpMarkState.selection=o;
-      markButtonState('');
-      showMarkToolbar();
-      return true;
-    }
-  }catch(_){ }
-  return false;
-}
-function mvpArmNovelHold(p,e){
-  if(!p)return;
-  if(e.pointerType==='mouse'&&e.button!==0)return;
-  if(e.pointerType!=='mouse'&&e.pointerType!=='touch'&&e.pointerType!=='pen')return;
-  mvpClearHold();
-  mvpHoldTarget=p;
-  mvpHoldX=e.clientX;
-  mvpHoldY=e.clientY;
-  mvpHoldPointerId=e.pointerId;
-  mvpHoldFired=false;
-  p.classList.add('mvp-hold-armed');
-  mvpHoldTimer=setTimeout(function(){
-    mvpHoldTimer=null;
-    if(mvpHoldTarget!==p)return;
-    mvpHoldFired=true;
-    p.classList.remove('mvp-hold-armed');
-    var r=mvpWordRangeFromPoint(mvpHoldX,mvpHoldY);
-    if(!r){mvpClearHold(p);return}
-    mvpHoldStartRange=r.cloneRange();
-    try{
-      var sel=window.getSelection();sel.removeAllRanges();sel.addRange(r);
-      var o=selectionRangeOffsets(sel);
-      if(o&&o.text){mvpMarkState.selection=o;markButtonState('');showMarkToolbar()}
-    }catch(_){ }
-    /* Setelah hold aktif, gesture ini menjadi gesture seleksi, bukan scroll. */
-    try{p.style.touchAction='none'}catch(_){ }
-    try{if(e.pointerId!=null&&p.setPointerCapture)p.setPointerCapture(e.pointerId)}catch(_){ }
-    try{if(tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred)tg.HapticFeedback.impactOccurred('light')}catch(_){ }
-  },MVP_HOLD_MS);
-}
-(function setupBaseStyleNovelHold(){
+/* NATIVE NOVEL SELECTION — mengikuti mekanisme selection native browser/WebView.
+   Jangan mengambil alih long-press/pointer gesture dengan Range buatan.
+   Native selection membuat handle kiri/kanan tetap dapat digeser di mobile.
+   selectionchange di atas menjadi satu-satunya sumber state selection MVP. */
+(function setupNativeNovelSelection(){
+  function isNovelTarget(target){
+    try{return !!(target&&target.closest&&target.closest('.novel-reader'))}catch(_){return false}
+  }
+
   document.addEventListener('pointerdown',function(e){
-    var p=e.target&&e.target.closest?e.target.closest('.novel-reader p'):null;
-    if(!p)return;
-    mvpArmNovelHold(p,e);
+    if(!isNovelTarget(e.target))return;
+    /* Sengaja tidak preventDefault/stopPropagation.
+       Long-press harus diteruskan sepenuhnya ke browser/WebView. */
   },{passive:true});
+
   document.addEventListener('pointermove',function(e){
-    if(!mvpHoldTarget)return;
-    var dx=e.clientX-mvpHoldX,dy=e.clientY-mvpHoldY;
-    if(!mvpHoldFired){
-      if(dx*dx+dy*dy>64)mvpClearHold(mvpHoldTarget);
-      return;
-    }
-    if(mvpHoldPointerId!=null&&e.pointerId!==mvpHoldPointerId)return;
-    e.preventDefault();
-    e.stopPropagation();
-    mvpApplyDragSelection(e.clientX,e.clientY);
-  },{passive:false,capture:true});
+    if(!isNovelTarget(e.target))return;
+    /* Jangan mengubah Selection/Range selama handle native digeser. */
+  },{passive:true});
+
   document.addEventListener('pointerup',function(e){
-    if(!mvpHoldTarget)return;
-    var p=mvpHoldTarget,was=mvpHoldFired;
-    if(was){
-      e.preventDefault();
-      e.stopPropagation();
-      try{if(p.releasePointerCapture&&e.pointerId!=null)p.releasePointerCapture(e.pointerId)}catch(_){ }
-    }
-    mvpClearHold(p);
-  },{passive:false,capture:true});
-  document.addEventListener('pointercancel',function(e){
-    if(mvpHoldTarget)mvpClearHold(mvpHoldTarget);
-  },{passive:true,capture:true});
+    if(!isNovelTarget(e.target))return;
+    /* selectionchange akan menangkap hasil selection native. */
+  },{passive:true});
 })();
 
 function closeReaderMarksPanel(){var p=$("mvpNotesPanel"),b=$("readerMarksButton");if(p)p.classList.remove('show');if(b)b.classList.remove('active')}
