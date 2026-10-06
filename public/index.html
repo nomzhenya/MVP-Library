@@ -2717,9 +2717,38 @@ function mvpArmNovelHold(p,e){
     if(mvpHoldTarget!==p)return;
     mvpHoldFired=true;
     p.classList.remove('mvp-hold-armed');
-    /* Jangan membuat selection baru. Jika WebView sudah membentuk native
-       word selection, simpan range tersebut dan tampilkan toolbar. */
+    /* Jika native selection sudah terbentuk, pakai selection tersebut.
+       Jika WebView belum membuat selection sendiri, buat word selection dari
+       titik hold. Ini membuat hold tetap mudah seperti base HTML, tetapi
+       selection tetap berupa Range native sehingga handle kiri/kanan WebView
+       masih dapat digunakan untuk memperluas pilihan. */
     var sel=window.getSelection();
+    if(!selectionIsInNovel(sel)){
+      var r=null;
+      try{
+        if(document.caretRangeFromPoint) r=document.caretRangeFromPoint(mvpHoldX,mvpHoldY);
+        else if(document.caretPositionFromPoint){
+          var cp=document.caretPositionFromPoint(mvpHoldX,mvpHoldY);
+          if(cp){r=document.createRange();r.setStart(cp.offsetNode,cp.offset);r.collapse(true)}
+        }
+      }catch(_){r=null}
+      if(r&&r.startContainer){
+        var node=r.startContainer;
+        if(node.nodeType===3&&closestNovelReader(node)){
+          var text=node.nodeValue||'';
+          var at=Math.max(0,Math.min(r.startOffset,text.length));
+          var left=at,right=at;
+          while(left>0&&!/\s/.test(text.charAt(left-1)))left--;
+          while(right<text.length&&!/\s/.test(text.charAt(right)))right++;
+          if(right>left){
+            try{
+              r.setStart(node,left);r.setEnd(node,right);
+              sel=window.getSelection();sel.removeAllRanges();sel.addRange(r);
+            }catch(_){ }
+          }
+        }
+      }
+    }
     if(selectionIsInNovel(sel)){
       var o=selectionRangeOffsets(sel);
       if(o&&o.text){
