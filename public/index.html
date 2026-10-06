@@ -247,9 +247,9 @@ h1,h2,h3,p{margin:0}
 .reader-watermark .wm-title{font-size:34px;font-weight:900;letter-spacing:0;line-height:1;text-align:center;}
 .reader-watermark .wm-user{font-size:16px;font-weight:800;margin-top:7px;letter-spacing:.2px}
 
-.novel-reader{width:min(820px,100%);margin:0 auto;padding:10px 24px 20px;background:transparent;color:var(--text);line-height:1.8;font-size:17px;user-select:none;-webkit-user-select:none;} 
-.novel-reader p{margin:0 0 1.2em}
-.novel-reader h1,.novel-reader h2,.novel-reader h3{line-height:1.4;margin:1.8em 0 .8em}
+.novel-reader{width:min(820px,100%);margin:0 auto;padding:10px 24px 20px;background:transparent;color:var(--text);line-height:1.8;font-size:17px;user-select:auto !important;-webkit-user-select:auto !important;cursor:text;} 
+.novel-reader p{margin:0 0 1.2em;-webkit-user-select:text !important;user-select:text !important;touch-action:pan-y !important;}
+.novel-reader h1,.novel-reader h2,.novel-reader h3{line-height:1.4;margin:1.8em 0 .8em;-webkit-user-select:text !important;user-select:text !important;touch-action:pan-y !important;}
 .novel-reader p.bookmarked { background-color:rgba(129, 140, 248, 0.15); border-left:4px solid var(--accent); padding:4px 12px; border-radius:0 8px 8px 0; transition:all 0.3s ease; }
 body.light .novel-reader p.bookmarked { background-color:rgba(129, 140, 248, 0.10); }
 
@@ -292,7 +292,7 @@ html,body{background:var(--bg)}
 .b-list{gap:0}.b-item{padding:16px 0;border-bottom:1px solid var(--border);gap:14px;min-width:0}.b-item:first-child{padding-top:4px}.b-cover{width:94px;border-radius:9px;box-shadow:0 6px 14px rgba(0,0,0,.24)}.b-info{gap:5px}.b-item-title{font-size:17px;line-height:1.28}.b-item-title .txt{display:block}.b-stats{gap:13px;font-size:12px}.b-tags{font-size:11px}.b-chaps{gap:5px;margin-top:4px}.b-chap{padding:5px 0}.b-chap-name{font-size:14px}.b-chap-meta{font-size:10px}.b-grid{gap:4px;border-radius:12px}.b-grid-item{border-radius:5px;overflow:hidden}.badge-status{border-radius:5px}
 .mvp-home-history{margin-top:7px;display:grid;gap:5px}.mvp-home-line{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;min-width:0}.mvp-home-line .label{font-weight:800;color:var(--muted);white-space:nowrap}.mvp-home-line .value{color:var(--text);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mvp-home-line.latest .label{color:var(--accent)}.mvp-home-line.history .label{color:var(--accent2)}.mvp-home-line button{border:0;background:none;color:inherit;padding:0;font:inherit;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
 #detail .detailcover{width:132px;border-radius:10px;box-shadow:0 8px 18px rgba(0,0,0,.28)}#detailContent>.mvp-detail-top{display:flex;gap:16px;align-items:flex-start;margin:8px 0 14px}.mvp-detail-title{font-size:21px!important;line-height:1.25!important;letter-spacing:-.3px}.mvp-detail-stats{display:flex;flex-wrap:wrap;gap:9px;margin-top:9px;font-size:12px;font-weight:800}.mvp-detail-stat{padding:6px 9px;background:var(--panel2);border-radius:8px;border:1px solid var(--border)}.mvp-detail-status{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 3px}.mvp-detail-chip{padding:6px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--border);font-size:11px;font-weight:800;color:var(--muted)}
-.novel-reader p{position:relative;touch-action:pan-y;cursor:default;transition:background-color .18s,border-color .18s,box-shadow .18s}.novel-reader p.mvp-hold-armed{background:rgba(129,140,248,.10)}.novel-reader p.bookmarked{background-color:rgba(129,140,248,.15)!important;border-left:4px solid var(--accent)!important;padding:7px 14px!important;border-radius:0 9px 9px 0;box-shadow:inset 0 0 0 1px rgba(129,140,248,.10)}body.light .novel-reader p.bookmarked{background-color:rgba(129,140,248,.10)!important}.mvp-mark-hint{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:100;pointer-events:none;background:var(--panel);color:var(--text);border:1px solid var(--border);box-shadow:0 8px 28px rgba(0,0,0,.35);padding:8px 12px;border-radius:999px;font-size:11px;font-weight:800;opacity:0;transition:opacity .15s}.mvp-mark-hint.show{opacity:1}.mvp-novel-hold-arrows{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;justify-content:space-between;align-items:center;gap:12px;z-index:35;pointer-events:none}.mvp-novel-hold-arrow{width:42px;height:42px;border:1px solid var(--border);border-radius:50%;background:var(--panel);color:var(--text);box-shadow:0 8px 22px rgba(0,0,0,.30);display:flex;align-items:center;justify-content:center;font-size:25px;line-height:1;font-weight:900;pointer-events:auto;cursor:pointer;touch-action:manipulation;opacity:0;transform:scale(.82);transition:opacity .16s,transform .16s}.mvp-novel-hold-arrows.show .mvp-novel-hold-arrow{opacity:1;transform:scale(1)}.mvp-novel-hold-arrow:active{transform:scale(.92)!important;background:var(--panel2)}
+.novel-reader p{position:relative;touch-action:pan-y;cursor:default;transition:background-color .18s,border-color .18s,box-shadow .18s}.novel-reader p.mvp-hold-armed{background:rgba(129,140,248,.10)}.novel-reader p.bookmarked{background-color:rgba(129,140,248,.15)!important;border-left:4px solid var(--accent)!important;padding:7px 14px!important;border-radius:0 9px 9px 0;box-shadow:inset 0 0 0 1px rgba(129,140,248,.10)}body.light .novel-reader p.bookmarked{background-color:rgba(129,140,248,.10)!important}.mvp-mark-hint{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:100;pointer-events:none;background:var(--panel);color:var(--text);border:1px solid var(--border);box-shadow:0 8px 28px rgba(0,0,0,.35);padding:8px 12px;border-radius:999px;font-size:11px;font-weight:800;opacity:0;transition:opacity .15s}.mvp-mark-hint.show{opacity:1}
 
 /* SIMPLE NAV PAGES */
 .mvp-simple-page{display:none}
@@ -966,8 +966,16 @@ html,body{background:var(--bg)}
   };
 
   document.addEventListener('contextmenu', function(e) { if(e.target.tagName==='INPUT')return; e.preventDefault(); });
-  document.addEventListener('dragstart', function(e) { e.preventDefault(); });
-  document.addEventListener('selectstart', function(e) { if(e.target.tagName!=='INPUT')e.preventDefault(); });
+  document.addEventListener('dragstart', function(e) {
+    if(e.target.tagName==='INPUT') return;
+    if(e.target.closest && e.target.closest('.novel-reader')) return;
+    e.preventDefault();
+  });
+  document.addEventListener('selectstart', function(e) {
+    if(e.target.tagName==='INPUT') return;
+    if(e.target.closest && e.target.closest('.novel-reader')) return;
+    e.preventDefault();
+  });
   document.addEventListener('keydown', function(e) {
     if (e.key==='F12' || (e.ctrlKey && e.shiftKey && (e.key==='I'||e.key==='J'||e.key==='C')) || (e.ctrlKey && e.key==='U')) { e.preventDefault(); return false; }
   });
@@ -2591,68 +2599,21 @@ async function openReader(projectId, chapterName, decensored){
           var saveKey = 'mvp_novel_mark_' + projectId + '_' + c.chapter + '_' + Number(c.decensored||0);
           var savedIndex = localStorage.getItem(saveKey);
 
-          var markTimer=null, markTarget=null, holdFired=false, holdX=0, holdY=0, holdArrows=null;
+          var markTimer=null, markTarget=null, holdFired=false, holdX=0, holdY=0;
           var HOLD_MS=550;
-          var hideHoldArrows=function(){
-              if(holdArrows&&holdArrows.parentNode)holdArrows.parentNode.removeChild(holdArrows);
-              holdArrows=null;
-          };
-          var setMarkedParagraph=function(target, targetIdx){
-              if(!target)return;
-              document.querySelectorAll('.novel-reader p.bookmarked').forEach(function(el){if(el!==target)el.classList.remove('bookmarked');});
-              target.classList.add('bookmarked');
-              localStorage.setItem(saveKey,targetIdx);
-          };
-          var showHoldArrows=function(p,pIdx){
-              hideHoldArrows();
-              var wrap=document.createElement('div');
-              wrap.className='mvp-novel-hold-arrows';
-              var prev=document.createElement('button');
-              prev.type='button';
-              prev.className='mvp-novel-hold-arrow';
-              prev.setAttribute('aria-label','Geser ke paragraf sebelumnya');
-              prev.innerHTML='&#8592;';
-              var next=document.createElement('button');
-              next.type='button';
-              next.className='mvp-novel-hold-arrow';
-              next.setAttribute('aria-label','Geser ke paragraf berikutnya');
-              next.innerHTML='&#8594;';
-              wrap.appendChild(prev);wrap.appendChild(next);p.appendChild(wrap);holdArrows=wrap;
-              var moveTo=function(nextIdx){
-                  if(nextIdx<0||nextIdx>=paragraphs.length)return;
-                  setMarkedParagraph(paragraphs[nextIdx],nextIdx);
-                  hideHoldArrows();
-                  if(tg&&tg.HapticFeedback&&tg.HapticFeedback.selectionChanged){try{tg.HapticFeedback.selectionChanged();}catch(_){}}
-                  paragraphs[nextIdx].scrollIntoView({behavior:'smooth',block:'center'});
-              };
-              prev.disabled=pIdx<=0;
-              next.disabled=pIdx>=paragraphs.length-1;
-              prev.style.opacity=prev.disabled?'0.35':'';
-              next.style.opacity=next.disabled?'0.35':'';
-              prev.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();if(!prev.disabled)moveTo(pIdx-1);});
-              next.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();if(!next.disabled)moveTo(pIdx+1);});
-              requestAnimationFrame(function(){wrap.classList.add('show');});
+          var markParagraph=function(p,pIdx){
+              document.querySelectorAll('.novel-reader p.bookmarked').forEach(function(el){if(el!==p)el.classList.remove('bookmarked');});
+              if(p.classList.contains('bookmarked')){p.classList.remove('bookmarked');localStorage.removeItem(saveKey);}
+              else{p.classList.add('bookmarked');localStorage.setItem(saveKey,pIdx);}
           };
           var clearHold=function(p){if(markTimer){clearTimeout(markTimer);markTimer=null;}if(p)p.classList.remove('mvp-hold-armed');markTarget=null;};
           paragraphs.forEach(function(p,pIdx){
               p.addEventListener('pointerdown',function(e){
                   if(e.pointerType==='mouse'&&e.button!==0)return;
-                  hideHoldArrows();
                   holdFired=false;markTarget=p;holdX=e.clientX;holdY=e.clientY;p.classList.add('mvp-hold-armed');
-                  markTimer=setTimeout(function(){
-                      if(markTarget!==p)return;
-                      holdFired=true;
-                      p.classList.remove('mvp-hold-armed');
-                      setMarkedParagraph(p,pIdx);
-                      showHoldArrows(p,pIdx);
-                      if(tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred){try{tg.HapticFeedback.impactOccurred('light');}catch(_){}}
-                  },HOLD_MS);
+                  markTimer=setTimeout(function(){if(markTarget!==p)return;holdFired=true;p.classList.remove('mvp-hold-armed');markParagraph(p,pIdx);if(tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred){try{tg.HapticFeedback.impactOccurred('light');}catch(_){}}},HOLD_MS);
               });
-              p.addEventListener('pointermove',function(e){
-                  if(markTarget!==p||holdFired)return;
-                  var dx=e.clientX-holdX,dy=e.clientY-holdY;
-                  if(dx*dx+dy*dy>64)clearHold(p);
-              });
+              p.addEventListener('pointermove',function(e){if(markTarget!==p)return;var dx=e.clientX-holdX,dy=e.clientY-holdY;if(dx*dx+dy*dy>64)clearHold(p);});
               p.addEventListener('pointerup',function(e){var wasHold=holdFired;clearHold(p);if(wasHold){e.preventDefault();e.stopPropagation();}});
               p.addEventListener('pointercancel',function(){clearHold(p);});
           });
