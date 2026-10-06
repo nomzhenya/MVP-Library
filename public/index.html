@@ -973,7 +973,7 @@ html,body{background:var(--bg)}
     }
   };
 
-  document.addEventListener('contextmenu', function(e) { if(e.target.tagName==='INPUT')return; e.preventDefault(); });
+  document.addEventListener('contextmenu', function(e) { if(e.target.tagName==='INPUT')return; if(e.target.closest && e.target.closest('.novel-reader'))return; e.preventDefault(); });
   document.addEventListener('dragstart', function(e) { e.preventDefault(); });
   document.addEventListener('selectstart', function(e) { if(e.target.tagName==='INPUT')return; if(e.target.closest && e.target.closest('.novel-reader'))return; e.preventDefault(); });
   document.addEventListener('keydown', function(e) {
