@@ -38,7 +38,7 @@ body.light{
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden;transition:background .3s,color .3s}
 
 /* ANTI-COPY CSS */
-body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
+body{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;-webkit-tap-highlight-color:transparent;}
 img{-webkit-user-drag:none;-webkit-touch-callout:none;pointer-events:auto;} 
 
 .wrap{max-width:900px;margin:auto;padding:24px 20px}
@@ -2710,45 +2710,10 @@ document.addEventListener('cut',function(e){
   }
 },false);
 
-/* NATIVE NOVEL SELECTION — mengikuti mekanisme selection native browser/WebView.
-   Jangan mengambil alih long-press/pointer gesture dengan Range buatan.
-   Native selection membuat handle kiri/kanan tetap dapat digeser di mobile.
-   selectionchange di atas menjadi satu-satunya sumber state selection MVP. */
-(function setupNativeNovelSelection(){
-  function isNovelTarget(target){
-    try{return !!(target&&target.closest&&target.closest('.novel-reader'))}catch(_){return false}
-  }
-
-  /*
-     Telegram WebView/Chromium tertentu masih membawa computed user-select:none
-     dari body ke gesture long-press walaupun elemen novel sudah user-select:text.
-     Saat jari mulai menyentuh teks novel, naikkan izin selection ke body juga.
-     Tidak membuat Range, tidak memindahkan caret, dan tidak mencegat gesture native.
-  */
-  document.addEventListener('touchstart',function(e){
-    if(!isNovelTarget(e.target))return;
-    try{
-      document.body.style.webkitUserSelect='text';
-      document.body.style.userSelect='text';
-      document.body.style.webkitTouchCallout='default';
-    }catch(_){}
-  },{passive:true,capture:true});
-
-  document.addEventListener('pointerdown',function(e){
-    if(!isNovelTarget(e.target))return;
-    try{
-      document.body.style.webkitUserSelect='text';
-      document.body.style.userSelect='text';
-      document.body.style.webkitTouchCallout='default';
-    }catch(_){}
-  },{passive:true,capture:true});
-
-  document.addEventListener('touchend',function(e){
-    if(!isNovelTarget(e.target))return;
-    /* Jangan memanggil removeAllRanges atau menyentuh Selection di sini. */
-  },{passive:true});
-})();
-
+/* NATIVE NOVEL SELECTION — jangan mengambil alih gesture native mobile.
+   Body sekarang mengizinkan text selection; handler selectstart di atas tetap
+   membatasi selection hanya pada .novel-reader. Long-press dan handle selection
+   sepenuhnya dikelola browser/WebView. */
 function closeReaderMarksPanel(){var p=$("mvpNotesPanel"),b=$("readerMarksButton");if(p)p.classList.remove('show');if(b)b.classList.remove('active')}
 function scrollToNovelMark(id){var marks=getNovelMarks(mvpMarkState.projectId,mvpMarkState.chapter),m=marks.find(function(x){return String(x.id)===String(id)}),r=document.querySelector('.novel-reader');if(!m||!r)return;closeReaderMarksPanel();var ranges=r.querySelectorAll('.mvp-marked-range'),target=null;for(var i=0;i<ranges.length;i++){if(ranges[i].dataset.markId===String(m.id)){target=ranges[i];break}}if(target){target.scrollIntoView({behavior:'smooth',block:'center'});target.classList.remove('mvp-mark-focus');void target.offsetWidth;target.classList.add('mvp-mark-focus');setTimeout(function(){target.classList.remove('mvp-mark-focus')},900)}}
 function renderReaderMarksList(){var panel=$("mvpNotesPanel");if(!panel)return;var marks=getNovelMarks(mvpMarkState.projectId,mvpMarkState.chapter).slice().sort(function(a,b){return Number(a.createdAt||a.id||0)-Number(b.createdAt||b.id||0)});if(!marks.length){panel.innerHTML="<div class='mvp-notes-head'><div><div class='mvp-notes-title'>Catatan</div><div class='mvp-notes-sub'>Belum ada kata, kalimat, atau paragraf yang ditandai di bab ini.</div></div><button class='mvp-notes-close' type='button' onclick='closeReaderMarksPanel(event)' aria-label='Tutup'>×</button></div><div class='mvp-notes-empty'>Tandai teks di novel untuk menambah catatan.</div>";return}var html="<div class='mvp-notes-head'><div><div class='mvp-notes-title'>Catatan</div><div class='mvp-notes-sub'>Teks yang kamu tandai di bab ini</div></div><button class='mvp-notes-close' type='button' onclick='closeReaderMarksPanel(event)' aria-label='Tutup'>×</button></div><div class='mvp-notes-list'>";marks.forEach(function(m){var text=String(m.text||'').trim();if(!text)return;html+="<button type='button' class='mvp-note-item' onclick='scrollToNovelMark("+esc(String(m.id))+")'><div class='mvp-note-item-text'>"+esc(text)+"</div></button>"});html+="</div>";panel.innerHTML=html}
