@@ -2691,33 +2691,30 @@ document.addEventListener('beforecut',function(e){if(mvpIsNovelSelectionActive()
 document.addEventListener('cut',function(e){if(mvpIsNovelSelectionActive())e.preventDefault()});
 
 /* NOVEL HOLD + DRAG SELECTION
-   Hold 550ms pada teks untuk mengunci titik awal, lalu drag ke kiri/kanan
-   untuk memperluas area selection. Mekanisme ini memakai Range native tetapi
-   tidak bergantung pada Selection.modify() atau handle selection WebView. */
-var mvpHoldTimer=null,mvpHoldTarget=null,mvpHoldX=0,mvpHoldY=0,mvpHoldFired=false;
+   Hold pada teks -> kunci titik awal -> drag untuk memilih area.
+   Pointer capture dipakai setelah hold supaya WebView tidak mengambil alih
+   gerakan jari sebagai scroll ketika mode selection sudah aktif. */
+var mvpHoldTimer=null,mvpHoldTarget=null,mvpHoldPointerId=null,mvpHoldX=0,mvpHoldY=0,mvpHoldFired=false;
 var mvpDragSelecting=false,mvpDragAnchorNode=null,mvpDragAnchorOffset=0;
 var MVP_HOLD_MS=550;
 
 function mvpClearHold(p){
   if(mvpHoldTimer){clearTimeout(mvpHoldTimer);mvpHoldTimer=null}
-  if(p&&p.classList)p.classList.remove('mvp-hold-armed');
-  if(mvpHoldTarget&&mvpHoldTarget!==p&&mvpHoldTarget.classList)mvpHoldTarget.classList.remove('mvp-hold-armed');
+  var t=p||mvpHoldTarget;
+  if(t&&t.classList)t.classList.remove('mvp-hold-armed');
+  if(mvpHoldTarget&&mvpHoldTarget!==t&&mvpHoldTarget.classList)mvpHoldTarget.classList.remove('mvp-hold-armed');
   mvpHoldTarget=null;
+  mvpHoldPointerId=null;
 }
-
 function mvpCancelHold(){mvpClearHold()}
 
 function mvpCaretRangeAtPoint(x,y){
   var r=null;
   try{
-    if(document.caretRangeFromPoint) r=document.caretRangeFromPoint(x,y);
+    if(document.caretRangeFromPoint)r=document.caretRangeFromPoint(x,y);
     else if(document.caretPositionFromPoint){
       var cp=document.caretPositionFromPoint(x,y);
-      if(cp){
-        r=document.createRange();
-        r.setStart(cp.offsetNode,cp.offset);
-        r.collapse(true);
-      }
+      if(cp){r=document.createRange();r.setStart(cp.offsetNode,cp.offset);r.collapse(true)}
     }
   }catch(_){r=null}
   if(!r||!r.startContainer)return null;
@@ -2727,21 +2724,20 @@ function mvpCaretRangeAtPoint(x,y){
 
 function mvpSetDragSelection(endRange){
   if(!mvpDragAnchorNode||!endRange||!endRange.startContainer)return false;
-  var sel=window.getSelection();
-  if(!sel)return false;
-  var range=document.createRange();
+  var sel=window.getSelection();if(!sel)return false;
   try{
-    range.setStart(mvpDragAnchorNode,mvpDragAnchorOffset);
-    range.setEnd(endRange.startContainer,endRange.startOffset);
-    /* Jika end berada sebelum anchor, balik start/end agar selection selalu valid. */
-    if(range.collapsed && !(mvpDragAnchorNode===endRange.startContainer&&mvpDragAnchorOffset===endRange.startOffset)){
+    var range=document.createRange();
+    var cmp=0;
+    try{cmp=mvpComparePoints(mvpDragAnchorNode,mvpDragAnchorOffset,endRange.startContainer,endRange.startOffset)}catch(_){cmp=0}
+    if(cmp<=0){
+      range.setStart(mvpDragAnchorNode,mvpDragAnchorOffset);
+      range.setEnd(endRange.startContainer,endRange.startOffset);
+    }else{
       range.setStart(endRange.startContainer,endRange.startOffset);
       range.setEnd(mvpDragAnchorNode,mvpDragAnchorOffset);
-    }else if(range.collapsed){
-      return false;
     }
-    sel.removeAllRanges();
-    sel.addRange(range);
+    if(range.collapsed)return false;
+    sel.removeAllRanges();sel.addRange(range);
     var o=selectionRangeOffsets(sel);
     if(o&&o.text){
       mvpMarkState.selection=o;
@@ -2753,6 +2749,17 @@ function mvpSetDragSelection(endRange){
   return false;
 }
 
+function mvpComparePoints(aNode,aOffset,bNode,bOffset){
+  if(aNode===bNode)return aOffset-bOffset;
+  var ra=document.createRange(),rb=document.createRange();
+  ra.selectNodeContents(document.querySelector('.novel-reader'));
+  var reader=closestNovelReader(aNode);
+  if(!reader||reader!==closestNovelReader(bNode))return 0;
+  ra.setStart(aNode,aOffset);ra.collapse(true);
+  rb.setStart(bNode,bOffset);rb.collapse(true);
+  return ra.compareBoundaryPoints(Range.START_TO_START,rb);
+}
+
 function mvpSelectWordAtRange(r){
   if(!r||r.startContainer.nodeType!==3)return false;
   var node=r.startContainer,text=node.nodeValue||'',at=Math.max(0,Math.min(r.startOffset,text.length));
@@ -2761,92 +2768,82 @@ function mvpSelectWordAtRange(r){
   while(right<text.length&&!/\s/.test(text.charAt(right)))right++;
   if(right<=left)return false;
   try{
-    var range=document.createRange();
-    range.setStart(node,left);range.setEnd(node,right);
-    var sel=window.getSelection();
-    sel.removeAllRanges();sel.addRange(range);
-    mvpDragAnchorNode=node;
-    mvpDragAnchorOffset=left;
+    var range=document.createRange();range.setStart(node,left);range.setEnd(node,right);
+    var sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);
+    mvpDragAnchorNode=node;mvpDragAnchorOffset=left;
     mvpMarkState.selection=selectionRangeOffsets(sel);
-    markButtonState('');
-    showMarkToolbar();
+    markButtonState('');showMarkToolbar();
     return true;
   }catch(_){return false}
 }
 
-function mvpArmNovelHold(p,e){
-  if(!p)return;
-  if(e.button!==undefined&&e.button!==0)return;
-  mvpClearHold();
-  mvpHoldTarget=p;
-  mvpHoldX=e.clientX;
-  mvpHoldY=e.clientY;
-  mvpHoldFired=false;
+function mvpBeginDragSelection(e){
+  if(!mvpHoldTarget||mvpDragSelecting)return;
+  var r=mvpCaretRangeAtPoint(e.clientX,e.clientY);
+  if(!r||!mvpSelectWordAtRange(r)){mvpDragSelecting=false;return}
+  mvpDragSelecting=true;
+  try{if(mvpHoldTarget.setPointerCapture&&mvpHoldPointerId!=null)mvpHoldTarget.setPointerCapture(mvpHoldPointerId)}catch(_){ }
+  try{e.preventDefault();e.stopPropagation()}catch(_){ }
+}
+
+function mvpFinishDragSelection(e){
+  if(!mvpDragSelecting)return;
+  try{
+    var r=mvpCaretRangeAtPoint(e.clientX,e.clientY);
+    if(r)mvpSetDragSelection(r);
+  }catch(_){ }
+  try{if(mvpHoldTarget&&mvpHoldTarget.releasePointerCapture&&mvpHoldPointerId!=null)mvpHoldTarget.releasePointerCapture(mvpHoldPointerId)}catch(_){ }
   mvpDragSelecting=false;
-  mvpDragAnchorNode=null;
-  mvpDragAnchorOffset=0;
-  p.classList.add('mvp-hold-armed');
-  mvpHoldTimer=setTimeout(function(){
-    mvpHoldTimer=null;
-    if(mvpHoldTarget!==p)return;
-    mvpHoldFired=true;
-    mvpDragSelecting=true;
-    p.classList.remove('mvp-hold-armed');
-
-    var r=mvpCaretRangeAtPoint(mvpHoldX,mvpHoldY);
-    if(!r||!mvpSelectWordAtRange(r)){
-      mvpDragSelecting=false;
-      mvpHoldFired=false;
-      return;
-    }
-
-    try{
-      if(tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred)tg.HapticFeedback.impactOccurred('light');
-    }catch(_){ }
-  },MVP_HOLD_MS);
 }
 
 (function setupBaseStyleNovelHold(){
   document.addEventListener('pointerdown',function(e){
     var p=e.target&&e.target.closest?e.target.closest('.novel-reader p'):null;
     if(!p)return;
-    mvpArmNovelHold(p,e);
+    if(e.button!==undefined&&e.button!==0)return;
+    mvpClearHold();
+    mvpHoldTarget=p;mvpHoldPointerId=e.pointerId;
+    mvpHoldX=e.clientX;mvpHoldY=e.clientY;mvpHoldFired=false;
+    mvpDragSelecting=false;mvpDragAnchorNode=null;mvpDragAnchorOffset=0;
+    p.classList.add('mvp-hold-armed');
+    mvpHoldTimer=setTimeout(function(){
+      mvpHoldTimer=null;
+      if(mvpHoldTarget!==p)return;
+      mvpHoldFired=true;
+      p.classList.remove('mvp-hold-armed');
+      mvpBeginDragSelection({clientX:mvpHoldX,clientY:mvpHoldY,preventDefault:function(){},stopPropagation:function(){}});
+      try{if(tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred)tg.HapticFeedback.impactOccurred('light')}catch(_){ }
+    },MVP_HOLD_MS);
   },{passive:true});
 
   document.addEventListener('pointermove',function(e){
     if(mvpDragSelecting){
       e.preventDefault();
+      e.stopPropagation();
       var r=mvpCaretRangeAtPoint(e.clientX,e.clientY);
       if(r)mvpSetDragSelection(r);
       return;
     }
     if(!mvpHoldTimer||!mvpHoldTarget)return;
+    if(mvpHoldPointerId!=null&&e.pointerId!==mvpHoldPointerId)return;
     var dx=e.clientX-mvpHoldX,dy=e.clientY-mvpHoldY;
     if(dx*dx+dy*dy>64)mvpClearHold(mvpHoldTarget);
   },{passive:false});
 
   document.addEventListener('pointerup',function(e){
+    if(mvpHoldPointerId!=null&&e.pointerId!==mvpHoldPointerId)return;
     var p=mvpHoldTarget,was=mvpHoldFired;
-    if(mvpDragSelecting){
-      e.preventDefault();
-      var r=mvpCaretRangeAtPoint(e.clientX,e.clientY);
-      if(r)mvpSetDragSelection(r);
-    }
+    if(mvpDragSelecting)mvpFinishDragSelection(e);
     mvpClearHold(p);
-    mvpDragSelecting=false;
-    mvpDragAnchorNode=null;
-    mvpDragAnchorOffset=0;
-    if(was){
-      try{e.stopPropagation()}catch(_){ }
-    }
+    mvpDragAnchorNode=null;mvpDragAnchorOffset=0;
+    if(was){try{e.preventDefault();e.stopPropagation()}catch(_){ }}
   },{passive:false});
 
-  document.addEventListener('pointercancel',function(){
-    mvpClearHold();
-    mvpDragSelecting=false;
-    mvpDragAnchorNode=null;
-    mvpDragAnchorOffset=0;
-  },{passive:true});
+  document.addEventListener('pointercancel',function(e){
+    if(mvpHoldPointerId!=null&&e.pointerId!==mvpHoldPointerId)return;
+    if(mvpDragSelecting)mvpFinishDragSelection(e);
+    mvpClearHold();mvpDragAnchorNode=null;mvpDragAnchorOffset=0;
+  },{passive:false});
 })();
 
 function closeReaderMarksPanel(){var p=$("mvpNotesPanel"),b=$("readerMarksButton");if(p)p.classList.remove('show');if(b)b.classList.remove('active')}
