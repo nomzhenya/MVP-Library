@@ -2652,8 +2652,10 @@ async function openReader(projectId, chapterName, decensored){
 
 var mvpMarkState={color:'#fde68a',selection:null,projectId:'',chapter:''};
 var mvpMarkPaletteDefaults=['#fde68a','#86efac','#93c5fd','#f9a8d4','#c4b5fd'];
-function mvpMarkStorageKey(p,c){return 'mvp_novel_marks_'+p+'_'+c}
-function getNovelMarks(p,c){try{var r=localStorage.getItem(mvpMarkStorageKey(p,c));var a=r?JSON.parse(r):[];return Array.isArray(a)?a:[]}catch(_){return []}}
+function mvpMarkUserKey(){try{var u=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user?tg.initDataUnsafe.user:null;return u&&u.id?'user_'+String(u.id):'local'}catch(_){return 'local'}}
+function mvpMarkStorageKey(p,c){return 'mvp_novel_marks_'+mvpMarkUserKey()+'_'+p+'_'+c}
+function mvpLegacyMarkStorageKey(p,c){return 'mvp_novel_marks_'+p+'_'+c}
+function getNovelMarks(p,c){try{var key=mvpMarkStorageKey(p,c),r=localStorage.getItem(key);if(!r){var legacy=localStorage.getItem(mvpLegacyMarkStorageKey(p,c));if(legacy){r=legacy;localStorage.setItem(key,legacy);localStorage.removeItem(mvpLegacyMarkStorageKey(p,c))}}var a=r?JSON.parse(r):[];return Array.isArray(a)?a:[]}catch(_){return []}}
 function saveNovelMarks(p,c,a){try{localStorage.setItem(mvpMarkStorageKey(p,c),JSON.stringify(a))}catch(_) {}}
 function getMarkPalette(){try{var a=JSON.parse(localStorage.getItem('mvp_novel_mark_palette')||'null');if(Array.isArray(a)&&a.length===5&&a.every(function(v){return /^#[0-9a-f]{6}$/i.test(String(v))}))return a}catch(_){}return mvpMarkPaletteDefaults.slice()}
 function saveMarkPalette(a){try{localStorage.setItem('mvp_novel_mark_palette',JSON.stringify(a))}catch(_) {}}
