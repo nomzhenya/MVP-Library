@@ -921,7 +921,7 @@ html,body{background:var(--bg)}
 #reader .novel-reader *{user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;touch-action:pan-y!important;}.mvp-marked-range{box-decoration-break:clone;-webkit-box-decoration-break:clone}.mvp-marked-range.mvp-mark-focus{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
 .mvp-custom-selection-layer{position:fixed;inset:0;z-index:1999;pointer-events:none;overflow:hidden}.mvp-custom-selection-rect{position:fixed;pointer-events:none;background:rgba(129,140,248,.28);border-radius:3px;box-shadow:inset 0 0 0 1px rgba(129,140,248,.18)}.mvp-custom-selection-handle{position:fixed;width:24px;height:30px;margin-left:-12px;margin-top:-2px;border:0;padding:0;background:transparent;pointer-events:auto;touch-action:none;cursor:grab;z-index:2147482999!important}.mvp-custom-selection-handle:before{content:"";position:absolute;left:8px;top:0;width:10px;height:10px;background:var(--accent);border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.42)}.mvp-custom-selection-handle:after{content:"";position:absolute;left:11px;top:10px;width:4px;height:16px;background:var(--accent);border-radius:0 0 4px 4px;box-shadow:0 1px 3px rgba(0,0,0,.28)}.mvp-custom-selection-handle.end:before{left:8px}.mvp-custom-selection-handle.end:after{left:9px}.mvp-custom-selection-handle:active:before{background:var(--accent-hover)}
 @media(max-width:520px){.mvp-quotes-carousel{padding-left:25px;padding-right:25px}.mvp-qb-card{min-height:205px;padding:25px 22px}.mvp-qb-text{font-size:15px}.mvp-qb-arrow{width:32px;height:32px}.mvp-mark-toolbar{top:auto;bottom:78px}.mvp-mark-tool{width:38px;height:36px}}
-</style><style id='mvp-selection-toolbar-final-fix'>#mvpMarkToolbar.show{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:fixed!important;z-index:2147483647!important}#reader .novel-reader,#reader .novel-reader *{user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;touch-action:pan-y!important}</style><style id='mvp-custom-selection-v7-fix'>.mvp-custom-selection-layer{z-index:2147483000!important;pointer-events:none!important}.mvp-custom-selection-handle{z-index:2147483640!important;pointer-events:auto!important;touch-action:none!important}.mvp-mark-toolbar.show{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:fixed!important;z-index:2147483647!important}</style></head>
+</style><style id='mvp-selection-toolbar-final-fix'>#mvpMarkToolbar.show{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:fixed!important;z-index:2147483647!important}#reader .novel-reader,#reader .novel-reader *{user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;touch-action:pan-y!important}</style><style id='mvp-custom-selection-v7-fix'>.mvp-custom-selection-layer{z-index:2147483000!important;pointer-events:none!important}.mvp-custom-selection-handle{z-index:2147483640!important;pointer-events:auto!important;touch-action:none!important}.mvp-mark-toolbar.show{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:fixed!important;z-index:2147483647!important}#reader .novel-reader,#reader .novel-reader *{user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;touch-action:pan-y!important;-webkit-tap-highlight-color:transparent}</style></head>
 <body>
 
 <div id="progressContainer"><div id="progressBar"></div></div>
@@ -2872,6 +2872,43 @@ function mvpSelectionChange(){
   }
 }
 document.addEventListener('selectionchange',mvpSelectionChange);
+/* V8 MOBILE CUSTOM SELECTION: touch long-press is the primary path. Native
+   text selection is deliberately disabled, so Android's Copy/Search/Share
+   action-mode is never used for novel text. */
+var mvpTouchSelectionState={timer:null,x:0,y:0,reader:null,active:false};
+function mvpTouchSelectionCancel(){if(mvpTouchSelectionState.timer){clearTimeout(mvpTouchSelectionState.timer);mvpTouchSelectionState.timer=null}}
+function mvpTouchSelectionStart(e){
+  if(!e.touches||e.touches.length!==1)return;
+  var t=e.target&&e.target.nodeType===3?e.target.parentElement:e.target;
+  var r=closestNovelReader(t);
+  if(!r)return;
+  mvpTouchSelectionCancel();
+  var q=e.touches[0];
+  mvpTouchSelectionState.x=q.clientX;mvpTouchSelectionState.y=q.clientY;mvpTouchSelectionState.reader=r;mvpTouchSelectionState.active=false;
+  mvpCustomSelection.reader=r;mvpCustomSelection.downX=q.clientX;mvpCustomSelection.downY=q.clientY;
+  mvpTouchSelectionState.timer=setTimeout(function(){
+    mvpTouchSelectionState.timer=null;
+    var off=mvpCustomOffsetFromPoint(r,mvpTouchSelectionState.x,mvpTouchSelectionState.y);
+    var w=off==null?null:mvpCustomWordRange(r,off);
+    if(!w)return;
+    mvpTouchSelectionState.active=mvpCustomActivate(r,w.start,w.end);
+    if(mvpTouchSelectionState.active){try{if(e.cancelable)e.preventDefault()}catch(_){} }
+  },MVP_CUSTOM_HOLD_MS);
+}
+function mvpTouchSelectionMove(e){
+  if(!e.touches||e.touches.length!==1)return;
+  var q=e.touches[0];
+  if(mvpTouchSelectionState.timer){
+    var dx=q.clientX-mvpTouchSelectionState.x,dy=q.clientY-mvpTouchSelectionState.y;
+    if(Math.sqrt(dx*dx+dy*dy)>MVP_CUSTOM_MOVE_PX)mvpTouchSelectionCancel();
+  }
+  if(mvpCustomSelection.dragging){mvpCustomMove({clientX:q.clientX,clientY:q.clientY,preventDefault:function(){try{if(e.cancelable)e.preventDefault()}catch(_){}}});}
+}
+function mvpTouchSelectionEnd(){mvpTouchSelectionCancel();mvpTouchSelectionState.active=false}
+document.addEventListener('touchstart',mvpTouchSelectionStart,{passive:false,capture:true});
+document.addEventListener('touchmove',mvpTouchSelectionMove,{passive:false,capture:true});
+document.addEventListener('touchend',mvpTouchSelectionEnd,{passive:true,capture:true});
+document.addEventListener('touchcancel',mvpTouchSelectionEnd,{passive:true,capture:true});
 document.addEventListener('pointerdown',mvpCustomHandleDown,true);
 document.addEventListener('pointerdown',function(e){
   var t=e.target&&e.target.nodeType===3?e.target.parentElement:e.target;
@@ -2884,20 +2921,7 @@ document.addEventListener('pointermove',mvpCustomMove,{passive:false});
 document.addEventListener('pointerup',mvpCustomHandleUp,true);
 document.addEventListener('pointerup',mvpCustomEnd,false);
 document.addEventListener('pointercancel',mvpCustomEnd,false);
-document.addEventListener('touchstart',function(e){
-  if(!e.touches||e.touches.length!==1)return;
-  var t=e.target&&e.target.nodeType===3?e.target.parentElement:e.target;
-  if(!t||!t.closest||!t.closest('.novel-reader'))return;
-  var q=e.touches[0];
-  mvpCustomArm({target:t,button:0,clientX:q.clientX,clientY:q.clientY});
-},{passive:true});
-document.addEventListener('touchmove',function(e){
-  if(!e.touches||e.touches.length!==1)return;
-  var q=e.touches[0];
-  mvpCustomMove({clientX:q.clientX,clientY:q.clientY,preventDefault:function(){try{e.preventDefault()}catch(_){}}});
-},{passive:false});
-document.addEventListener('touchend',mvpCustomEnd,{passive:true});
-document.addEventListener('touchcancel',mvpCustomEnd,{passive:true});
+/* Legacy touch bridge intentionally disabled in V8; touchstart/move/end above is the single mobile path. */
 document.addEventListener('click',mvpCustomReaderClick,true);
 document.addEventListener('scroll',mvpCustomViewportUpdate,true);
 window.addEventListener('resize',mvpCustomViewportUpdate);
