@@ -921,7 +921,11 @@ html,body{background:var(--bg)}
 #reader .novel-reader *{user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;touch-action:pan-y!important;}.mvp-marked-range{box-decoration-break:clone;-webkit-box-decoration-break:clone}.mvp-marked-range.mvp-mark-focus{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
 .mvp-custom-selection-layer{position:fixed;inset:0;z-index:1999;pointer-events:none;overflow:hidden}.mvp-custom-selection-rect{position:fixed;pointer-events:none;background:rgba(129,140,248,.28);border-radius:3px;box-shadow:inset 0 0 0 1px rgba(129,140,248,.18)}.mvp-custom-selection-handle{position:fixed;width:24px;height:30px;margin-left:-12px;margin-top:-2px;border:0;padding:0;background:transparent;pointer-events:auto;touch-action:none;cursor:grab;z-index:2147482999!important}.mvp-custom-selection-handle:before{content:"";position:absolute;left:8px;top:0;width:10px;height:10px;background:var(--accent);border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.42)}.mvp-custom-selection-handle:after{content:"";position:absolute;left:11px;top:10px;width:4px;height:16px;background:var(--accent);border-radius:0 0 4px 4px;box-shadow:0 1px 3px rgba(0,0,0,.28)}.mvp-custom-selection-handle.end:before{left:8px}.mvp-custom-selection-handle.end:after{left:9px}.mvp-custom-selection-handle:active:before{background:var(--accent-hover)}
 @media(max-width:520px){.mvp-quotes-carousel{padding-left:25px;padding-right:25px}.mvp-qb-card{min-height:205px;padding:25px 22px}.mvp-qb-text{font-size:15px}.mvp-qb-arrow{width:32px;height:32px}.mvp-mark-toolbar{top:auto;bottom:78px}.mvp-mark-tool{width:38px;height:36px}}
-</style><style id='mvp-selection-toolbar-final-fix'>#mvpMarkToolbar.show{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:fixed!important;z-index:2147483647!important}#reader .novel-reader,#reader .novel-reader *{user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;touch-action:pan-y!important}</style><style id='mvp-custom-selection-v7-fix'>.mvp-custom-selection-layer{z-index:2147483000!important;pointer-events:none!important}.mvp-custom-selection-handle{z-index:2147483640!important;pointer-events:auto!important;touch-action:none!important}.mvp-mark-toolbar.show{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:fixed!important;z-index:2147483647!important}#reader .novel-reader,#reader .novel-reader *{user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;touch-action:pan-y!important;-webkit-tap-highlight-color:transparent}</style></head>
+</style><style id='mvp-selection-toolbar-final-fix'>#mvpMarkToolbar.show{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:fixed!important;z-index:2147483647!important}#reader .novel-reader,#reader .novel-reader *{user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;touch-action:pan-y!important}</style><style id='mvp-custom-selection-v7-fix'>.mvp-custom-selection-layer{z-index:2147483000!important;pointer-events:none!important}.mvp-custom-selection-handle{z-index:2147483640!important;pointer-events:auto!important;touch-action:none!important}.mvp-mark-toolbar.show{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:fixed!important;z-index:2147483647!important}#reader .novel-reader,#reader .novel-reader *{user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;touch-action:pan-y!important;-webkit-tap-highlight-color:transparent}</style><style id='mvp-custom-selection-v9-final'>
+#reader .novel-reader,#reader .novel-reader *{user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;touch-action:pan-y!important;-webkit-tap-highlight-color:transparent!important}
+#mvpMarkToolbar.show{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;z-index:2147483647!important}
+@media(max-width:520px){#mvpMarkToolbar.show{position:fixed!important;left:50%!important;top:auto!important;bottom:78px!important;transform:translate(-50%,0)!important}}
+</style></head>
 <body>
 
 <div id="progressContainer"><div id="progressBar"></div></div>
@@ -2696,20 +2700,25 @@ function showMarkToolbar(){
   t.style.setProperty('visibility','visible','important');
   t.style.setProperty('opacity','1','important');
   t.style.setProperty('pointer-events','auto','important');
-  t.style.setProperty('z-index','2147483000','important');
-  t.style.bottom='auto';
-  var top=window.innerHeight-125;
-  try{
-    var r=mvpCustomSelection&&mvpCustomSelection.active?mvpCustomRange(mvpCustomSelection.reader,mvpCustomSelection.start,mvpCustomSelection.end):null;
-    var rect=r?r.getBoundingClientRect():null;
-    if(rect&&rect.height){
-      top=rect.top-92;
-      if(top<8)top=Math.min(rect.bottom+12,window.innerHeight-110);
-    }
-  }catch(_){ }
-  top=Math.max(8,Math.min(top,window.innerHeight-105));
-  t.style.top=top+'px';
+  t.style.setProperty('z-index','2147483647','important');
   t.style.left='50%';
+  if(window.innerWidth<=520){
+    t.style.setProperty('top','auto','important');
+    t.style.setProperty('bottom','78px','important');
+  }else{
+    t.style.setProperty('bottom','auto','important');
+    var top=Math.max(8,Math.min(window.innerHeight-125,window.innerHeight-105));
+    try{
+      var r=mvpCustomSelection&&mvpCustomSelection.active?mvpCustomRange(mvpCustomSelection.reader,mvpCustomSelection.start,mvpCustomSelection.end):null;
+      var rect=r?r.getBoundingClientRect():null;
+      if(rect&&rect.height){
+        top=rect.top-92;
+        if(top<8)top=Math.min(rect.bottom+12,window.innerHeight-110);
+      }
+    }catch(_){ }
+    top=Math.max(8,Math.min(top,window.innerHeight-105));
+    t.style.setProperty('top',top+'px','important');
+  }
   return true;
 }
 function hideMarkToolbar(){var t=$("mvpMarkToolbar");if(t){t.classList.remove('show');t.style.display='';t.style.top='';t.style.left='';t.style.bottom=''}}
@@ -2913,6 +2922,9 @@ document.addEventListener('pointerdown',mvpCustomHandleDown,true);
 document.addEventListener('pointerdown',function(e){
   var t=e.target&&e.target.nodeType===3?e.target.parentElement:e.target;
   if(t&&t.closest&&t.closest('.novel-reader')){
+    /* Touch sudah ditangani satu-satunya oleh mvpTouchSelectionStart.
+       Pointer path hanya dipakai untuk mouse/desktop agar tidak ada dua timer. */
+    if(e.pointerType==='touch')return;
     if(e.pointerType==='mouse'&&e.button!==0)return;
     mvpCustomArm(e);
   }
@@ -2926,10 +2938,10 @@ document.addEventListener('click',mvpCustomReaderClick,true);
 document.addEventListener('scroll',mvpCustomViewportUpdate,true);
 window.addEventListener('resize',mvpCustomViewportUpdate);
 function mvpIsNovelSelectionActive(){return !!(mvpCustomSelection.active&&mvpMarkState.selection&&mvpMarkState.selection.text)}
-document.addEventListener('beforecopy',function(e){if(mvpIsNovelSelectionActive())e.preventDefault()},false);
-document.addEventListener('copy',function(e){if(mvpIsNovelSelectionActive()){e.preventDefault();try{e.stopImmediatePropagation()}catch(_){} }},false);
-document.addEventListener('beforecut',function(e){if(mvpIsNovelSelectionActive())e.preventDefault()},false);
-document.addEventListener('cut',function(e){if(mvpIsNovelSelectionActive()){e.preventDefault();try{e.stopImmediatePropagation()}catch(_){} }},false);
+document.addEventListener('beforecopy',function(e){var t=e.target&&e.target.nodeType===3?e.target.parentElement:e.target;if(t&&t.closest&&t.closest('.novel-reader'))e.preventDefault()},false);
+document.addEventListener('copy',function(e){var t=e.target&&e.target.nodeType===3?e.target.parentElement:e.target;if(t&&t.closest&&t.closest('.novel-reader')){e.preventDefault();try{e.stopImmediatePropagation()}catch(_){} }},false);
+document.addEventListener('beforecut',function(e){var t=e.target&&e.target.nodeType===3?e.target.parentElement:e.target;if(t&&t.closest&&t.closest('.novel-reader'))e.preventDefault()},false);
+document.addEventListener('cut',function(e){var t=e.target&&e.target.nodeType===3?e.target.parentElement:e.target;if(t&&t.closest&&t.closest('.novel-reader')){e.preventDefault();try{e.stopImmediatePropagation()}catch(_){} }},false);
 
 function closeReaderMarksPanel(){var p=$("mvpNotesPanel"),b=$("readerMarksButton");if(p)p.classList.remove('show');if(b)b.classList.remove('active')}
 function scrollToNovelMark(id){var marks=getNovelMarks(mvpMarkState.projectId,mvpMarkState.chapter),m=marks.find(function(x){return String(x.id)===String(id)}),r=document.querySelector('.novel-reader');if(!m||!r)return;closeReaderMarksPanel();var ranges=r.querySelectorAll('.mvp-marked-range'),target=null;for(var i=0;i<ranges.length;i++){if(ranges[i].dataset.markId===String(m.id)){target=ranges[i];break}}if(target){target.scrollIntoView({behavior:'smooth',block:'center'});target.classList.remove('mvp-mark-focus');void target.offsetWidth;target.classList.add('mvp-mark-focus');setTimeout(function(){target.classList.remove('mvp-mark-focus')},900)}}
