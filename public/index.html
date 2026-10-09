@@ -2866,7 +2866,7 @@ function mvpNovelSaveStyles(){
     if(span.classList.contains("mvp-style-underline")) styles.push("underline");
     if(span.classList.contains("mvp-style-strike")) styles.push("strike");
     if(span.classList.contains("mvp-style-wavy")) styles.push("wavy");
-    if(styles.length) out[String(i)]=styles;
+    if(styles.length) out[String(i)]={styles:styles,colors:{highlight:span.style.getPropertyValue("--mvp-novel-highlight-color"),underline:span.style.getPropertyValue("--mvp-novel-underline-color"),strike:span.style.getPropertyValue("--mvp-novel-strike-color"),wavy:span.style.getPropertyValue("--mvp-novel-wavy-color")}};
   });
   try{ localStorage.setItem(key,JSON.stringify(out)); }catch(_){ }
 }
@@ -2884,8 +2884,12 @@ function mvpNovelLoadStyles(){
   Object.keys(data).forEach(function(idx){
     var span=mvpNovelSelectionState.tokenSpans[Number(idx)];
     if(!span) return;
-    var styles=Array.isArray(data[idx])?data[idx]:[data[idx]];
+    var entry=data[idx];
+    var styles=entry&&typeof entry==="object"&&!Array.isArray(entry)?(Array.isArray(entry.styles)?entry.styles:[]):(Array.isArray(entry)?entry:[entry]);
     styles.forEach(function(style){if(cls[style]) span.classList.add(cls[style]);});
+    if(entry&&entry.colors&&typeof entry.colors==="object"){
+      ["highlight","underline","strike","wavy"].forEach(function(style){var prop="--mvp-novel-"+style+"-color";var color=entry.colors[style];if(/^#[0-9a-f]{6}$/i.test(color||""))span.style.setProperty(prop,color);});
+    }
   });
 }
 
@@ -2898,7 +2902,14 @@ function mvpNovelApplyStyle(style){
       ["--mvp-novel-highlight-color","--mvp-novel-underline-color","--mvp-novel-strike-color","--mvp-novel-wavy-color"].forEach(function(prop){span.style.removeProperty(prop);});
     }else{
       var cls={highlight:"mvp-style-highlight",underline:"mvp-style-underline",strike:"mvp-style-strike",wavy:"mvp-style-wavy"}[style];
-      if(cls) span.classList.toggle(cls);
+      if(cls){
+        var wasOn=span.classList.contains(cls);
+        span.classList.toggle(cls);
+        if(!wasOn){
+          var color=null;try{color=localStorage.getItem(mvpNovelColorKey(style));}catch(_){ }
+          if(/^#[0-9a-f]{6}$/i.test(color||""))span.style.setProperty("--mvp-novel-"+style+"-color",color);
+        }
+      }
     }
   });
   mvpNovelSaveStyles();
@@ -3024,8 +3035,8 @@ function mvpNovelSetColor(style,color){
   if(!/^#[0-9a-f]{6}$/i.test(color||"")) return;
   color=color.toLowerCase();
   try{localStorage.setItem(mvpNovelColorKey(style),color);}catch(_){ }
-  var cssName={highlight:"--mvp-novel-highlight-color",underline:"--mvp-novel-underline-color",strike:"--mvp-novel-strike-color",wavy:"--mvp-novel-wavy-color"}[style];
-  if(cssName) document.documentElement.style.setProperty(cssName,color);
+  // Warna default hanya menjadi preferensi untuk efek yang dipakai berikutnya.
+  // Efek yang sudah ada menyimpan warna masing-masing pada span, jadi tidak ikut berubah.
   // Simpan lima warna yang paling baru dipakai; warna aktif dipindah ke posisi terbaru.
   var historyKey='mvp_novel_color_history';var history=[];
   try{history=JSON.parse(localStorage.getItem(historyKey)||'[]');}catch(_){history=[];}
@@ -3079,16 +3090,19 @@ function mvpNovelInitSelection(projectId,chapter,decensored){
       btn.addEventListener("click",function(e){
         e.preventDefault();e.stopPropagation();
         var style=mvpNovelActiveStyle();if(style==="clear")style="highlight";
-        mvpNovelSetColor(style,btn.dataset.mvpColor);
-        var cssName={highlight:"--mvp-novel-highlight-color",underline:"--mvp-novel-underline-color",strike:"--mvp-novel-strike-color",wavy:"--mvp-novel-wavy-color"}[style];
-        if(cssName){mvpNovelSelectionState.tokenSpans.forEach(function(span){if(span.classList.contains({highlight:"mvp-style-highlight",underline:"mvp-style-underline",strike:"mvp-style-strike",wavy:"mvp-style-wavy"}[style]))span.style.setProperty(cssName,btn.dataset.mvpColor);});}
+        var color=btn.dataset.mvpColor;
+        mvpNovelSetColor(style,color);
+        var cls={highlight:"mvp-style-highlight",underline:"mvp-style-underline",strike:"mvp-style-strike",wavy:"mvp-style-wavy"}[style];
+        var cssName="--mvp-novel-"+style+"-color";
+        mvpNovelSelectionState.selectedSpans.forEach(function(span){if(cls&&span.classList.contains(cls))span.style.setProperty(cssName,color);});
+        mvpNovelSaveStyles();
       });
     });
     var colorInput=document.getElementById("mvpNovelCustomColor");
     var settingsButton=document.getElementById("mvpNovelColorSettings");
     if(settingsButton&&colorInput){
       settingsButton.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();var style=mvpNovelActiveStyle();if(style==="clear")style="highlight";try{colorInput.value=localStorage.getItem(mvpNovelColorKey(style))||"#a6b77a";}catch(_){colorInput.value="#a6b77a";}colorInput.dataset.targetStyle=style;colorInput.click();});
-      colorInput.addEventListener("input",function(){var style=colorInput.dataset.targetStyle||"highlight";mvpNovelSetColor(style,colorInput.value);var cssName={highlight:"--mvp-novel-highlight-color",underline:"--mvp-novel-underline-color",strike:"--mvp-novel-strike-color",wavy:"--mvp-novel-wavy-color"}[style];if(cssName)mvpNovelSelectionState.tokenSpans.forEach(function(span){if(span.classList.contains({highlight:"mvp-style-highlight",underline:"mvp-style-underline",strike:"mvp-style-strike",wavy:"mvp-style-wavy"}[style]))span.style.setProperty(cssName,colorInput.value);});});
+      colorInput.addEventListener("input",function(){var style=colorInput.dataset.targetStyle||"highlight";var color=colorInput.value;mvpNovelSetColor(style,color);var cls={highlight:"mvp-style-highlight",underline:"mvp-style-underline",strike:"mvp-style-strike",wavy:"mvp-style-wavy"}[style];var cssName="--mvp-novel-"+style+"-color";mvpNovelSelectionState.selectedSpans.forEach(function(span){if(cls&&span.classList.contains(cls))span.style.setProperty(cssName,color);});mvpNovelSaveStyles();});
     }
   }
   mvpNovelLoadColors();
