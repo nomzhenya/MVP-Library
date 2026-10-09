@@ -3012,6 +3012,26 @@ function mvpNovelBindTokenEvents(container){
   });
 }
 
+function mvpNovelActiveStyle(){
+  var active=document.querySelector("#custom-selection-toolbar button[data-mvp-style].mvp-tool-active");
+  return active ? active.dataset.mvpStyle : "highlight";
+}
+function mvpNovelColorKey(style){return "mvp_novel_color_"+String(style||"highlight");}
+function mvpNovelSetColor(style,color){
+  if(!/^#[0-9a-f]{6}$/i.test(color||"")) return;
+  try{localStorage.setItem(mvpNovelColorKey(style),color);}catch(_){ }
+  var cssName={highlight:"--mvp-novel-highlight-color",underline:"--mvp-novel-underline-color",strike:"--mvp-novel-strike-color",wavy:"--mvp-novel-wavy-color"}[style];
+  if(cssName) document.documentElement.style.setProperty(cssName,color);
+  var toolbar=document.getElementById("custom-selection-toolbar");
+  if(toolbar){toolbar.querySelectorAll(".mvp-color-swatch").forEach(function(b){b.classList.toggle("mvp-color-active",b.dataset.mvpColor.toLowerCase()===color.toLowerCase());});}
+}
+function mvpNovelLoadColors(){
+  ["highlight","underline","strike","wavy"].forEach(function(style){
+    var fallback={highlight:"#a6b77a",underline:"#ff9800",strike:"#ef4444",wavy:"#d39bc4"}[style];
+    var value=fallback;try{value=localStorage.getItem(mvpNovelColorKey(style))||fallback;}catch(_){ }
+    mvpNovelSetColor(style,value);
+  });
+}
 function mvpNovelInitSelection(projectId,chapter,decensored){
   var article=document.querySelector(".novel-reader");
   if(!article) return;
@@ -3029,12 +3049,32 @@ function mvpNovelInitSelection(projectId,chapter,decensored){
     toolbar.addEventListener("pointerdown",function(e){e.preventDefault();e.stopPropagation();},{passive:false});
     toolbar.querySelectorAll("button[data-mvp-style]").forEach(function(btn){
       btn.addEventListener("click",function(e){
-        e.preventDefault();
-        e.stopPropagation();
+        e.preventDefault();e.stopPropagation();
+        if(btn.dataset.mvpStyle!=="clear"){
+          toolbar.querySelectorAll("button[data-mvp-style]").forEach(function(other){other.classList.toggle("mvp-tool-active",other===btn);});
+        }
         mvpNovelApplyStyle(btn.dataset.mvpStyle);
       });
     });
+    toolbar.querySelectorAll(".mvp-color-swatch").forEach(function(btn){
+      btn.addEventListener("click",function(e){
+        e.preventDefault();e.stopPropagation();
+        var style=mvpNovelActiveStyle();if(style==="clear")style="highlight";
+        mvpNovelSetColor(style,btn.dataset.mvpColor);
+        var cssName={highlight:"--mvp-novel-highlight-color",underline:"--mvp-novel-underline-color",strike:"--mvp-novel-strike-color",wavy:"--mvp-novel-wavy-color"}[style];
+        if(cssName){mvpNovelSelectionState.tokenSpans.forEach(function(span){if(span.classList.contains({highlight:"mvp-style-highlight",underline:"mvp-style-underline",strike:"mvp-style-strike",wavy:"mvp-style-wavy"}[style]))span.style.setProperty(cssName,btn.dataset.mvpColor);});}
+      });
+    });
+    var colorInput=document.getElementById("mvpNovelCustomColor");
+    var settingsButton=document.getElementById("mvpNovelColorSettings");
+    if(settingsButton&&colorInput){
+      settingsButton.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();var style=mvpNovelActiveStyle();if(style==="clear")style="highlight";try{colorInput.value=localStorage.getItem(mvpNovelColorKey(style))||"#a6b77a";}catch(_){colorInput.value="#a6b77a";}colorInput.dataset.targetStyle=style;colorInput.click();});
+      colorInput.addEventListener("input",function(){var style=colorInput.dataset.targetStyle||"highlight";mvpNovelSetColor(style,colorInput.value);var cssName={highlight:"--mvp-novel-highlight-color",underline:"--mvp-novel-underline-color",strike:"--mvp-novel-strike-color",wavy:"--mvp-novel-wavy-color"}[style];if(cssName)mvpNovelSelectionState.tokenSpans.forEach(function(span){if(span.classList.contains({highlight:"mvp-style-highlight",underline:"mvp-style-underline",strike:"mvp-style-strike",wavy:"mvp-style-wavy"}[style]))span.style.setProperty(cssName,colorInput.value);});});
+    }
   }
+  mvpNovelLoadColors();
+  var firstTool=toolbar&&toolbar.querySelector('button[data-mvp-style="highlight"]');
+  if(firstTool&&!toolbar.querySelector(".mvp-tool-active"))firstTool.classList.add("mvp-tool-active");
 
   if(document.documentElement.dataset.mvpNovelSelectionOutsideBound!=="1") {
     document.documentElement.dataset.mvpNovelSelectionOutsideBound="1";
@@ -3125,7 +3165,7 @@ html,body{background:var(--bg)}
   box-shadow:0 0 0 1px rgba(129,140,248,.16);
 }
 .novel-reader .mvp-style-highlight{
-  background:#ffd54f;
+  background:var(--mvp-novel-highlight-color,#ffd54f);
   color:#111827;
   border-radius:3px;
   box-decoration-break:clone;
@@ -3133,78 +3173,69 @@ html,body{background:var(--bg)}
 }
 .novel-reader .mvp-style-underline{
   text-decoration-line:underline;
-  text-decoration-color:#ff9800;
+  text-decoration-color:var(--mvp-novel-underline-color,#ff9800);
   text-decoration-thickness:2px;
   text-underline-offset:3px;
 }
 .novel-reader .mvp-style-strike{
   text-decoration-line:line-through;
-  text-decoration-color:#ef4444;
+  text-decoration-color:var(--mvp-novel-strike-color,#ef4444);
   text-decoration-thickness:2px;
 }
 .novel-reader .mvp-style-wavy{
   text-decoration-line:underline;
   text-decoration-style:wavy;
-  text-decoration-color:#e91e63;
+  text-decoration-color:var(--mvp-novel-wavy-color,#e91e63);
   text-decoration-thickness:2px;
   text-underline-offset:3px;
 }
 
 #custom-selection-toolbar{
-  position:fixed;
-  left:50%;
-  top:0;
-  display:none;
-  align-items:center;
-  gap:8px;
-  padding:9px;
-  background:rgba(44,45,47,.96);
-  border:1px solid rgba(255,255,255,.14);
-  border-radius:9px;
-  box-shadow:0 8px 28px rgba(0,0,0,.45);
-  z-index:10000;
-  transform:translateX(-50%);
-  -webkit-backdrop-filter:blur(10px);
-  backdrop-filter:blur(10px);
+  position:fixed;left:50%;top:0;display:none;flex-direction:column;align-items:stretch;
+  gap:7px;width:min(350px,calc(100vw - 24px));box-sizing:border-box;padding:8px 10px 9px;
+  background:rgba(61,39,30,.97);border:1px solid rgba(255,255,255,.2);border-radius:7px;
+  box-shadow:0 5px 18px rgba(0,0,0,.38);z-index:10000;transform:none;
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
 }
 #custom-selection-toolbar.mvp-selection-toolbar-visible{display:flex}
-#custom-selection-toolbar button{
-  width:58px;
-  height:42px;
-  padding:0;
-  border:1px solid transparent;
-  border-radius:7px;
-  background:#56585a;
-  color:#f8fafc;
-  font:700 24px/1 Georgia,serif;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  -webkit-user-select:none;
-  user-select:none;
-  touch-action:manipulation;
-}
-#custom-selection-toolbar button:active{transform:scale(.96);background:var(--accent);}
-#custom-selection-toolbar .mvp-tool-highlight{background:#3e687e;color:#fff;}
-#custom-selection-toolbar .mvp-tool-underline{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px;}
-#custom-selection-toolbar .mvp-tool-strike{text-decoration:line-through;text-decoration-thickness:2px;}
-#custom-selection-toolbar .mvp-tool-wavy{text-decoration:underline wavy #f1c4df;text-decoration-thickness:2px;text-underline-offset:4px;}
-#custom-selection-toolbar .mvp-tool-clear{font-family:system-ui,sans-serif;font-size:24px;color:#f3f4f6;}
-@media(max-width:520px){
-  #custom-selection-toolbar{gap:7px;padding:8px;border-radius:8px;}
-  #custom-selection-toolbar button{width:58px;height:40px;}
-}
+.mvp-selection-tools{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;align-items:center}
+#custom-selection-toolbar button{min-width:0;height:35px;padding:0;border:1px solid transparent;border-radius:5px;background:transparent;color:#f4e8df;font:700 25px/1 Georgia,serif;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+#custom-selection-toolbar button:active{transform:scale(.96)}
+#custom-selection-toolbar button.mvp-tool-active{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.08)}
+#custom-selection-toolbar .mvp-tool-highlight{color:#f4e8df}
+#custom-selection-toolbar .mvp-tool-underline{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
+#custom-selection-toolbar .mvp-tool-strike{text-decoration:line-through;text-decoration-thickness:2px}
+#custom-selection-toolbar .mvp-tool-wavy{text-decoration:underline wavy #f1c4df;text-decoration-thickness:2px;text-underline-offset:4px}
+#custom-selection-toolbar .mvp-tool-clear{font:600 21px/1 system-ui,sans-serif}
+.mvp-selection-colors{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) 30px;gap:7px;align-items:center;padding-top:1px}
+#custom-selection-toolbar .mvp-color-swatch{height:22px;width:100%;border-radius:999px;border:2px solid rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);padding:0}
+#custom-selection-toolbar .mvp-color-swatch.mvp-color-active{outline:2px solid rgba(255,255,255,.8);outline-offset:2px}
+#custom-selection-toolbar .mvp-tool-settings{height:29px;width:29px;font:19px/1 system-ui,sans-serif;border-radius:50%;background:rgba(255,255,255,.1)}
+.mvp-selection-divider{height:1px;background:rgba(255,255,255,.23);margin-top:1px}
+#mvpNovelCustomColor{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+@media(max-width:380px){#custom-selection-toolbar{width:min(320px,calc(100vw - 20px));padding:7px 8px}.mvp-selection-tools{gap:3px}#custom-selection-toolbar button{height:32px;font-size:23px}.mvp-selection-colors{gap:6px}#custom-selection-toolbar .mvp-color-swatch{height:20px}}
 </style>
 
 
 <!-- TOOLBAR SELEKSI TEKS CUSTOM NOVEL -->
 <div id="custom-selection-toolbar" aria-hidden="true">
-  <button type="button" class="mvp-tool-highlight" data-mvp-style="highlight" aria-label="Stabilo">T</button>
-  <button type="button" class="mvp-tool-underline" data-mvp-style="underline" aria-label="Garis bawah">T</button>
-  <button type="button" class="mvp-tool-strike" data-mvp-style="strike" aria-label="Coret">T</button>
-  <button type="button" class="mvp-tool-wavy" data-mvp-style="wavy" aria-label="Garis bergelombang">T</button>
-  <button type="button" class="mvp-tool-clear" data-mvp-style="clear" aria-label="Hapus gaya">⌫</button>
+  <div class="mvp-selection-tools">
+    <button type="button" class="mvp-tool-highlight" data-mvp-style="highlight" aria-label="Stabilo" title="Stabilo">T</button>
+    <button type="button" class="mvp-tool-underline" data-mvp-style="underline" aria-label="Garis bawah" title="Garis bawah">T</button>
+    <button type="button" class="mvp-tool-strike" data-mvp-style="strike" aria-label="Coret" title="Coret">T</button>
+    <button type="button" class="mvp-tool-wavy" data-mvp-style="wavy" aria-label="Garis bergelombang" title="Garis bergelombang">T</button>
+    <button type="button" class="mvp-tool-clear" data-mvp-style="clear" aria-label="Hapus gaya" title="Hapus gaya">⌫</button>
+  </div>
+  <div class="mvp-selection-divider"></div>
+  <div class="mvp-selection-colors" aria-label="Pilihan warna">
+    <button type="button" class="mvp-color-swatch" data-mvp-color="#a6b77a" style="background:#a6b77a" aria-label="Hijau" title="Hijau"></button>
+    <button type="button" class="mvp-color-swatch" data-mvp-color="#55585b" style="background:#55585b" aria-label="Abu-abu" title="Abu-abu"></button>
+    <button type="button" class="mvp-color-swatch" data-mvp-color="#d39bc4" style="background:#d39bc4" aria-label="Merah muda" title="Merah muda"></button>
+    <button type="button" class="mvp-color-swatch" data-mvp-color="#929292" style="background:#929292" aria-label="Abu-abu terang" title="Abu-abu terang"></button>
+    <button type="button" class="mvp-color-swatch" data-mvp-color="#4da0c4" style="background:#4da0c4" aria-label="Biru" title="Biru"></button>
+    <button type="button" class="mvp-tool-settings" id="mvpNovelColorSettings" aria-label="Atur warna sendiri" title="Atur warna sendiri">⚙</button>
+  </div>
+  <input type="color" id="mvpNovelCustomColor" value="#a6b77a" aria-label="Pilih warna custom">
 </div>
 </body>
 </html>
