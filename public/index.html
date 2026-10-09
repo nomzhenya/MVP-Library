@@ -3022,18 +3022,34 @@ function mvpNovelActiveStyle(){
 function mvpNovelColorKey(style){return "mvp_novel_color_"+String(style||"highlight");}
 function mvpNovelSetColor(style,color){
   if(!/^#[0-9a-f]{6}$/i.test(color||"")) return;
+  color=color.toLowerCase();
   try{localStorage.setItem(mvpNovelColorKey(style),color);}catch(_){ }
   var cssName={highlight:"--mvp-novel-highlight-color",underline:"--mvp-novel-underline-color",strike:"--mvp-novel-strike-color",wavy:"--mvp-novel-wavy-color"}[style];
   if(cssName) document.documentElement.style.setProperty(cssName,color);
+  // Simpan lima warna yang paling baru dipakai; warna aktif dipindah ke posisi terbaru.
+  var historyKey='mvp_novel_color_history';var history=[];
+  try{history=JSON.parse(localStorage.getItem(historyKey)||'[]');}catch(_){history=[];}
+  if(!Array.isArray(history))history=[];
+  history=history.filter(function(c){return /^#[0-9a-f]{6}$/i.test(c)&&c.toLowerCase()!==color;});
+  history.push(color);history=history.slice(-5);
+  try{localStorage.setItem(historyKey,JSON.stringify(history));}catch(_){ }
   var toolbar=document.getElementById("custom-selection-toolbar");
-  if(toolbar){toolbar.querySelectorAll(".mvp-color-swatch").forEach(function(b){b.classList.toggle("mvp-color-active",b.dataset.mvpColor.toLowerCase()===color.toLowerCase());});}
+  if(toolbar){
+    var swatches=Array.prototype.slice.call(toolbar.querySelectorAll('.mvp-color-swatch'));
+    history.forEach(function(c,i){if(!swatches[i])return;swatches[i].dataset.mvpColor=c;swatches[i].style.background=c;swatches[i].setAttribute('aria-label','Warna '+c);swatches[i].title=c;});
+    toolbar.querySelectorAll(".mvp-color-swatch").forEach(function(b){b.classList.toggle("mvp-color-active",b.dataset.mvpColor.toLowerCase()===color);});
+  }
 }
 function mvpNovelLoadColors(){
   ["highlight","underline","strike","wavy"].forEach(function(style){
     var fallback={highlight:"#a6b77a",underline:"#ff9800",strike:"#ef4444",wavy:"#d39bc4"}[style];
     var value=fallback;try{value=localStorage.getItem(mvpNovelColorKey(style))||fallback;}catch(_){ }
-    mvpNovelSetColor(style,value);
+    var cssName={highlight:"--mvp-novel-highlight-color",underline:"--mvp-novel-underline-color",strike:"--mvp-novel-strike-color",wavy:"--mvp-novel-wavy-color"}[style];
+    if(cssName)document.documentElement.style.setProperty(cssName,value);
   });
+  var toolbar=document.getElementById('custom-selection-toolbar'),history=[];
+  try{history=JSON.parse(localStorage.getItem('mvp_novel_color_history')||'[]');}catch(_){history=[];}
+  if(toolbar&&Array.isArray(history)){var swatches=Array.prototype.slice.call(toolbar.querySelectorAll('.mvp-color-swatch'));history.slice(-5).forEach(function(c,i){if(swatches[i]&&/^#[0-9a-f]{6}$/i.test(c)){swatches[i].dataset.mvpColor=c;swatches[i].style.background=c;swatches[i].title=c;}});}
 }
 function mvpNovelInitSelection(projectId,chapter,decensored){
   var article=document.querySelector(".novel-reader");
@@ -3257,7 +3273,7 @@ html,body{background:var(--bg)}
 </style>
 <div id="mvpNovelNotesOverlay" aria-hidden="true">
   <section class="mvp-novel-notes-sheet" role="dialog" aria-modal="true" aria-label="Catatan novel">
-    <div class="mvp-novel-notes-head"><span>Catatan dari tandaan</span><button class="mvp-novel-notes-close" type="button" onclick="mvpNovelCloseNotes()" aria-label="Tutup">×</button></div>
+    <div class="mvp-novel-notes-head"><span>Bookmark</span><button class="mvp-novel-notes-close" type="button" onclick="mvpNovelCloseNotes()" aria-label="Tutup">×</button></div>
     <div id="mvpNovelNotesList" class="mvp-novel-notes-list"></div>
   </section>
 </div>
@@ -3304,39 +3320,30 @@ html,body{background:var(--bg)}
   function cleanText(s){return String(s||'').replace(/\s+/g,' ').trim();}
   function getNoteEntries(){
     var article=document.querySelector('.novel-reader');if(!article)return [];
-    var paragraphs=Array.prototype.slice.call(article.querySelectorAll('p,h1,h2,h3,h4,li,blockquote'));
-    var entries=[],covered=new Set();
-    paragraphs.forEach(function(p,pIdx){
-      var tokens=Array.prototype.slice.call(p.querySelectorAll('.mvp-select-token'));
-      var marked=tokens.filter(hasEffect);
+    var blocks=Array.prototype.slice.call(article.querySelectorAll('p,h1,h2,h3,h4,li,blockquote'));
+    var entries=[];
+    function add(text,el){text=cleanText(text);if(!text)return;var k=text.toLocaleLowerCase();if(!entries.some(function(x){return x.text.toLocaleLowerCase()===k;}))entries.push({text:text,el:el});}
+    blocks.forEach(function(block){
+      var tokens=Array.prototype.slice.call(block.querySelectorAll('.mvp-select-token'));
+      if(!tokens.length)return;
+      var marked=tokens.map(function(t,i){return {t:t,i:i,on:hasEffect(t)};}).filter(function(x){return x.on;});
       if(!marked.length)return;
-      var text=cleanText(p.innerText||p.textContent);
-      if(!text)return;
-      // Prefer a complete sentence/paragraph when any part of it has an annotation.
-      var key='p:'+pIdx;
-      if(!covered.has(key)){entries.push({text:text,el:p,key:key});covered.add(key);}
-      marked.forEach(function(t){
-        // A marked token outside the paragraph-level list still receives a standalone entry only if its parent is not a prose block.
-        if(!t.closest('p,h1,h2,h3,h4,li,blockquote')){
-          var word=cleanText(t.textContent),wkey='w:'+word;
-          if(word&&!entries.some(function(x){return x.text===word;}))entries.push({text:word,el:t,key:wkey});
-        }
+      // Tampilkan paragraf hanya jika seluruh teksnya ditandai. Jika hanya satu kata
+      // atau sebagian kalimat yang diberi efek, catat rentang kata yang benar-benar ditandai.
+      if(marked.length===tokens.length){add(block.innerText||block.textContent,block);return;}
+      var run=[],last=-2;
+      marked.forEach(function(item){
+        if(item.i!==last+1&&run.length){add(run.map(function(x){return cleanText(x.textContent);}).join(' '),run[0]);run=[];}
+        run.push(item.t);last=item.i;
       });
+      if(run.length)add(run.map(function(x){return cleanText(x.textContent);}).join(' '),run[0]);
     });
-    // Catch annotations in other text containers and deduplicate by visible text.
-    getTokens().forEach(function(t){
-      if(!hasEffect(t))return;
-      var block=t.closest('p,h1,h2,h3,h4,li,blockquote');
-      if(block)return;
-      var word=cleanText(t.textContent);
-      if(word&&!entries.some(function(x){return x.text===word;}))entries.push({text:word,el:t,key:'w:'+word});
+    // Kata di luar blok paragraf juga dicatat satu kali.
+    Array.prototype.slice.call(article.querySelectorAll('.mvp-select-token')).forEach(function(t){
+      if(!hasEffect(t)||t.closest('p,h1,h2,h3,h4,li,blockquote'))return;
+      add(t.textContent,t);
     });
-    var unique=[],seen=new Set();
-    entries.forEach(function(item){
-      var k=item.text.toLocaleLowerCase();
-      if(!seen.has(k)){seen.add(k);unique.push(item);}
-    });
-    return unique;
+    return entries;
   }
   window.mvpNovelOpenNotes=function(){
     var overlay=document.getElementById('mvpNovelNotesOverlay'),list=document.getElementById('mvpNovelNotesList');
