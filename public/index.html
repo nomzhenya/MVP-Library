@@ -2541,6 +2541,7 @@ async function openReader(projectId, chapterName, decensored){
           "</button>" +
           "<div id='readerChapterMenu' class='reader-chapter-menu hidden'>" + chapterOptions + "</div>" +
         "</div>" +
+        "<button type='button' class='mvp-reader-notes-button' onclick='mvpNovelOpenNotes()' aria-label='Catatan novel' title='Catatan'>▤</button>" +
       "</div>" +
     "</div>";
 
@@ -2586,7 +2587,7 @@ async function openReader(projectId, chapterName, decensored){
       pages.innerHTML = "<article class='novel-reader' style='font-size:"+savedFont+"px'>" + ((data && data.html) ? data.html : "<p class='muted'>Chapter kosong.</p>") + "</article>";
         
       setTimeout(function() {
-          if (!$('mvpMarkHint')) { var hint=document.createElement('div'); hint.id='mvpMarkHint'; hint.className='mvp-mark-hint'; hint.textContent='Tahan paragraf untuk menandai'; document.body.appendChild(hint); setTimeout(function(){hint.classList.add('show');},80); setTimeout(function(){hint.classList.remove('show');},2300); }
+          if (!$('mvpMarkHint')) { var hint=document.createElement('div'); hint.id='mvpMarkHint'; hint.className='mvp-mark-hint'; hint.textContent='Posisi baca tersimpan otomatis'; document.body.appendChild(hint); setTimeout(function(){hint.classList.add('show');},80); setTimeout(function(){hint.classList.remove('show');},2300); }
           var paragraphs = document.querySelectorAll('.novel-reader p');
           var saveKey = 'mvp_novel_mark_' + projectId + '_' + c.chapter + '_' + Number(c.decensored||0);
           var savedIndex = localStorage.getItem(saveKey);
@@ -2603,14 +2604,14 @@ async function openReader(projectId, chapterName, decensored){
               p.addEventListener('pointerdown',function(e){
                   if(e.pointerType==='mouse'&&e.button!==0)return;
                   holdFired=false;markTarget=p;holdX=e.clientX;holdY=e.clientY;p.classList.add('mvp-hold-armed');
-                  markTimer=setTimeout(function(){if(markTarget!==p)return;holdFired=true;p.classList.remove('mvp-hold-armed');markParagraph(p,pIdx);if(tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred){try{tg.HapticFeedback.impactOccurred('light');}catch(_){}}},HOLD_MS);
+                  markTimer=setTimeout(function(){if(markTarget!==p)return;holdFired=true;p.classList.remove('mvp-hold-armed');try{localStorage.setItem('mvp_novel_readpos_'+projectId+'_'+c.chapter+'_'+Number(c.decensored||0),JSON.stringify({y:window.scrollY||document.documentElement.scrollTop||0,at:Date.now()}));}catch(_){}if(tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred){try{tg.HapticFeedback.impactOccurred('light');}catch(_){}}},HOLD_MS);
               });
               p.addEventListener('pointermove',function(e){if(markTarget!==p)return;var dx=e.clientX-holdX,dy=e.clientY-holdY;if(dx*dx+dy*dy>64)clearHold(p);});
               p.addEventListener('pointerup',function(e){var wasHold=holdFired;clearHold(p);if(wasHold){e.preventDefault();e.stopPropagation();}});
               p.addEventListener('pointercancel',function(){clearHold(p);});
           });
 
-          if (savedIndex !== null && paragraphs[savedIndex]) {
+          if (false && savedIndex !== null && paragraphs[savedIndex]) {
               paragraphs[savedIndex].classList.add('bookmarked');
               paragraphs[savedIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
@@ -2892,14 +2893,16 @@ function mvpNovelApplyStyle(style){
   var selected=mvpNovelSelectionState.selectedSpans.slice();
   if(!selected.length) return;
   selected.forEach(function(span){
-    span.classList.remove("mvp-style-highlight","mvp-style-underline","mvp-style-strike","mvp-style-wavy");
-    if(style!=="clear"){
+    if(style==="clear"){
+      span.classList.remove("mvp-style-highlight","mvp-style-underline","mvp-style-strike","mvp-style-wavy");
+      ["--mvp-novel-highlight-color","--mvp-novel-underline-color","--mvp-novel-strike-color","--mvp-novel-wavy-color"].forEach(function(prop){span.style.removeProperty(prop);});
+    }else{
       var cls={highlight:"mvp-style-highlight",underline:"mvp-style-underline",strike:"mvp-style-strike",wavy:"mvp-style-wavy"}[style];
-      if(cls) span.classList.add(cls);
+      if(cls) span.classList.toggle(cls);
     }
   });
   mvpNovelSaveStyles();
-  mvpNovelResetSelection();
+  mvpNovelShowSelectionToolbar();
 }
 
 function mvpNovelFinishTouchSelection(){
@@ -3237,5 +3240,139 @@ html,body{background:var(--bg)}
   </div>
   <input type="color" id="mvpNovelCustomColor" value="#a6b77a" aria-label="Pilih warna custom">
 </div>
+
+<style>
+.reader-topbar{gap:7px}
+.mvp-reader-notes-button{flex:0 0 38px;height:38px;border:1px solid var(--border);border-radius:10px;background:var(--panel2);color:var(--text);font-size:22px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.mvp-reader-notes-button:active{transform:scale(.96)}
+#mvpNovelNotesOverlay{position:fixed;inset:0;z-index:12000;background:rgba(0,0,0,.62);display:none;align-items:flex-end;justify-content:center;padding:12px}
+#mvpNovelNotesOverlay.open{display:flex}
+.mvp-novel-notes-sheet{width:min(620px,100%);max-height:min(78vh,720px);background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:18px 18px 12px 12px;display:flex;flex-direction:column;box-shadow:0 18px 55px rgba(0,0,0,.4);overflow:hidden}
+.mvp-novel-notes-head{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid var(--border);font-weight:900}
+.mvp-novel-notes-close{border:0;background:var(--panel2);color:var(--text);border-radius:9px;width:34px;height:34px;font-size:20px}
+.mvp-novel-notes-list{overflow:auto;padding:8px 12px 16px}
+.mvp-novel-note-item{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--border);padding:13px 7px;background:transparent;color:var(--text);font:inherit;line-height:1.55;overflow-wrap:anywhere}
+.mvp-novel-note-item:active{background:var(--panel2)}
+.mvp-novel-notes-empty{padding:24px 8px;text-align:center;color:var(--muted);font-size:13px}
+</style>
+<div id="mvpNovelNotesOverlay" aria-hidden="true">
+  <section class="mvp-novel-notes-sheet" role="dialog" aria-modal="true" aria-label="Catatan novel">
+    <div class="mvp-novel-notes-head"><span>Catatan dari tandaan</span><button class="mvp-novel-notes-close" type="button" onclick="mvpNovelCloseNotes()" aria-label="Tutup">×</button></div>
+    <div id="mvpNovelNotesList" class="mvp-novel-notes-list"></div>
+  </section>
+</div>
+<script>
+(function(){
+  function chapterIdentity(){
+    var article=document.querySelector('.novel-reader');
+    if(!article)return null;
+    var parts=String(mvpNovelSelectionState.chapterKey||'').replace(/^mvp_novel_styles_/,'').split('_');
+    return {article:article,key:mvpNovelSelectionState.chapterKey||'',parts:parts};
+  }
+  function positionKey(){
+    var k=mvpNovelSelectionState.chapterKey||'';
+    return k ? k.replace('mvp_novel_styles_','mvp_novel_readpos_') : '';
+  }
+  function saveReadPosition(){
+    var key=positionKey(),article=document.querySelector('.novel-reader');
+    if(!key||!article)return;
+    var y=window.scrollY||document.documentElement.scrollTop||0;
+    var rect=article.getBoundingClientRect();
+    var payload={y:y,offset:Math.max(0,-rect.top),at:Date.now()};
+    try{localStorage.setItem(key,JSON.stringify(payload));}catch(e){}
+  }
+  var resumeTimer=null;
+  window.addEventListener('scroll',function(){
+    if(!document.querySelector('.novel-reader'))return;
+    clearTimeout(resumeTimer);resumeTimer=setTimeout(saveReadPosition,250);
+  },{passive:true});
+  window.addEventListener('pagehide',saveReadPosition);
+  window.addEventListener('beforeunload',saveReadPosition);
+
+  function restoreReadPosition(){
+    var key=positionKey();if(!key)return;
+    var raw=null;try{raw=localStorage.getItem(key);}catch(e){}
+    if(!raw)return;
+    var data;try{data=JSON.parse(raw);}catch(e){return;}
+    var y=typeof data==='number'?data:Number(data&&data.y);
+    if(Number.isFinite(y)&&y>0)setTimeout(function(){window.scrollTo({top:y,behavior:'auto'});},180);
+  }
+  window.addEventListener('mvpNovelChapterRendered',restoreReadPosition);
+
+  function getTokens(){return Array.prototype.slice.call(document.querySelectorAll('.novel-reader .mvp-select-token'));}
+  function hasEffect(t){return t.classList.contains('mvp-style-highlight')||t.classList.contains('mvp-style-underline')||t.classList.contains('mvp-style-strike')||t.classList.contains('mvp-style-wavy');}
+  function cleanText(s){return String(s||'').replace(/\s+/g,' ').trim();}
+  function getNoteEntries(){
+    var article=document.querySelector('.novel-reader');if(!article)return [];
+    var paragraphs=Array.prototype.slice.call(article.querySelectorAll('p,h1,h2,h3,h4,li,blockquote'));
+    var entries=[],covered=new Set();
+    paragraphs.forEach(function(p,pIdx){
+      var tokens=Array.prototype.slice.call(p.querySelectorAll('.mvp-select-token'));
+      var marked=tokens.filter(hasEffect);
+      if(!marked.length)return;
+      var text=cleanText(p.innerText||p.textContent);
+      if(!text)return;
+      // Prefer a complete sentence/paragraph when any part of it has an annotation.
+      var key='p:'+pIdx;
+      if(!covered.has(key)){entries.push({text:text,el:p,key:key});covered.add(key);}
+      marked.forEach(function(t){
+        // A marked token outside the paragraph-level list still receives a standalone entry only if its parent is not a prose block.
+        if(!t.closest('p,h1,h2,h3,h4,li,blockquote')){
+          var word=cleanText(t.textContent),wkey='w:'+word;
+          if(word&&!entries.some(function(x){return x.text===word;}))entries.push({text:word,el:t,key:wkey});
+        }
+      });
+    });
+    // Catch annotations in other text containers and deduplicate by visible text.
+    getTokens().forEach(function(t){
+      if(!hasEffect(t))return;
+      var block=t.closest('p,h1,h2,h3,h4,li,blockquote');
+      if(block)return;
+      var word=cleanText(t.textContent);
+      if(word&&!entries.some(function(x){return x.text===word;}))entries.push({text:word,el:t,key:'w:'+word});
+    });
+    var unique=[],seen=new Set();
+    entries.forEach(function(item){
+      var k=item.text.toLocaleLowerCase();
+      if(!seen.has(k)){seen.add(k);unique.push(item);}
+    });
+    return unique;
+  }
+  window.mvpNovelOpenNotes=function(){
+    var overlay=document.getElementById('mvpNovelNotesOverlay'),list=document.getElementById('mvpNovelNotesList');
+    if(!overlay||!list)return;
+    list.innerHTML='';
+    var entries=getNoteEntries();
+    if(!entries.length){
+      var empty=document.createElement('div');empty.className='mvp-novel-notes-empty';empty.textContent='Belum ada teks yang ditandai di chapter ini.';list.appendChild(empty);
+    }else{
+      entries.forEach(function(item){
+        var btn=document.createElement('button');btn.type='button';btn.className='mvp-novel-note-item';btn.textContent=item.text;
+        btn.addEventListener('click',function(){
+          window.mvpNovelCloseNotes();
+          if(item.el&&item.el.isConnected){
+            item.el.scrollIntoView({behavior:'smooth',block:'center'});
+            item.el.animate([{backgroundColor:'rgba(129,140,248,.45)'},{backgroundColor:'transparent'}],{duration:900});
+          }
+        });
+        list.appendChild(btn);
+      });
+    }
+    overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');
+  };
+  window.mvpNovelCloseNotes=function(){
+    var overlay=document.getElementById('mvpNovelNotesOverlay');
+    if(overlay){overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true');}
+  };
+  document.getElementById('mvpNovelNotesOverlay').addEventListener('click',function(e){if(e.target===this)window.mvpNovelCloseNotes();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')window.mvpNovelCloseNotes();});
+  // Each chapter render restores reading position after annotation tokens are ready.
+  var observer=new MutationObserver(function(){
+    if(document.querySelector('.novel-reader .mvp-select-token'))restoreReadPosition();
+  });
+  observer.observe(document.body,{childList:true,subtree:true});
+})();
+</script>
+
 </body>
 </html>
