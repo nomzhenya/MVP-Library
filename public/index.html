@@ -2882,8 +2882,26 @@ function mvpNovelClosestToken(target){
 }
 
 function mvpNovelPointToken(x,y){
-  var el=document.elementFromPoint(x,y);
-  return mvpNovelClosestToken(el);
+  // Gunakan hit-test caret native browser; tidak membuat Range seleksi OS dan
+  // tidak mengaktifkan menu Copy/Share bawaan. Token span hanya dipakai untuk
+  // menerapkan efek/menyimpan anotasi setelah titik teks ditemukan.
+  try{
+    var range=null;
+    if(document.caretRangeFromPoint) range=document.caretRangeFromPoint(x,y);
+    else if(document.caretPositionFromPoint){
+      var pos=document.caretPositionFromPoint(x,y);
+      if(pos){range=document.createRange();range.setStart(pos.offsetNode,pos.offset);range.collapse(true);}
+    }
+    if(range){
+      var token=mvpNovelClosestToken(range.startContainer);
+      if(token)return token;
+      if(range.startContainer && range.startContainer.parentElement){
+        token=mvpNovelClosestToken(range.startContainer.parentElement);
+        if(token)return token;
+      }
+    }
+  }catch(_){ }
+  return mvpNovelClosestToken(document.elementFromPoint(x,y));
 }
 
 function mvpNovelPositionToolbar(x,y){
@@ -3024,59 +3042,50 @@ function mvpNovelWrapText(container){
 }
 
 function mvpNovelBindTokenEvents(container){
-  if(!container) return;
-  mvpNovelSelectionState.tokenSpans.forEach(function(span){
-    if(span.dataset.mvpBound==="1") return;
-    span.dataset.mvpBound="1";
+  if(!container || container.dataset.mvpDelegatedSelection==='1') return;
+  container.dataset.mvpDelegatedSelection='1';
+  // Delegasi event di article: satu set listener, bukan listener untuk setiap kata.
+  container.addEventListener('pointerdown',function(e){
+    var span=mvpNovelClosestToken(e.target) || mvpNovelPointToken(e.clientX,e.clientY);
+    if(!span) return;
+    if(e.pointerType==='mouse' && e.button!==0) return;
+    e.preventDefault();
+    mvpNovelCancelPending();
+    mvpNovelClearSelectionVisual();
+    mvpNovelHideSelectionToolbar();
+    var index=mvpNovelGetTokenIndex(span);
+    mvpNovelSelectionState.pending=true;
+    mvpNovelSelectionState.anchorIndex=index;
+    mvpNovelSelectionState.currentIndex=index;
+    mvpNovelSelectionState.active=false;
+    mvpNovelSelectionState.timer=setTimeout(function(){
+      mvpNovelSelectionState.timer=null;
+      mvpNovelSelectionState.pending=false;
+      mvpNovelSelectionState.active=true;
+      mvpNovelRefreshRange(index,index);
+      if(tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred){try{tg.HapticFeedback.impactOccurred('light');}catch(_){}}
+    },360);
+    try{container.setPointerCapture(e.pointerId);}catch(_){ }
+  },{passive:false});
 
-    span.addEventListener("pointerdown",function(e){
-      if(e.pointerType==="mouse" && e.button!==0) return;
-      if(mvpNovelSelectionState.active) e.preventDefault();
-      mvpNovelCancelPending();
-      mvpNovelClearSelectionVisual();
-      mvpNovelHideSelectionToolbar();
-      var index=mvpNovelGetTokenIndex(span);
-      mvpNovelSelectionState.pending=true;
-      mvpNovelSelectionState.anchorIndex=index;
-      mvpNovelSelectionState.currentIndex=index;
-      mvpNovelSelectionState.active=false;
-      mvpNovelSelectionState.timer=setTimeout(function(){
-        mvpNovelSelectionState.timer=null;
-        mvpNovelSelectionState.pending=false;
-        mvpNovelSelectionState.active=true;
-        mvpNovelRefreshRange(index,index);
-        try{span.setPointerCapture(e.pointerId);}catch(_){ }
-        if(tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred){try{tg.HapticFeedback.impactOccurred("light");}catch(_){ }}
-      },360);
-      e.stopPropagation();
-    },{passive:false});
+  container.addEventListener('pointermove',function(e){
+    if(!mvpNovelSelectionState.active) return;
+    e.preventDefault();
+    var token=mvpNovelPointToken(e.clientX,e.clientY);
+    if(!token) return;
+    var index=mvpNovelGetTokenIndex(token);
+    if(index<0 || index===mvpNovelSelectionState.currentIndex) return;
+    mvpNovelSelectionState.currentIndex=index;
+    mvpNovelRefreshRange(mvpNovelSelectionState.anchorIndex,index);
+  },{passive:false});
 
-    span.addEventListener("pointermove",function(e){
-      if(!mvpNovelSelectionState.active) return;
-      e.preventDefault();
-      var token=mvpNovelPointToken(e.clientX,e.clientY);
-      if(!token) return;
-      var index=mvpNovelGetTokenIndex(token);
-      if(index<0) return;
-      if(index!==mvpNovelSelectionState.currentIndex){
-        mvpNovelSelectionState.currentIndex=index;
-        mvpNovelRefreshRange(mvpNovelSelectionState.anchorIndex,index);
-      }
-      e.stopPropagation();
-    },{passive:false});
-
-    span.addEventListener("pointerup",function(e){
-      var wasActive=mvpNovelSelectionState.active;
-      if(!wasActive){mvpNovelCancelPending();mvpNovelResetSelection();return;}
-      e.preventDefault();
-      e.stopPropagation();
-      mvpNovelFinishTouchSelection();
-    },{passive:false});
-
-    span.addEventListener("pointercancel",function(){
-      if(mvpNovelSelectionState.active) mvpNovelFinishTouchSelection();
-      else mvpNovelResetSelection();
-    });
+  container.addEventListener('pointerup',function(e){
+    if(!mvpNovelSelectionState.active){mvpNovelCancelPending();return;}
+    e.preventDefault();e.stopPropagation();mvpNovelFinishTouchSelection();
+  },{passive:false});
+  container.addEventListener('pointercancel',function(){
+    if(mvpNovelSelectionState.active)mvpNovelFinishTouchSelection();
+    else mvpNovelResetSelection();
   });
 }
 
