@@ -2797,6 +2797,7 @@ function mvpNovelResetSelection(){
   mvpNovelSelectionState.toolbarX = 0;
   mvpNovelSelectionState.toolbarY = 0;
   mvpNovelHideSelectionToolbar();
+  mvpNovelHideSelectionHandles();
 }
 
 function mvpNovelGetTokenIndex(span){
@@ -2816,6 +2817,46 @@ function mvpNovelRefreshRange(anchorIndex,currentIndex){
       mvpNovelSelectionState.selectedSpans.push(span);
     }
   }
+  mvpNovelPositionSelectionHandles();
+}
+
+function mvpNovelPositionSelectionHandles(){
+  var layer=document.getElementById("mvpNovelSelectionHandles");
+  if(!layer||!mvpNovelSelectionState.selectedSpans.length)return;
+  var selected=mvpNovelSelectionState.selectedSpans;
+  var first=selected[0].getBoundingClientRect(),last=selected[selected.length-1].getBoundingClientRect();
+  var start=layer.querySelector(".mvp-handle-start"),end=layer.querySelector(".mvp-handle-end");
+  layer.classList.add("mvp-handles-visible");layer.setAttribute("aria-hidden","false");
+  start.style.left=Math.max(14,Math.min(window.innerWidth-14,first.left))+"px";
+  start.style.top=Math.max(14,Math.min(window.innerHeight-14,first.bottom+3))+"px";
+  end.style.left=Math.max(14,Math.min(window.innerWidth-14,last.right))+"px";
+  end.style.top=Math.max(14,Math.min(window.innerHeight-14,last.bottom+3))+"px";
+}
+function mvpNovelHideSelectionHandles(){
+  var layer=document.getElementById("mvpNovelSelectionHandles");
+  if(layer){layer.classList.remove("mvp-handles-visible");layer.setAttribute("aria-hidden","true");}
+}
+function mvpNovelBindSelectionHandles(){
+  var layer=document.getElementById("mvpNovelSelectionHandles");if(!layer||layer.dataset.mvpBound==="1")return;
+  layer.dataset.mvpBound="1";
+  var dragging=null;
+  layer.querySelectorAll(".mvp-selection-handle").forEach(function(handle){
+    handle.addEventListener("pointerdown",function(e){
+      if(!mvpNovelSelectionState.active)return;
+      e.preventDefault();e.stopPropagation();dragging=handle.classList.contains("mvp-handle-start")?"start":"end";
+      try{handle.setPointerCapture(e.pointerId);}catch(_){ }
+    },{passive:false});
+    handle.addEventListener("pointermove",function(e){
+      if(!dragging)return;e.preventDefault();e.stopPropagation();
+      var token=mvpNovelPointToken(e.clientX,e.clientY);if(!token)return;
+      var index=mvpNovelGetTokenIndex(token);if(index<0)return;
+      if(dragging==="start")mvpNovelSelectionState.anchorIndex=index;else mvpNovelSelectionState.currentIndex=index;
+      mvpNovelRefreshRange(mvpNovelSelectionState.anchorIndex,mvpNovelSelectionState.currentIndex);
+      mvpNovelShowSelectionToolbar();
+    },{passive:false});
+    function stop(e){if(!dragging)return;if(e){e.preventDefault();e.stopPropagation();}dragging=null;mvpNovelShowSelectionToolbar();}
+    handle.addEventListener("pointerup",stop,{passive:false});handle.addEventListener("pointercancel",stop,{passive:false});
+  });
 }
 
 function mvpNovelClosestToken(target){
@@ -3041,8 +3082,10 @@ function mvpNovelSetColor(style,color){
   var historyKey='mvp_novel_color_history';var history=[];
   try{history=JSON.parse(localStorage.getItem(historyKey)||'[]');}catch(_){history=[];}
   if(!Array.isArray(history))history=[];
-  history=history.filter(function(c){return /^#[0-9a-f]{6}$/i.test(c)&&c.toLowerCase()!==color;});
-  history.push(color);history=history.slice(-5);
+  history=history.filter(function(c){return /^#[0-9a-f]{6}$/i.test(c);}).map(function(c){return c.toLowerCase();});
+  // Warna yang sudah ada tetap di slotnya. Hanya warna baru yang menambah histori;
+  // jika penuh, keluarkan warna paling lama tanpa menggeser warna terpilih.
+  if(history.indexOf(color)===-1){history.push(color);if(history.length>5)history=history.slice(history.length-5);}
   try{localStorage.setItem(historyKey,JSON.stringify(history));}catch(_){ }
   var toolbar=document.getElementById("custom-selection-toolbar");
   if(toolbar){
@@ -3106,6 +3149,7 @@ function mvpNovelInitSelection(projectId,chapter,decensored){
     }
   }
   mvpNovelLoadColors();
+  mvpNovelBindSelectionHandles();
   var firstTool=toolbar&&toolbar.querySelector('button[data-mvp-style="highlight"]');
   if(firstTool&&!toolbar.querySelector(".mvp-tool-active"))firstTool.classList.add("mvp-tool-active");
 
@@ -3270,8 +3314,16 @@ html,body{background:var(--bg)}
   </div>
   <input type="color" id="mvpNovelCustomColor" value="#a6b77a" aria-label="Pilih warna custom">
 </div>
+<div id="mvpNovelSelectionHandles" aria-hidden="true">
+  <button type="button" class="mvp-selection-handle mvp-handle-start" aria-label="Perluas seleksi dari awal">‹</button>
+  <button type="button" class="mvp-selection-handle mvp-handle-end" aria-label="Perluas seleksi sampai akhir">›</button>
+</div>
 
 <style>
+#mvpNovelSelectionHandles{position:fixed;inset:0;z-index:10001;pointer-events:none;display:none}
+#mvpNovelSelectionHandles.mvp-handles-visible{display:block}
+.mvp-selection-handle{position:absolute;pointer-events:auto;touch-action:none;width:28px;height:28px;border:2px solid #fff;border-radius:50%;background:var(--accent,#818cf8);color:#fff;font:700 25px/20px system-ui,sans-serif;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px #0008;padding:0;transform:translate(-50%,-50%)}
+.mvp-selection-handle:active{transform:translate(-50%,-50%) scale(1.08)}
 .reader-topbar{gap:7px}
 .mvp-reader-notes-button{flex:0 0 38px;height:38px;border:1px solid var(--border);border-radius:10px;background:var(--panel2);color:var(--text);font-size:22px;font-weight:800;display:flex;align-items:center;justify-content:center}
 .mvp-reader-notes-button:active{transform:scale(.96)}
