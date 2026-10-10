@@ -1021,7 +1021,10 @@ if (url.pathname === "/api/admin/abuse-reset" && request.method === "POST") {
       if (!data) return json({error: "not found"}, 404);
 
       return new Response(JSON.stringify(data), {
-        headers: cors({"content-type": "application/json; charset=utf-8"})
+        headers: cors({
+          "cache-control": "private, no-store, max-age=0",
+          "content-type": "application/json; charset=utf-8"
+        })
       });
     }
 
@@ -1055,7 +1058,11 @@ if (url.pathname === "/api/admin/abuse-reset" && request.method === "POST") {
       }
 
       const headers = new Headers(cors({
-        "cache-control": "public, max-age=3600",
+        // Reader media is intentionally not exposed as a browser-downloadable
+        // attachment and should not be kept in a shared/public cache.
+        "cache-control": "private, no-store, max-age=0",
+        "content-disposition": "inline",
+        "x-content-type-options": "nosniff",
         "content-type": file.headers.get("content-type") || "image/jpeg"
       }));
       return new Response(file.body, {status: 200, headers});
