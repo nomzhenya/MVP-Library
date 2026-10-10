@@ -3330,10 +3330,11 @@ html,body{background:var(--bg)}
 <style>
 #mvpNovelSelectionHandles{position:fixed;inset:0;z-index:10001;pointer-events:none;display:none}
 #mvpNovelSelectionHandles.mvp-handles-visible{display:block}
-.mvp-selection-handle{position:absolute;pointer-events:auto;touch-action:none;width:30px;height:40px;border:0;border-radius:0;background:transparent;padding:0;transform:translate(-50%,0);will-change:left,top;}
-.mvp-selection-handle::before{content:"";position:absolute;left:50%;top:0;width:24px;height:24px;transform:translateX(-50%);border-radius:50% 50% 50% 0;background:#28a9e8;border:1px solid #a7e5ff;box-shadow:0 2px 5px #0006;}
-.mvp-selection-handle::after{content:"";position:absolute;left:50%;top:17px;width:7px;height:19px;transform:translateX(-50%);border-radius:0 0 4px 4px;background:#28a9e8;box-shadow:0 2px 4px #0004;}
-.mvp-selection-handle:active::before{background:#1596d7}
+.mvp-selection-handle{position:absolute;pointer-events:auto;touch-action:none;width:34px;height:44px;border:0;border-radius:0;background:transparent;padding:0;transform:translate(-50%,0);will-change:left,top;-webkit-tap-highlight-color:transparent;}
+/* Handle bentuk tetesan seperti reader referensi: ujung segitiga di atas, batang biru lurus di bawah. */
+.mvp-selection-handle::before{content:"";position:absolute;left:50%;top:0;width:28px;height:21px;transform:translateX(-50%);background:#28a9e8;clip-path:polygon(50% 0,100% 46%,100% 100%,0 100%,0 46%);filter:drop-shadow(0 1px 2px #0005);}
+.mvp-selection-handle::after{content:"";position:absolute;left:50%;top:18px;width:19px;height:25px;transform:translateX(-50%);border-radius:0 0 3px 3px;background:#28a9e8;box-shadow:0 2px 3px #0004;}
+.mvp-selection-handle:active::before,.mvp-selection-handle:active::after{background:#1596d7}
 .reader-topbar{gap:7px}
 .mvp-reader-notes-button{flex:0 0 38px;height:38px;border:1px solid var(--border);border-radius:10px;background:var(--panel2);color:var(--text);font-size:22px;font-weight:800;display:flex;align-items:center;justify-content:center}
 .mvp-reader-notes-button:active{transform:scale(.96)}
