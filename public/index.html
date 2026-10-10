@@ -3173,20 +3173,43 @@ function mvpNovelInitSelection(projectId,chapter,decensored){
     toolbar.querySelectorAll(".mvp-color-swatch").forEach(function(btn){
       btn.addEventListener("click",function(e){
         e.preventDefault();e.stopPropagation();
-        var style=mvpNovelActiveStyle();if(style==="clear")style="highlight";
         var color=btn.dataset.mvpColor;
-        mvpNovelSetColor(style,color);
-        var cls={highlight:"mvp-style-highlight",underline:"mvp-style-underline",strike:"mvp-style-strike",wavy:"mvp-style-wavy"}[style];
-        var cssName="--mvp-novel-"+style+"-color";
-        mvpNovelSelectionState.selectedSpans.forEach(function(span){if(cls&&span.classList.contains(cls))span.style.setProperty(cssName,color);});
+        // Palet warna berlaku untuk semua efek, bukan hanya highlight atau tombol terakhir.
+        ["highlight","underline","strike","wavy"].forEach(function(style){
+          mvpNovelSetColor(style,color);
+          var cssName="--mvp-novel-"+style+"-color";
+          var cls="mvp-style-"+style;
+          mvpNovelSelectionState.selectedSpans.forEach(function(span){
+            if(span.classList.contains(cls))span.style.setProperty(cssName,color);
+          });
+        });
         mvpNovelSaveStyles();
+        mvpNovelRenderEffectRuns();
       });
     });
     var colorInput=document.getElementById("mvpNovelCustomColor");
     var settingsButton=document.getElementById("mvpNovelColorSettings");
     if(settingsButton&&colorInput){
-      settingsButton.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();var style=mvpNovelActiveStyle();if(style==="clear")style="highlight";try{colorInput.value=localStorage.getItem(mvpNovelColorKey(style))||"#a6b77a";}catch(_){colorInput.value="#a6b77a";}colorInput.dataset.targetStyle=style;colorInput.click();});
-      colorInput.addEventListener("input",function(){var style=colorInput.dataset.targetStyle||"highlight";var color=colorInput.value;mvpNovelSetColor(style,color);var cls={highlight:"mvp-style-highlight",underline:"mvp-style-underline",strike:"mvp-style-strike",wavy:"mvp-style-wavy"}[style];var cssName="--mvp-novel-"+style+"-color";mvpNovelSelectionState.selectedSpans.forEach(function(span){if(cls&&span.classList.contains(cls))span.style.setProperty(cssName,color);});mvpNovelSaveStyles();});
+      settingsButton.addEventListener("click",function(e){
+        e.preventDefault();e.stopPropagation();
+        try{colorInput.value=localStorage.getItem(mvpNovelColorKey("highlight"))||"#a6b77a";}catch(_){colorInput.value="#a6b77a";}
+        colorInput.click();
+      });
+      colorInput.addEventListener("input",function(){
+        var color=colorInput.value;
+        // Warna custom juga menjadi preferensi untuk seluruh efek dan mewarnai
+        // semua efek yang sudah ada pada teks terpilih.
+        ["highlight","underline","strike","wavy"].forEach(function(style){
+          mvpNovelSetColor(style,color);
+          var cls="mvp-style-"+style;
+          var cssName="--mvp-novel-"+style+"-color";
+          mvpNovelSelectionState.selectedSpans.forEach(function(span){
+            if(span.classList.contains(cls))span.style.setProperty(cssName,color);
+          });
+        });
+        mvpNovelSaveStyles();
+        mvpNovelRenderEffectRuns();
+      });
     }
   }
   mvpNovelLoadColors();
@@ -3333,15 +3356,20 @@ html,body{background:var(--bg)}
 .novel-reader .mvp-style-run.mvp-run-highlight{background:var(--mvp-novel-highlight-color,#ffd54f);color:#111827;}
 .novel-reader .mvp-style-run.mvp-run-underline{text-decoration-line:underline;text-decoration-color:var(--mvp-novel-underline-color,#ff9800);text-decoration-thickness:2px;text-underline-offset:3px;}
 .novel-reader .mvp-style-run.mvp-run-strike{text-decoration-line:line-through;text-decoration-color:var(--mvp-novel-strike-color,#ef4444);text-decoration-thickness:2px;}
-/* FIX: format efek teks reader menggunakan deklarasi spesifik dan warna dinamis. */
+/* Wavy zigzag seragam: pola CSS berulang, bukan dekorasi native browser.
+   Warna selalu mengikuti pilihan pengguna melalui --mvp-novel-wavy-color. */
 .novel-reader .mvp-style-run.mvp-run-wavy{
-  background-image:none!important;
-  padding-bottom:0;
-  text-decoration-line:underline!important;
-  text-decoration-style:wavy!important;
-  text-decoration-color:var(--mvp-novel-wavy-color,#d4df22)!important;
-  text-decoration-thickness:2px!important;
-  text-underline-offset:4px!important;
+  text-decoration-line:none!important;
+  background-color:transparent!important;
+  background-image:
+    linear-gradient(135deg, transparent 43%, var(--mvp-novel-wavy-color,#d4df22) 44%, var(--mvp-novel-wavy-color,#d4df22) 56%, transparent 57%),
+    linear-gradient(45deg, transparent 43%, var(--mvp-novel-wavy-color,#d4df22) 44%, var(--mvp-novel-wavy-color,#d4df22) 56%, transparent 57%)!important;
+  background-size:12px 8px!important;
+  background-position:left bottom,left bottom!important;
+  background-repeat:repeat-x!important;
+  padding-bottom:5px!important;
+  box-decoration-break:clone!important;
+  -webkit-box-decoration-break:clone!important;
 }
 .novel-reader .mvp-style-run.mvp-run-strike{
   text-decoration-line:line-through!important;
