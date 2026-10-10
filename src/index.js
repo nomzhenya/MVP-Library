@@ -260,20 +260,6 @@ async function putCommunity(env, projectId, data) {
   await env.LIBRARY.put(`community:${safeId(projectId)}`, JSON.stringify(data));
 }
 
-
-async function getSharedQuotes(env) {
-  const data = await env.LIBRARY.get("novel:shared_quotes", "json");
-  return Array.isArray(data) ? data : [];
-}
-
-async function putSharedQuotes(env, quotes) {
-  await env.LIBRARY.put("novel:shared_quotes", JSON.stringify(Array.isArray(quotes) ? quotes.slice(0, 100) : []));
-}
-
-async function getNovelMarksResetVersion(env) {
-  return String((await env.LIBRARY.get("novel:marks_reset_version")) || "mvp-novel-marks-reset-2026-10-07-v1");
-}
-
 async function getNotifications(env, userId) {
   const data = await env.LIBRARY.get(`notifications:${String(userId)}`, "json");
   return Array.isArray(data) ? data : [];
@@ -1193,75 +1179,6 @@ if (url.pathname === "/api/admin/abuse-reset" && request.method === "POST") {
       await saveInteraction(env, projectId, interaction);
       const summary = summarizeInteraction(interaction, uid, data.comments.length);
       return json({ok:true, review:existing, reviews:data.reviews.length, interaction:summary});
-    }
-
-
-
-    if (url.pathname === "/api/novel-quotes" && request.method === "GET") {
-      const access = await requireApiAccess(request, env);
-      if (!access.ok) return json({ok:false, code:access.code}, access.code);
-      const quotes = await getSharedQuotes(env);
-      const publicQuotes = quotes.map(item => decoratePublicUser(item, env));
-      return json({ok:true, quotes:publicQuotes});
-    }
-
-    if (url.pathname === "/api/novel-quotes" && request.method === "POST") {
-      const access = await requireApiAccess(request, env);
-      if (!access.ok) return json({ok:false, code:access.code}, access.code);
-      const body = await request.json().catch(() => ({}));
-      const text = String(body.text || "").replace(/\s+/g, " ").trim();
-      const projectId = String(body.project_id || "").trim();
-      const chapter = String(body.chapter || "").trim();
-      if (!text || !projectId) return json({error:"quote tidak lengkap"}, 400);
-      if (text.length > 2000) return json({error:"quote terlalu panjang"}, 400);
-
-      const catalog = await env.LIBRARY.get("catalog", "json");
-      const project = Array.isArray(catalog)
-        ? catalog.find(p => String(p?.id || "") === projectId)
-        : null;
-      if (!project) return json({error:"project not found"}, 404);
-
-      const uid = String(access.user.id);
-      const abuseBlock = await checkAbuseBlock(env, uid);
-      if (abuseBlock.blocked) return rateLimitResponse({retryAfter:abuseBlock.retryAfter}, "Akses sementara diblokir karena aktivitas terlalu cepat.");
-      const rate = await checkRateLimit(env, uid, "novel_quote", 5, 60);
-      if (!rate.allowed) return rateLimitResponse(rate, "Terlalu banyak quote. Tunggu sebentar sebelum membagikan lagi.");
-
-      const now = nowSec();
-      const telegramName = [access.user.first_name, access.user.last_name].filter(Boolean).join(" ").trim();
-      const quotes = await getSharedQuotes(env);
-      const item = {
-        id: crypto.randomUUID(),
-        text,
-        project_id: projectId,
-        title: String(project.title || projectId),
-        chapter,
-        user_id: uid,
-        first_name: access.user.first_name || "",
-        last_name: access.user.last_name || "",
-        telegram_name: telegramName || access.user.username || "Reader",
-        username: access.user.username || "",
-        created_at: now
-      };
-      quotes.unshift(item);
-      await putSharedQuotes(env, quotes);
-      const publicItem = decoratePublicUser(item, env);
-      const publicQuotes = quotes.slice(0,100).map(item => decoratePublicUser(item, env));
-      return json({ok:true, quote:publicItem, quotes:publicQuotes});
-    }
-
-    if (url.pathname === "/api/novel-marks-version" && request.method === "GET") {
-      const access = await requireApiAccess(request, env);
-      if (!access.ok) return json({ok:false, code:access.code}, access.code);
-      return json({ok:true, version:await getNovelMarksResetVersion(env)});
-    }
-
-    if (url.pathname === "/api/admin/novel-marks-reset" && request.method === "POST") {
-      const secret = request.headers.get("x-library-secret") || request.headers.get("X-Library-Secret") || "";
-      if (!env.LIBRARY_SECRET || secret !== env.LIBRARY_SECRET) return json({ok:false, reason:"unauthorized"}, 401);
-      const version = String(Date.now()) + "-" + crypto.randomUUID();
-      await env.LIBRARY.put("novel:marks_reset_version", version);
-      return json({ok:true, version, message:"Sinyal reset catatan global sudah dibuat. Catatan lama akan dibersihkan saat member membuka Miniweb kembali."});
     }
 
     if (url.pathname === "/api/comment" && request.method === "POST") {
