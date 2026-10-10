@@ -2811,7 +2811,7 @@ function mvpNovelRefreshRange(anchorIndex,currentIndex){
   var previous=mvpNovelSelectionState.selectedSpans;
   var oldStart=previous.length?mvpNovelGetTokenIndex(previous[0]):-1;
   var oldEnd=previous.length?mvpNovelGetTokenIndex(previous[previous.length-1]):-1;
-  // Update only the changed edges instead of clearing/repainting every selected token.
+  // Update only the changed edges; whitespace tokens are included in the range.
   if(oldStart>=0&&oldEnd>=oldStart){
     for(var i=oldStart;i<start&&i<=oldEnd;i++)if(tokens[i])tokens[i].classList.remove("mvp-selecting");
     for(var j=end+1;j<=oldEnd;j++)if(tokens[j])tokens[j].classList.remove("mvp-selecting");
@@ -2825,52 +2825,9 @@ function mvpNovelRefreshRange(anchorIndex,currentIndex){
   mvpNovelPositionSelectionHandles();
 }
 
-function mvpNovelPositionSelectionHandles(){
-  var layer=document.getElementById("mvpNovelSelectionHandles");
-  if(!layer||!mvpNovelSelectionState.selectedSpans.length)return;
-  var selected=mvpNovelSelectionState.selectedSpans;
-  var first=selected[0].getBoundingClientRect(),last=selected[selected.length-1].getBoundingClientRect();
-  var start=layer.querySelector(".mvp-handle-start"),end=layer.querySelector(".mvp-handle-end");
-  layer.classList.add("mvp-handles-visible");layer.setAttribute("aria-hidden","false");
-  start.style.left=Math.max(14,Math.min(window.innerWidth-14,first.left))+"px";
-  start.style.top=Math.max(14,Math.min(window.innerHeight-14,first.bottom+3))+"px";
-  end.style.left=Math.max(14,Math.min(window.innerWidth-14,last.right))+"px";
-  end.style.top=Math.max(14,Math.min(window.innerHeight-14,last.bottom+3))+"px";
-}
-function mvpNovelHideSelectionHandles(){
-  var layer=document.getElementById("mvpNovelSelectionHandles");
-  if(layer){layer.classList.remove("mvp-handles-visible");layer.setAttribute("aria-hidden","true");}
-}
-function mvpNovelBindSelectionHandles(){
-  var layer=document.getElementById("mvpNovelSelectionHandles");if(!layer||layer.dataset.mvpBound==="1")return;
-  layer.dataset.mvpBound="1";
-  var dragging=null, pendingPoint=null, framePending=false, lastDragIndex=-1;
-  function processDragPoint(){
-    framePending=false;
-    if(!dragging||!pendingPoint)return;
-    var point=pendingPoint;pendingPoint=null;
-    var token=mvpNovelPointToken(point.x,point.y);if(!token)return;
-    var index=mvpNovelGetTokenIndex(token);if(index<0||index===lastDragIndex)return;
-    lastDragIndex=index;
-    if(dragging==="start")mvpNovelSelectionState.anchorIndex=index;else mvpNovelSelectionState.currentIndex=index;
-    mvpNovelRefreshRange(mvpNovelSelectionState.anchorIndex,mvpNovelSelectionState.currentIndex);
-  }
-  layer.querySelectorAll(".mvp-selection-handle").forEach(function(handle){
-    handle.addEventListener("pointerdown",function(e){
-      if(!mvpNovelSelectionState.active)return;
-      e.preventDefault();e.stopPropagation();dragging=handle.classList.contains("mvp-handle-start")?"start":"end";
-      lastDragIndex=-1;pendingPoint={x:e.clientX,y:e.clientY};
-      try{handle.setPointerCapture(e.pointerId);}catch(_){ }
-    },{passive:false});
-    handle.addEventListener("pointermove",function(e){
-      if(!dragging)return;e.preventDefault();e.stopPropagation();
-      pendingPoint={x:e.clientX,y:e.clientY};
-      if(!framePending){framePending=true;requestAnimationFrame(processDragPoint);}
-    },{passive:false});
-    function stop(e){if(!dragging)return;if(e){e.preventDefault();e.stopPropagation();}processDragPoint();dragging=null;pendingPoint=null;framePending=false;mvpNovelShowSelectionToolbar();}
-    handle.addEventListener("pointerup",stop,{passive:false});handle.addEventListener("pointercancel",stop,{passive:false});
-  });
-}
+function mvpNovelPositionSelectionHandles(){ /* Handle custom dinonaktifkan sesuai permintaan. */ }
+function mvpNovelHideSelectionHandles(){ /* Tidak ada handle yang ditampilkan. */ }
+function mvpNovelBindSelectionHandles(){ /* Seleksi memakai long-press dan drag pada teks. */ }
 
 function mvpNovelClosestToken(target){
   if(!target) return null;
@@ -2928,6 +2885,63 @@ function mvpNovelShowSelectionToolbar(){
   mvpNovelPositionToolbar(x,y);
 }
 
+function mvpNovelRenderEffectRuns(){
+  var article=document.querySelector('.novel-reader');
+  if(!article)return;
+  // Lepas wrapper visual sebelumnya tanpa mengubah token dan data anotasi.
+  Array.prototype.slice.call(article.querySelectorAll('.mvp-style-run')).forEach(function(run){
+    var parent=run.parentNode;
+    while(run.firstChild)parent.insertBefore(run.firstChild,run);
+    parent.removeChild(run);
+  });
+  var tokens=mvpNovelSelectionState.tokenSpans||[];
+  var styles=['highlight','underline','strike','wavy'];
+  function signature(token){
+    var active=[];
+    styles.forEach(function(style){
+      var cls='mvp-style-'+(style==='highlight'?'highlight':style==='underline'?'underline':style==='strike'?'strike':'wavy');
+      if(token.classList.contains(cls)){
+        var prop='--mvp-novel-'+style+'-color';
+        var color=token.style.getPropertyValue(prop)||getComputedStyle(token).getPropertyValue(prop)||'';
+        active.push(style+':'+color.trim());
+      }
+    });
+    return active.join('|');
+  }
+  // Gabungkan rentang token bersebelahan dengan kombinasi efek/warna yang sama.
+  // Wrapper inline membuat dekorasi melewati spasi, bukan terputus di tiap kata.
+  var i=0;
+  while(i<tokens.length){
+    var first=tokens[i],sig=signature(first);
+    if(!sig){i++;continue;}
+    var parent=first.parentNode;
+    if(!parent || !first.isConnected){i++;continue;}
+    var run=[first],j=i+1;
+    while(j<tokens.length){
+      var next=tokens[j];
+      if(next.parentNode!==parent || signature(next)!==sig)break;
+      var cursor=run[run.length-1].nextSibling;
+      var contiguous=true;
+      while(cursor&&cursor!==next){if(cursor.nodeType===1&&!cursor.classList.contains('mvp-select-token')){contiguous=false;break;}if(cursor.nodeType===3&&cursor.nodeValue.trim()){contiguous=false;break;}cursor=cursor.nextSibling;}
+      if(!contiguous||cursor!==next)break;
+      run.push(next);j++;
+    }
+    if(run.length){
+      var wrapper=document.createElement('span');
+      wrapper.className='mvp-style-run';
+      var active=sig.split('|');
+      active.forEach(function(entry){
+        var bits=entry.split(':');var style=bits.shift();var color=bits.join(':');
+        wrapper.classList.add('mvp-run-'+style);
+        if(color)wrapper.style.setProperty('--mvp-novel-'+style+'-color',color);
+      });
+      parent.insertBefore(wrapper,first);
+      run.forEach(function(token){wrapper.appendChild(token);});
+      i+=run.length;
+    }else i++;
+  }
+}
+
 function mvpNovelSaveStyles(){
   var key=mvpNovelSelectionState.chapterKey;
   if(!key) return;
@@ -2963,6 +2977,7 @@ function mvpNovelLoadStyles(){
       ["highlight","underline","strike","wavy"].forEach(function(style){var prop="--mvp-novel-"+style+"-color";var color=entry.colors[style];if(/^#[0-9a-f]{6}$/i.test(color||""))span.style.setProperty(prop,color);});
     }
   });
+  mvpNovelRenderEffectRuns();
 }
 
 function mvpNovelApplyStyle(style){
@@ -2985,6 +3000,10 @@ function mvpNovelApplyStyle(style){
     }
   });
   mvpNovelSaveStyles();
+  mvpNovelRenderEffectRuns();
+  // Refresh references after wrappers are inserted; token nodes themselves remain intact.
+  mvpNovelSelectionState.tokenSpans=Array.prototype.slice.call(document.querySelectorAll('.novel-reader .mvp-select-token'));
+  mvpNovelSelectionState.selectedSpans=mvpNovelSelectionState.selectedSpans.filter(function(span){return span&&span.isConnected;});
   mvpNovelShowSelectionToolbar();
 }
 
@@ -3025,15 +3044,15 @@ function mvpNovelWrapText(container){
     var frag=document.createDocumentFragment();
     parts.forEach(function(part){
       if(!part) return;
-      if(/^\s+$/.test(part)){
-        frag.appendChild(document.createTextNode(part));
-      }else{
-        var span=document.createElement("span");
-        span.className="mvp-select-token";
-        span.dataset.mvpToken=String(tokenIndex++);
-        span.textContent=part;
-        frag.appendChild(span);
-      }
+      // Bungkus kata DAN spasi sebagai token inline agar efek tidak terputus
+      // di sela kata. Whitespace tetap memakai white-space normal sehingga
+      // perilaku wrapping paragraf tidak berubah.
+      var span=document.createElement("span");
+      span.className="mvp-select-token";
+      span.dataset.mvpToken=String(tokenIndex++);
+      if(/^\s+$/.test(part)) span.dataset.mvpWhitespace="1";
+      span.textContent=part;
+      frag.appendChild(span);
     });
     node.parentNode.replaceChild(frag,node);
   });
@@ -3262,8 +3281,10 @@ html,body{background:var(--bg)}
 }
 .novel-reader .mvp-select-token{
   display:inline;
-  padding:0 .5px;
+  padding:0;
+  margin:0;
   border-radius:3px;
+  white-space:normal;
   -webkit-user-select:none!important;
   user-select:none!important;
   -webkit-touch-callout:none!important;
@@ -3298,6 +3319,14 @@ html,body{background:var(--bg)}
   text-decoration-thickness:2px;
   text-underline-offset:3px;
 }
+
+/* Efek diterapkan pada rentang inline, bukan per-kata; spasi ikut berada di dalam wrapper. */
+.novel-reader .mvp-style-run{display:inline;white-space:normal;border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+.novel-reader .mvp-style-run .mvp-select-token{background:transparent!important;text-decoration:none!important;box-shadow:none!important;color:inherit;}
+.novel-reader .mvp-style-run.mvp-run-highlight{background:var(--mvp-novel-highlight-color,#ffd54f);color:#111827;}
+.novel-reader .mvp-style-run.mvp-run-underline{text-decoration-line:underline;text-decoration-color:var(--mvp-novel-underline-color,#ff9800);text-decoration-thickness:2px;text-underline-offset:3px;}
+.novel-reader .mvp-style-run.mvp-run-strike{text-decoration-line:line-through;text-decoration-color:var(--mvp-novel-strike-color,#ef4444);text-decoration-thickness:2px;}
+.novel-reader .mvp-style-run.mvp-run-wavy{text-decoration-line:underline;text-decoration-style:wavy;text-decoration-color:var(--mvp-novel-wavy-color,#e91e63);text-decoration-thickness:2px;text-underline-offset:3px;}
 
 #custom-selection-toolbar{
   position:fixed;left:50%;top:0;display:none;flex-direction:column;align-items:stretch;
@@ -3346,19 +3375,7 @@ html,body{background:var(--bg)}
   </div>
   <input type="color" id="mvpNovelCustomColor" value="#a6b77a" aria-label="Pilih warna custom">
 </div>
-<div id="mvpNovelSelectionHandles" aria-hidden="true">
-  <button type="button" class="mvp-selection-handle mvp-handle-start" aria-label="Perluas seleksi dari awal"></button>
-  <button type="button" class="mvp-selection-handle mvp-handle-end" aria-label="Perluas seleksi sampai akhir"></button>
-</div>
-
 <style>
-#mvpNovelSelectionHandles{position:fixed;inset:0;z-index:10001;pointer-events:none;display:none}
-#mvpNovelSelectionHandles.mvp-handles-visible{display:block}
-.mvp-selection-handle{position:absolute;pointer-events:auto;touch-action:none;width:34px;height:44px;border:0;border-radius:0;background:transparent;padding:0;transform:translate(-50%,0);will-change:left,top;-webkit-tap-highlight-color:transparent;}
-/* Handle ala seleksi teks bawaan Android: bulb bulat kecil + stem ramping. */
-.mvp-selection-handle::before{content:"";position:absolute;left:50%;top:0;width:16px;height:16px;transform:translateX(-50%);border-radius:50%;background:var(--accent,#398be8);box-shadow:0 1px 2px rgba(0,0,0,.28);}
-.mvp-selection-handle::after{content:"";position:absolute;left:50%;top:12px;width:3px;height:27px;transform:translateX(-50%);border-radius:0 0 2px 2px;background:var(--accent,#398be8);box-shadow:0 1px 2px rgba(0,0,0,.2);}
-.mvp-selection-handle:active::before,.mvp-selection-handle:active::after{background:var(--accent-hover,var(--accent,#398be8))}
 .reader-topbar{gap:7px}
 .mvp-reader-notes-button{flex:0 0 38px;height:38px;border:1px solid var(--border);border-radius:10px;background:var(--panel2);color:var(--text);font-size:22px;font-weight:800;display:flex;align-items:center;justify-content:center}
 .mvp-reader-notes-button:active{transform:scale(.96)}
