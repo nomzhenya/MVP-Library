@@ -2839,22 +2839,30 @@ function mvpNovelHideSelectionHandles(){
 function mvpNovelBindSelectionHandles(){
   var layer=document.getElementById("mvpNovelSelectionHandles");if(!layer||layer.dataset.mvpBound==="1")return;
   layer.dataset.mvpBound="1";
-  var dragging=null;
+  var dragging=null, pendingPoint=null, framePending=false, lastDragIndex=-1;
+  function processDragPoint(){
+    framePending=false;
+    if(!dragging||!pendingPoint)return;
+    var point=pendingPoint;pendingPoint=null;
+    var token=mvpNovelPointToken(point.x,point.y);if(!token)return;
+    var index=mvpNovelGetTokenIndex(token);if(index<0||index===lastDragIndex)return;
+    lastDragIndex=index;
+    if(dragging==="start")mvpNovelSelectionState.anchorIndex=index;else mvpNovelSelectionState.currentIndex=index;
+    mvpNovelRefreshRange(mvpNovelSelectionState.anchorIndex,mvpNovelSelectionState.currentIndex);
+  }
   layer.querySelectorAll(".mvp-selection-handle").forEach(function(handle){
     handle.addEventListener("pointerdown",function(e){
       if(!mvpNovelSelectionState.active)return;
       e.preventDefault();e.stopPropagation();dragging=handle.classList.contains("mvp-handle-start")?"start":"end";
+      lastDragIndex=-1;pendingPoint={x:e.clientX,y:e.clientY};
       try{handle.setPointerCapture(e.pointerId);}catch(_){ }
     },{passive:false});
     handle.addEventListener("pointermove",function(e){
       if(!dragging)return;e.preventDefault();e.stopPropagation();
-      var token=mvpNovelPointToken(e.clientX,e.clientY);if(!token)return;
-      var index=mvpNovelGetTokenIndex(token);if(index<0)return;
-      if(dragging==="start")mvpNovelSelectionState.anchorIndex=index;else mvpNovelSelectionState.currentIndex=index;
-      mvpNovelRefreshRange(mvpNovelSelectionState.anchorIndex,mvpNovelSelectionState.currentIndex);
-      mvpNovelShowSelectionToolbar();
+      pendingPoint={x:e.clientX,y:e.clientY};
+      if(!framePending){framePending=true;requestAnimationFrame(processDragPoint);}
     },{passive:false});
-    function stop(e){if(!dragging)return;if(e){e.preventDefault();e.stopPropagation();}dragging=null;mvpNovelShowSelectionToolbar();}
+    function stop(e){if(!dragging)return;if(e){e.preventDefault();e.stopPropagation();}processDragPoint();dragging=null;pendingPoint=null;framePending=false;mvpNovelShowSelectionToolbar();}
     handle.addEventListener("pointerup",stop,{passive:false});handle.addEventListener("pointercancel",stop,{passive:false});
   });
 }
@@ -3315,15 +3323,17 @@ html,body{background:var(--bg)}
   <input type="color" id="mvpNovelCustomColor" value="#a6b77a" aria-label="Pilih warna custom">
 </div>
 <div id="mvpNovelSelectionHandles" aria-hidden="true">
-  <button type="button" class="mvp-selection-handle mvp-handle-start" aria-label="Perluas seleksi dari awal">‹</button>
-  <button type="button" class="mvp-selection-handle mvp-handle-end" aria-label="Perluas seleksi sampai akhir">›</button>
+  <button type="button" class="mvp-selection-handle mvp-handle-start" aria-label="Perluas seleksi dari awal"></button>
+  <button type="button" class="mvp-selection-handle mvp-handle-end" aria-label="Perluas seleksi sampai akhir"></button>
 </div>
 
 <style>
 #mvpNovelSelectionHandles{position:fixed;inset:0;z-index:10001;pointer-events:none;display:none}
 #mvpNovelSelectionHandles.mvp-handles-visible{display:block}
-.mvp-selection-handle{position:absolute;pointer-events:auto;touch-action:none;width:28px;height:28px;border:2px solid #fff;border-radius:50%;background:var(--accent,#818cf8);color:#fff;font:700 25px/20px system-ui,sans-serif;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px #0008;padding:0;transform:translate(-50%,-50%)}
-.mvp-selection-handle:active{transform:translate(-50%,-50%) scale(1.08)}
+.mvp-selection-handle{position:absolute;pointer-events:auto;touch-action:none;width:30px;height:40px;border:0;border-radius:0;background:transparent;padding:0;transform:translate(-50%,0);will-change:left,top;}
+.mvp-selection-handle::before{content:"";position:absolute;left:50%;top:0;width:24px;height:24px;transform:translateX(-50%);border-radius:50% 50% 50% 0;background:#28a9e8;border:1px solid #a7e5ff;box-shadow:0 2px 5px #0006;}
+.mvp-selection-handle::after{content:"";position:absolute;left:50%;top:17px;width:7px;height:19px;transform:translateX(-50%);border-radius:0 0 4px 4px;background:#28a9e8;box-shadow:0 2px 4px #0004;}
+.mvp-selection-handle:active::before{background:#1596d7}
 .reader-topbar{gap:7px}
 .mvp-reader-notes-button{flex:0 0 38px;height:38px;border:1px solid var(--border);border-radius:10px;background:var(--panel2);color:var(--text);font-size:22px;font-weight:800;display:flex;align-items:center;justify-content:center}
 .mvp-reader-notes-button:active{transform:scale(.96)}
